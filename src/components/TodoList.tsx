@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Trash2, AlertCircle, ChevronDown, ChevronUp, Tag, HelpCircle, Plus, Minus } from 'lucide-react';
+import { Check, Trash2, AlertCircle, ChevronDown, Tag, HelpCircle, Plus, Minus } from 'lucide-react';
 import { useTodoStore } from '../store/todoStore';
 import { format } from 'date-fns';
 import TodoForm from './TodoForm';
 import type { Todo } from '../types';
+import { ConfettiSideCannons } from './ui/ConfettiSideCannons.ts';
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 }) => {
   const { toggleTodo, removeTodo } = useTodoStore();
   const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+
 
   const toggleInsights = (id: string) => {
     setExpandedInsights(prev => 
@@ -25,6 +27,12 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
       default: return 'text-gray-500';
     }
   };
+
+  useEffect(() => {
+    if(todo.completed){
+      ConfettiSideCannons();
+    }
+  }, [todo]);
 
   return (
     <motion.div
@@ -50,7 +58,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
             {todo.title}
           </p>
           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-            <AlertCircle className={`w-4 h-4 ${getPriorityColor(todo.priority)}`} />
+            <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`} />
             {todo.dueDate && (
               <span>Due: {format(new Date(todo.dueDate), 'PPP')}</span>
             )}
@@ -60,21 +68,21 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                 className="flex items-center gap-1 text-blue-500 hover:text-blue-600"
               >
                 {expandedInsights.includes(todo.id) ? (
-                  <ChevronUp className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4" />
                 ) : (
-                  <ChevronDown className="w-4 h-4" />
+                    <img src="../../src/components/assets/gemini-color.svg" alt={"Gemini"} className="w-4 h-4"/>
                 )}
                 Insights
               </button>
             )}
             <button
-              onClick={() => setShowSubtaskForm(!showSubtaskForm)}
+                onClick={() => setShowSubtaskForm(!showSubtaskForm)}
               className="flex items-center gap-1 text-blue-500 hover:text-blue-600"
             >
               {showSubtaskForm ? (
                 <Minus className="w-4 h-4" />
               ) : (
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-5" />
               )}
               Subtask
             </button>

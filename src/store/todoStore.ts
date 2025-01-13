@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { TodoStore, Todo } from '../types';
+import { TodoStore } from '../types';
 
 export const useTodoStore = create<TodoStore>((set) => ({
   todos: [],
   theme: {
     mode: 'light',
-    primaryColor: '#3b82f6',
-    secondaryColor: '#60a5fa',
+    primaryColor: '#53c9d9',
+    secondaryColor: '#5f4ae8',
   },
   addTodo: (todo) =>
     set((state) => ({

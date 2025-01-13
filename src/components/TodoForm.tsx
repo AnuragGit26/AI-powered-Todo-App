@@ -64,7 +64,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2"
+                className="absolute top-2.5 right-1"
               >
                 <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
               </motion.div>

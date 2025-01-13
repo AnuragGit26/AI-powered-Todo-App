@@ -5,6 +5,7 @@ import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import ThemeCustomizer from './components/ThemeCustomizer';
 import { useTodoStore } from './store/todoStore';
+import {BorderBeam} from "./components/ui/border-beam.tsx";
 
 function App() {
   const theme = useTodoStore((state) => state.theme);
@@ -16,12 +17,14 @@ function App() {
 
   return (
     <div 
-      className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200"
+      className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
+      relative flex h-[500px] w-full flex-col overflow-hidden rounded-lg border bg-background md:shadow-xl"
       style={{
         '--primary-color': theme.primaryColor,
         '--secondary-color': theme.secondaryColor,
       } as React.CSSProperties}
     >
+      <BorderBeam size={400} duration={12} delay={9} />
       <ThemeCustomizer />
       
       <motion.div
