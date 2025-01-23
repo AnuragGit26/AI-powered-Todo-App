@@ -11,6 +11,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
   const { toggleTodo, removeTodo } = useTodoStore();
   const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const calculateTimeLeft = (dueDate: Date | null) => {
+    if (!dueDate) return '';
+    const now = new Date();
+    const timeLeft = dueDate.getTime() - now.getTime();
+    const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 ? `${daysLeft} days left` : 'Due today';
+  };
+
 
 
   const toggleInsights = (id: string) => {
@@ -60,7 +68,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
             <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`} />
             {todo.dueDate && (
-              <span>Due: {format(new Date(todo.dueDate), 'PPP')}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {calculateTimeLeft(todo.dueDate)}
+                </p>
             )}
             {todo.analysis && (
               <button
