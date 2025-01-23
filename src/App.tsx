@@ -14,22 +14,15 @@ const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env
 const App: React.FC = () => {
   const theme = useTodoStore((state) => state.theme);
   const [session, setSession] = useState<Session | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        setError(error.message);
-      } else {
-        setSession(session);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setSession(session);
-      } else {
-        setError('Failed to authenticate');
       }
     });
 

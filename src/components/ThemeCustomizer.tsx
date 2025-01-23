@@ -60,7 +60,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                             className="absolute right-0 mt-2 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-80 z-50"
                         >
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold dark:text-white">Theme Settings</h3>
+                                <h3 className="text-lg font-semibold dark:text-white">App Settings</h3>
                                 <button
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
