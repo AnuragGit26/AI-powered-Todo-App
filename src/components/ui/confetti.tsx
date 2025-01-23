@@ -15,7 +15,7 @@ import type {
 } from "canvas-confetti";
 import confetti from "canvas-confetti";
 
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button, ButtonProps } from "./button.tsx";
 
 type Api = {
   fire: (options?: ConfettiOptions) => void;
