@@ -28,6 +28,10 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
     );
   };
 
+  const toggleStatus = (id: string) => {
+    updateTodo(id, { status: todo.status === 'Not Started' ? 'In progress' : 'Not Started' });
+  }
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'text-red-500';
@@ -115,7 +119,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                     {expandedInsights.includes(todo.id) ? (
                         <ChevronDown className="w-4 h-4" />
                     ) : (
-                        <img src="../../src/components/assets/gemini-color.svg" alt={"Gemini"} className="w-4 h-4"/>
+                        <img src="https://svgmix.com/uploads/e567ca-google-bard.svg" alt={"Gemini"} className="w-4 h-4"/>
                     )}
                     Insights
                   </button>
