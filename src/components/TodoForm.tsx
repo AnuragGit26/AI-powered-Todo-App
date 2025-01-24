@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
-import type { Priority } from '../types';
+import type { Priority, Status } from '../types';
 
 const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [priority, setPriority] = useState<Priority>('medium');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [status, setStatus] = useState<Status>('Not Started');
   const { addTodo, addSubtask } = useTodoStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,6 +27,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
       title: title.trim(),
       completed: false,
       dueDate,
+      status,
       priority,
       analysis,
       subtasks: [],
@@ -40,6 +42,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
     setTitle('');
     setDueDate(null);
     setPriority('medium');
+    setStatus('Not Started');
   };
 
   return (
@@ -86,6 +89,15 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
+          </select>
+          <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Status)}
+              className="w-full md:w-auto p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="Not Started">Not Started</option>
+            <option value="In progress">In Progress</option>
+            <option value="Completed">Completed</option>
           </select>
           <motion.button
               whileHover={{ scale: 1.05 }}

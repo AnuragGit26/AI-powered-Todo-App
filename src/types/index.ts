@@ -1,4 +1,5 @@
 export type Priority = 'low' | 'medium' | 'high';
+export type Status = 'Not Started' | 'In progress' | 'Completed';
 
 export interface TodoAnalysis {
   category: string;
@@ -15,6 +16,7 @@ export interface Todo {
   analysis?: TodoAnalysis;
   subtasks: Todo[];
   parentId?: string;
+  status: Status;
 }
 
 export interface ThemeConfig {
