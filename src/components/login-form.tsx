@@ -1,11 +1,12 @@
 import { cn } from "../lib/utils";
 import { Button } from "./ui/button.tsx";
+import SplitText from './ui/SplitText';
+
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "./ui/card.tsx";
 import { Input } from "./ui/input.tsx";
 import { Label } from "./ui/label.tsx";
@@ -44,12 +45,26 @@ export function LoginForm({
     console.log(data);
   };
 
+    const handleAnimationComplete = () => {
+        console.log('All letters have animated!');
+    };
+
   return (
-      <div className={cn("flex items-center justify-center min-h-screen", className)} {...props}>
+      <div className={cn("flex items-center justify-center min-h-screen z-50", className)} {...props}>
         <div className="max-w-3xl flex flex-col gap-10">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Welcome back</CardTitle>
+                <SplitText
+                    text="Hello,Welcome Back!"
+                    className="text-2xl font-semibold text-center"
+                    delay={70}
+                    animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+                    animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+                    easing="easeOutCubic"
+                    threshold={0.2}
+                    rootMargin="-50px"
+                    onLetterAnimationComplete={handleAnimationComplete}
+                />
               <CardDescription>
                 Login with your Apple or Google account
               </CardDescription>

@@ -8,6 +8,7 @@ import { useTodoStore } from './store/todoStore';
 import { BorderBeam } from "./components/ui/border-beam";
 import { createClient, Session } from "@supabase/supabase-js";
 import {LoginForm} from "./components/login-form.tsx";
+import Waves from './components/ui/Waves';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -43,7 +44,9 @@ const App: React.FC = () => {
   const renderContent = useCallback(() => {
     if (!session) {
       return (
-        <LoginForm />);
+        <>
+            <LoginForm />
+        </>);
     } else {
       return (
           <div
@@ -54,6 +57,20 @@ const App: React.FC = () => {
                 '--secondary-color': theme.secondaryColor,
               } as React.CSSProperties}
           >
+              <Waves
+
+                  lineColor="#fff"
+                  backgroundColor="rgba(255, 255, 255, 0.2)"
+                  waveSpeedX={0.02}
+                  waveSpeedY={0.01}
+                  waveAmpX={40}
+                  waveAmpY={20}
+                  friction={0.9}
+                  tension={0.01}
+                  maxCursorMove={120}
+                  xGap={12}
+                  yGap={36}
+              />
             <BorderBeam size={400} duration={12} delay={9}/>
             <ThemeCustomizer/>
 
