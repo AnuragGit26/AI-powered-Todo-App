@@ -28,9 +28,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
     );
   };
 
-  const toggleStatus = (id: string) => {
-    updateTodo(id, { status: todo.status === 'Not Started' ? 'In progress' : 'Not Started' });
-  }
+  // const toggleStatus = (id: string) => {
+  //   updateTodo(id, { status: todo.status === 'Not Started' ? 'In progress' : 'Not Started' });
+  // }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -108,9 +108,10 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                     {calculateTimeLeft(todo.dueDate)}
                   </p>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {todo.status}
-              </p>
+              {/*<p className="text-sm text-gray-500 dark:text-gray-400">*/}
+              {/*  {todo.status}*/}
+              {/*</p>*/}
+
               {todo.analysis && (
                   <button
                       onClick={() => toggleInsights(todo.id)}

@@ -1,7 +1,7 @@
 import { cn } from "../lib/utils";
 import { Button } from "./ui/button.tsx";
 import SplitText from './ui/SplitText';
-
+import { motion } from 'framer-motion';
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import { Input } from "./ui/input.tsx";
 import { Label } from "./ui/label.tsx";
 import React, { useState } from "react";
 import {createClient} from "@supabase/supabase-js";
+import {useNavigate} from "react-router-dom";
 
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
@@ -20,9 +21,9 @@ export function LoginForm({
                             className,
                             ...props
                           }: React.ComponentPropsWithoutRef<"div">) {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate=useNavigate();
 
   const handleGithubSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -115,7 +116,7 @@ export function LoginForm({
                       <div className="flex items-center">
                         <Label htmlFor="password">Password</Label>
                         <a
-                            href="#"
+                            href="/password-reset-request"
                             className="ml-auto text-sm underline-offset-4 hover:underline"
                         >
                           Forgot your password?
@@ -129,13 +130,13 @@ export function LoginForm({
                           required
                       />
                     </div>
-                    <Button type="submit" className="w-full">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} type="submit" onClick={()=>navigate("/")} className="w-full">
                       Sign In
-                    </Button>
+                    </motion.button>
                   </div>
                   <div className="text-center text-sm">
                     Don&apos;t have an account?{" "}
-                    <a href="#" className="underline underline-offset-4">
+                    <a href="/signup" className="underline underline-offset-4">
                       Sign up
                     </a>
                   </div>
