@@ -11,7 +11,7 @@ import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from './components/ProtectedRoute';
-import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm.tsx";
+import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
@@ -28,6 +28,7 @@ const App: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session) {
                 setSession(session);
+                localStorage.setItem('token', session.access_token?.toString() || '');
             }
         });
 
@@ -35,14 +36,18 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        document.documentElement.classList.toggle('dark', theme.mode === 'dark');
-    }, [theme.mode]);
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                console.log(user.user_metadata.username);
+            }
+        };
+        fetchUser();
+    }, []);
 
     useEffect(() => {
-        if (session) {
-            console.log(session.user);
-        }
-    }, [session]);
+        document.documentElement.classList.toggle('dark', theme.mode === 'dark');
+    }, [theme.mode]);
 
     return (
         <Routes>
@@ -52,7 +57,7 @@ const App: React.FC = () => {
             <Route
                 path="/"
                 element={
-                    <ProtectedRoute isAuthenticated={!!session}>
+                    <ProtectedRoute isAuthenticated={localStorage.getItem('token') != null}>
                         <div
                             className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
               relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-background md:shadow-xl"

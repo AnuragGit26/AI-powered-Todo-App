@@ -1,7 +1,8 @@
 {
-  "name": "Todo AI App",
-  "private": true,
-  "version": "0.0.0",
+  "name": "Todo_AI_App",
+  "version": "1.0.0",
+  "private": "true",
+  "description": "A Todo AI App built with React, TailwindCSS, and Vite.",
   "type": "module",
   "scripts": {
     "dev": "vite",

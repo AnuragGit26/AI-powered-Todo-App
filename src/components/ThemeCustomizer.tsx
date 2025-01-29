@@ -21,6 +21,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
 
     const handleLogout = useCallback(async () => {
         const { error } = await supabase.auth.signOut();
+        localStorage.clear();
         if (error) {
             console.error('Error logging out:', error.message);
         }
