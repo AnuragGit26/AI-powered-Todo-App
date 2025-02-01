@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback} from 'react';
 import { Settings, Moon, Sun, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTodoStore } from '../store/todoStore';
@@ -9,6 +9,7 @@ const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env
 const ThemeCustomizer: React.FC = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const { theme, setTheme } = useTodoStore();
+    const username=localStorage.getItem('username');
 
     const toggleTheme = useCallback(() => {
         setTheme({
@@ -61,7 +62,10 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                             className="absolute right-0 mt-2 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-80 z-50"
                         >
                             <div className="flex justify-between items-center mb-4">
+                                <div className="block items-center gap-2">
+                                <h2 className="text-2xl font-semibold dark:text-white">Welcome {username}!</h2><br/>
                                 <h3 className="text-lg font-semibold dark:text-white">App Settings</h3>
+                                </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
@@ -95,41 +99,6 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                             />
                                         </div>
                                     </button>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium dark:text-gray-200">Primary Color</label>
-                                    <div className="relative">
-                                        <input
-                                            type="color"
-                                            value={theme.primaryColor}
-                                            onChange={(e) => setTheme({ ...theme, primaryColor: e.target.value })}
-                                            className="w-full h-10 rounded-lg cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium dark:text-gray-200">Secondary Color</label>
-                                    <div className="relative">
-                                        <input
-                                            type="color"
-                                            value={theme.secondaryColor}
-                                            onChange={(e) => setTheme({ ...theme, secondaryColor: e.target.value })}
-                                            className="w-full h-10 rounded-lg cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t dark:border-gray-700">
-                                    <div className="flex gap-2 items-center text-sm text-gray-500 dark:text-gray-400">
-                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
-                                        <span>Primary: {theme.primaryColor}</span>
-                                    </div>
-                                    <div className="flex gap-2 items-center text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.secondaryColor }} />
-                                        <span>Secondary: {theme.secondaryColor}</span>
-                                    </div>
                                 </div>
 
                                 <div className="pt-4 border-t dark:border-gray-700">

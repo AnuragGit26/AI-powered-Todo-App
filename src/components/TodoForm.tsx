@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
-import type { Priority, Status } from '../types';
+import type {Priority, Status, SubTodo, Todo} from '../types';
+import {createSubtask, createTask, getTaskById} from '../services/taskService';
 
 const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
   const [title, setTitle] = useState('');
@@ -15,35 +16,47 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
   const [status, setStatus] = useState<Status>('Not Started');
   const { addTodo, addSubtask } = useTodoStore();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim()) return;
 
-    setIsAnalyzing(true);
-    const analysis = await analyzeTodo(title);
-    setIsAnalyzing(false);
+        setIsAnalyzing(true);
+        const analysis = await analyzeTodo(title);
+        setIsAnalyzing(false);
 
-    const newTodo = {
-      title: title.trim(),
-      completed: false,
-      dueDate,
-      status,
-      priority,
-      analysis,
-      subtasks: [],
+        const newTodo: Todo = {
+            id: crypto.randomUUID(),
+            title: title.trim(),
+            completed: false,
+            dueDate,
+            status,
+            priority,
+            analysis,
+            createdAt: new Date(),
+        };
+
+        if (parentId) {
+            const parentTask = await getTaskById(parentId); // Assuming you have a function to get a task by ID
+            if (parentTask && parentTask.id === parentId) {
+                const newSubtask: SubTodo = {
+                    ...newTodo,
+                    parentId,
+                };
+                addSubtask(parentId, newSubtask);
+                await createSubtask(newSubtask);
+            } else {
+                console.error("Parent task not found or ID mismatch");
+            }
+        } else {
+            addTodo(newTodo);
+            await createTask(newTodo);
+        }
+
+        setTitle('');
+        setDueDate(null);
+        setPriority('medium');
+        setStatus('Not Started');
     };
-
-    if (parentId) {
-      addSubtask(parentId, newTodo);
-    } else {
-      addTodo(newTodo);
-    }
-
-    setTitle('');
-    setDueDate(null);
-    setPriority('medium');
-    setStatus('Not Started');
-  };
 
   return (
       <motion.form

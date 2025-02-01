@@ -13,12 +13,26 @@ import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from './components/ProtectedRoute';
 import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
+import {fetchTasks} from "./services/taskService.ts";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
+    const { setTodos } = useTodoStore();
+
+    useEffect(() => {
+        const loadTasks = async () => {
+            try {
+                const tasks = await fetchTasks();
+                setTodos(tasks);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        };
+        loadTasks();
+    }, [setTodos]);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,6 +54,7 @@ const App: React.FC = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 console.log(user.user_metadata.username);
+                localStorage.setItem('username', user.user_metadata.username);
             }
         };
         fetchUser();
@@ -48,6 +63,7 @@ const App: React.FC = () => {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
     }, [theme.mode]);
+
 
     return (
         <Routes>

@@ -14,9 +14,21 @@ export interface Todo {
   dueDate: Date | null;
   priority: Priority;
   analysis?: TodoAnalysis;
-  subtasks: Todo[];
+  subtasks?: Todo[];
   parentId?: string;
   status: Status;
+}
+
+export interface SubTodo {
+    id: string;
+    title: string;
+    completed: boolean;
+    createdAt: Date;
+    dueDate: Date | null;
+    priority: Priority;
+    analysis?: TodoAnalysis;
+    parentId?: string;
+    status: Status;
 }
 
 export interface ThemeConfig {
@@ -28,10 +40,11 @@ export interface ThemeConfig {
 export interface TodoStore {
   todos: Todo[];
   theme: ThemeConfig;
-  addTodo: (todo: Omit<Todo, 'id' | 'createdAt'>) => void;
-  addSubtask: (parentId: string, subtask: Omit<Todo, 'id' | 'createdAt'>) => void;
+  addTodo: (todo: Partial<Todo>) => void;
+  addSubtask: (parentId: string, subtask: Partial<Todo>) => void;
   toggleTodo: (id: string) => void;
   removeTodo: (id: string) => void;
   updateTodo: (id: string, todo: Partial<Todo>) => void;
   setTheme: (theme: ThemeConfig) => void;
+  setTodos: (todos: Todo[]) => void;
 }
