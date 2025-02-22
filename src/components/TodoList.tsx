@@ -14,6 +14,8 @@ import {
     updateTask
 } from '../services/taskService';
 
+
+
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) => {
     const {toggleTodo, removeTodo, updateTodo} = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
@@ -21,13 +23,32 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(todo.title);
     const [subtasks, setSubtasks] = useState<SubTodo[]>([]);
+    const [isHovered, setIsHovered] = useState(false);
 
-    const calculateTimeLeft = (dueDate: Date | null) => {
-        if (!dueDate || !(dueDate instanceof Date) || isNaN(dueDate.getTime())) return '';
+    // const calculateTimeLeft = (dueDate: Date | string | null) => {
+    //     if (!dueDate) return '';
+    //     // Convert string to Date if necessary
+    //     const parsedDate = dueDate instanceof Date ? dueDate : new Date(dueDate);
+    //     if (isNaN(parsedDate.getTime())) return '';
+    //     const now = new Date();
+    //     const timeLeft = parsedDate.getTime() - now.getTime();
+    //     const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+    //     return daysLeft < 0 ? 'Crossed due date' : `${daysLeft} days left`;
+    // };
+
+    const renderDueDate = (dueDate: Date | string | null) => {
+        if (!dueDate) return null;
+        const parsedDate = dueDate instanceof Date ? dueDate : new Date(dueDate);
+        if (isNaN(parsedDate.getTime())) return null;
         const now = new Date();
-        const timeLeft = dueDate.getTime() - now.getTime();
-        const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-        return daysLeft > 0 ? `${daysLeft} days left` : 'Due today';
+        if (parsedDate < now) {
+            const content = isHovered ? "Crossed Due Date" : parsedDate.toLocaleDateString();
+            return <span className="text-red-500">{content}</span>;
+        } else {
+            const timeLeft = parsedDate.getTime() - now.getTime();
+            const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+            return <span>{`${daysLeft} days left`}</span>;
+        }
     };
 
     const toggleInsights = (id: string) => {
@@ -45,9 +66,21 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
         }
     };
 
-    // const toggleStatus = (id: string) => {
-    //   updateTodo(id, { status: todo.status === 'Not Started' ? 'In progress' : 'Not Started' });
-    // }
+    const toggleStatus = () => {
+        const newStatus = todo.status === 'Not Started' ? 'In progress' : 'Not Started';
+        updateTodo(todo.id, { status: newStatus });
+    };
+
+    const getStatusClasses = (status: string) => {
+        if (status === 'Not Started') {
+            return `cursor-pointer text-sm font-semibold bg-gray-300 text-gray-800 rounded-full px-2 py-1`;
+        } else if (status === 'In progress') {
+            return `cursor-pointer text-sm font-semibold bg-orange-200 text-orange-800 rounded-full px-2 py-1`;
+        } else if (status === 'Completed') {
+            return `cursor-pointer text-sm font-semibold bg-green-200 text-green-800 rounded-full px-2 py-1`;
+        }
+        return `cursor-pointer text-sm font-semibold rounded-full px-2 py-1`;
+    };
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
@@ -84,13 +117,16 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     };
 
     useEffect(() => {
-        if (todo.completed) {
-            ConfettiSideCannons();
-            todo.status = "Completed";
-        } else {
-            todo.status = "In progress";
+        const newStatus = todo.completed ? "Completed" : "In progress";
+        if (todo.status !== newStatus) {
+            if (todo.completed) {
+                ConfettiSideCannons();
+            }
+            updateTask(todo.id, { status: newStatus });
+            updateTodo(todo.id, { status: newStatus });
+            todo.status = newStatus;
         }
-    }, [todo, todo.status]);
+    }, [todo.completed]);
 
     useEffect(() => {
         const loadSubtasks = async () => {
@@ -141,14 +177,20 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                     )}
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                         <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`}/>
-                        {todo.dueDate && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {calculateTimeLeft(todo.dueDate)}
-                            </p>
-                        )}
-                        {/*<p className="text-sm text-gray-500 dark:text-gray-400">*/}
-                        {/*  {todo.status}*/}
-                        {/*</p>*/}
+                        <div className="p-0.5 border rounded-lg">
+                            {todo.dueDate && (
+                                <p
+                                    onMouseEnter={() => setIsHovered(true)}
+                                    onMouseLeave={() => setIsHovered(false)}
+                                    className="transition-colors duration-200"
+                                >
+                                    {renderDueDate(todo.dueDate)}
+                                </p>
+                            )}
+                        </div>
+                        <span onClick={toggleStatus} className={getStatusClasses(todo.status)}>
+                             {todo.status}
+                        </span>
 
                         {todo.analysis && (
                             <button
@@ -247,15 +289,39 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
 
 const TodoList: React.FC = () => {
     const todos = useTodoStore((state) => state.todos);
+    const [sortCriteria, setSortCriteria] = useState<'date' | 'priority'>('date');
+    const sortedTodos=[...todos].sort((a,b)=>{
+        if(sortCriteria==='date')
+        {
+            return (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) - (b.dueDate ? new Date(b.dueDate).getTime() : Infinity);
+        }
+        else if (sortCriteria === 'priority') {
+            const priorityOrder = { high: 1, medium: 2, low: 3 };
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
+        }
+        return 0;
+    })
 
     return (
-        <AnimatePresence>
-            <div className="space-y-4">
-                {todos.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo}/>
-                ))}
+        <div>
+            <div className="flex justify-end mb-4">
+                <select
+                    value={sortCriteria}
+                    onChange={(e) => setSortCriteria(e.target.value as 'date' | 'priority')}
+                    className="mt-2 p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                >
+                    <option value="date">Sort by Date</option>
+                    <option value="priority">Sort by Priority</option>
+                </select>
             </div>
-        </AnimatePresence>
+            <AnimatePresence>
+                <div className="space-y-4">
+                    {sortedTodos.map((todo) => (
+                        <TodoItem key={todo.id} todo={todo} />
+                    ))}
+                </div>
+            </AnimatePresence>
+        </div>
     );
 };
 

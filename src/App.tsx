@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
 import {fetchTasks} from "./services/taskService.ts";
+import NotFound from './components/NotFound';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -26,6 +27,7 @@ const App: React.FC = () => {
         const loadTasks = async () => {
             try {
                 const tasks = await fetchTasks();
+                console.log('Tasks:', tasks);
                 setTodos(tasks);
             } catch (error) {
                 console.error('Error fetching tasks:', error);
@@ -101,6 +103,7 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                 }
             />
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };

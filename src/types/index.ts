@@ -11,7 +11,7 @@ export interface Todo {
   title: string;
   completed: boolean;
   createdAt: Date;
-  dueDate: Date | null;
+  dueDate: Date | string | null;
   priority: Priority;
   analysis?: TodoAnalysis;
   subtasks?: Todo[];
