@@ -21,13 +21,13 @@ const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos } = useTodoStore();
+    const { setTodos,todos } = useTodoStore();
 
     useEffect(() => {
         const loadTasks = async () => {
             try {
                 const tasks = await fetchTasks();
-                console.log('Tasks:', tasks);
+                console.log('Todos:', todos);
                 setTodos(tasks);
             } catch (error) {
                 console.error('Error fetching tasks:', error);

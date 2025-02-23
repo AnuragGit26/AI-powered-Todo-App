@@ -50,7 +50,7 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
     if (error) {
         console.error('Error updating task:', error);
     } else {
-        console.log('Task updated:', data);
+        console.log('Task updated:', data,taskId);
     }
 };
 
@@ -98,7 +98,7 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
     if (error) {
         console.error('Error updating subtask:', error);
     } else {
-        console.log('Subtask updated:', data);
+        console.log('Subtask updated:',subtaskId,data);
     }
 };
 

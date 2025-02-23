@@ -49,26 +49,26 @@ export const useTodoStore = create<TodoStore>((set) => ({
                 if (todo.id === id) {
                     return { ...todo, completed: !todo.completed };
                 }
-                // Also check subtasks
-                if (todo.subtasks?.some(subtask => subtask.id === id)) {
-                    return {
-                        ...todo,
-                        subtasks: todo.subtasks.map(subtask =>
-                            subtask.id === id ? { ...subtask, completed: !subtask.completed } : subtask
-                        ),
-                    };
-                }
+                // // Also check subtasks
+                // if (todo.subtasks?.some(subtask => subtask.id === id)) {
+                //     return {
+                //         ...todo,
+                //         subtasks: todo.subtasks.map(subtask =>
+                //             subtask.id === id ? { ...subtask, completed: !subtask.completed } : subtask
+                //         ),
+                //     };
+                // }
                 return todo;
             }),
         })),
     removeTodo: (id: string) =>
         set((state) => ({
-            todos: state.todos.filter((todo) => {
-                if (todo.id === id) return false;
-                // Also filter out from subtasks
-                todo.subtasks = todo.subtasks?.filter(subtask => subtask.id !== id) || [];
-                return true;
-            }),
+            todos: state.todos
+                .map(todo => ({
+                    ...todo,
+                    subtasks: todo.subtasks?.filter(subtask => subtask.id !== id) || []
+                }))
+                .filter(todo => todo.id !== id),
         })),
     updateTodo: (id: string, updatedTodo: Partial<Todo>) =>
         set((state) => ({
@@ -83,6 +83,46 @@ export const useTodoStore = create<TodoStore>((set) => ({
                         subtasks: todo.subtasks.map(subtask =>
                             subtask.id === id ? { ...subtask, ...updatedTodo } : subtask
                         ),
+                    };
+                }
+                return todo;
+            }),
+        })),
+    createSubtaskStore: (parentId: string, subtask: SubTodo) =>
+        set((state) => ({
+            todos: state.todos.map((todo) => {
+                if (todo.id === parentId) {
+                    return {
+                        ...todo,
+                        subtasks: [...(todo.subtasks || []), subtask],
+                    };
+                }
+                return todo;
+            }),
+        })),
+
+    updateSubtaskStore: (parentId: string, subtaskId: string, updates: Partial<SubTodo>) =>
+        set((state) => ({
+            todos: state.todos.map((todo) => {
+                if (todo.id === parentId) {
+                    return {
+                        ...todo,
+                        subtasks: (todo.subtasks || []).map((subtask) =>
+                            subtask.id === subtaskId ? { ...subtask, ...updates } : subtask
+                        ),
+                    };
+                }
+                return todo;
+            }),
+        })),
+
+    deleteSubtaskStore: (parentId: string, subtaskId: string) =>
+        set((state) => ({
+            todos: state.todos.map((todo) => {
+                if (todo.id === parentId) {
+                    return {
+                        ...todo,
+                        subtasks: (todo.subtasks || []).filter((subtask) => subtask.id !== subtaskId),
                     };
                 }
                 return todo;

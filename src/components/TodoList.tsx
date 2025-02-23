@@ -1,6 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {AlertCircle, Check, ChevronDown, Edit3, HelpCircle, Minus, Plus, Tag, Trash2} from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "../components/ui/select";
 import {useTodoStore} from '../store/todoStore';
 import TodoForm from './TodoForm';
 import type {SubTodo, Todo} from '../types';
@@ -17,7 +26,7 @@ import {
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) => {
-    const {toggleTodo, removeTodo, updateTodo} = useTodoStore();
+    const {toggleTodo, removeTodo, updateTodo,deleteSubtaskStore,updateSubtaskStore} = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -25,16 +34,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const [subtasks, setSubtasks] = useState<SubTodo[]>([]);
     const [isHovered, setIsHovered] = useState(false);
 
-    // const calculateTimeLeft = (dueDate: Date | string | null) => {
-    //     if (!dueDate) return '';
-    //     // Convert string to Date if necessary
-    //     const parsedDate = dueDate instanceof Date ? dueDate : new Date(dueDate);
-    //     if (isNaN(parsedDate.getTime())) return '';
-    //     const now = new Date();
-    //     const timeLeft = parsedDate.getTime() - now.getTime();
-    //     const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-    //     return daysLeft < 0 ? 'Crossed due date' : `${daysLeft} days left`;
-    // };
 
     const renderDueDate = (dueDate: Date | string | null) => {
         if (!dueDate) return null;
@@ -60,8 +59,10 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const handleRemove = async (id:string) => {
         removeTodo(id);
         if (todo.parentId) {
+            deleteSubtaskStore(todo.parentId, id);
             await deleteSubtask(id); // Delete subtask from Supabase
         } else {
+            deleteTask(id);
             await deleteTask(id); // Delete task from Supabase
         }
     };
@@ -69,6 +70,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const toggleStatus = () => {
         const newStatus = todo.status === 'Not Started' ? 'In progress' : 'Not Started';
         updateTodo(todo.id, { status: newStatus });
+        updateTask(todo.id, { status: newStatus });
+        if(todo.parentId) {
+            updateSubtaskStore(todo.parentId, todo.id, {status: newStatus});
+            updateSubtask(todo.id, {status: newStatus});
+        }
     };
 
     const getStatusClasses = (status: string) => {
@@ -103,6 +109,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
         const analysis = await analyzeTodo(editedTitle);
         updateTodo(todo.id, { title: editedTitle, analysis });
         if (todo.parentId) {
+            updateSubtaskStore(todo.parentId, todo.id, { title: editedTitle, analysis });
             await updateSubtask(todo.id, { title: editedTitle, analysis }); // Update subtask in Supabase
         } else {
             await updateTask(todo.id, { title: editedTitle, analysis }); // Update task in Supabase
@@ -116,14 +123,34 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
         }
     };
 
+    const handleTodoCompletion = (todo: Todo) => {
+        const updatedCompleted = !todo.completed;
+        if (todo.parentId) {
+            updateSubtaskStore(todo.parentId, todo.id, { completed: updatedCompleted });
+            updateSubtask(todo.id, { completed: updatedCompleted }).catch((error) =>
+                console.error("Error updating subtask:", error)
+            );
+        } else {
+            toggleTodo(todo.id);
+            updateTask(todo.id, { completed: updatedCompleted }).catch((error) =>
+                console.error("Error updating task:", error)
+            );
+        }
+    };
+
     useEffect(() => {
         const newStatus = todo.completed ? "Completed" : "In progress";
         if (todo.status !== newStatus) {
             if (todo.completed) {
                 ConfettiSideCannons();
             }
-            updateTask(todo.id, { status: newStatus });
-            updateTodo(todo.id, { status: newStatus });
+            if (todo.parentId) {
+                updateSubtaskStore(todo.parentId, todo.id, { status: newStatus, completed: todo.completed });
+                updateSubtask(todo.id, { status: newStatus, completed: todo.completed });
+            } else {
+                updateTask(todo.id, { status: newStatus, completed: todo.completed });
+                updateTodo(todo.id, { status: newStatus, completed: todo.completed });
+            }
             todo.status = newStatus;
         }
     }, [todo.completed]);
@@ -152,7 +179,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                 <motion.button
                     whileHover={{scale: 1.1}}
                     whileTap={{scale: 0.9}}
-                    onClick={() => toggleTodo(todo.id)}
+                    onClick={() => handleTodoCompletion(todo)}
                     className={`p-2 rounded-full ${
                         todo.completed ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
@@ -278,7 +305,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
             {subtasks.length > 0 && (
                 <div className="mt-4 space-y-2">
                     {subtasks.map((subtask) => (
-                        <TodoItem key={subtask.id} todo={subtask} level={level + 1} />
+                        <div key={subtask.id} className="flex items-center gap-2">
+                            <TodoItem todo={subtask} level={level + 1} />
+                        </div>
                     ))}
                 </div>
             )}
@@ -304,16 +333,26 @@ const TodoList: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-end mb-4">
-                <select
+            <motion.div
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                exit={{opacity: 0, x: -100}}
+                className={`p-2 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md mb-4`}
+            >
+            <div className="flex justify-end mb-1">
+                <Select
                     value={sortCriteria}
-                    onChange={(e) => setSortCriteria(e.target.value as 'date' | 'priority')}
-                    className="mt-2 p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                >
-                    <option value="date">Sort by Date</option>
-                    <option value="priority">Sort by Priority</option>
-                </select>
+                    onValueChange={(e) => setSortCriteria(e as 'date' | 'priority')}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sort By" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="date">Sort by Date</SelectItem>
+                        <SelectItem value="priority">Sort by Priority</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
+            </motion.div>
             <AnimatePresence>
                 <div className="space-y-4">
                     {sortedTodos.map((todo) => (
