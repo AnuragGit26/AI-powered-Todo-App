@@ -87,11 +87,11 @@ const App: React.FC = () => {
                             colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
                             blend={0.5}
                             amplitude={1.0}
-                            speed={0.5}
+                            speed={0.7}
                         />
                         <div
                             className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
-              relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-background md:shadow-xl"
+              relative flex h-full w-full flex-col overflow-hidden bg-background md:shadow-xl"
                             style={{
                                 '--primary-color': theme.primaryColor,
                                 '--secondary-color': theme.secondaryColor,

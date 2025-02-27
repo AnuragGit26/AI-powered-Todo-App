@@ -67,14 +67,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const toggleStatus = () => {
         if(todo.completed) return;
         const newStatus = todo.status === 'Not Started' ? 'In progress' : 'Not Started';
-        console.log("newStatus",newStatus);
         if(todo.parentId) {
-            console.log("subtask toggle");
             useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, {status: newStatus});
             updateSubtask(todo.id, {status: newStatus});
         }
         else{
-            console.log("task toggle");
             updateTodo(todo.id, { status: newStatus });
             updateTask(todo.id, { status: newStatus });
         }
@@ -129,7 +126,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
     const handleTodoCompletion = (todo: Todo) => {
         const updatedCompleted = !todo.completed;
         const newStatus = updatedCompleted ? "Completed" : "In progress";
-        console.log(updatedCompleted,newStatus);
         if (todo.parentId) {
             useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, { completed: updatedCompleted,status:newStatus });
             updateSubtask(todo.id, { completed: updatedCompleted,status:newStatus }).catch((error) =>
