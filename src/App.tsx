@@ -5,7 +5,6 @@ import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import ThemeCustomizer from './components/ThemeCustomizer';
 import { useTodoStore } from './store/todoStore';
-import { BorderBeam } from "./components/ui/border-beam";
 import { createClient, Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
@@ -13,27 +12,34 @@ import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from './components/ProtectedRoute';
 import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
-import {fetchTasks} from "./services/taskService.ts";
+import {fetchSubtasks, fetchTasks} from "./services/taskService.ts";
 import NotFound from './components/NotFound';
+import Aurora from './components/ui/AuroraBG.tsx';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos,todos } = useTodoStore();
+    const { setTodos} = useTodoStore();
 
     useEffect(() => {
-        const loadTasks = async () => {
+        const loadTasksWithSubtasks = async () => {
             try {
                 const tasks = await fetchTasks();
-                console.log('Todos:', todos);
-                setTodos(tasks);
+                const tasksWithSubtasks = await Promise.all(
+                    (tasks || []).map(async (task) => {
+                        const subtasks = await fetchSubtasks(task.id);
+                        return { ...task, subtasks: subtasks || [] };
+                    })
+                );
+                setTodos(tasksWithSubtasks);
             } catch (error) {
-                console.error('Error fetching tasks:', error);
+                console.error('Error fetching tasks/subtasks:', error);
             }
         };
-        loadTasks();
+
+        loadTasksWithSubtasks();
     }, [setTodos]);
 
     useEffect(() => {
@@ -57,6 +63,7 @@ const App: React.FC = () => {
             if (user) {
                 console.log(user.user_metadata.username);
                 localStorage.setItem('username', user.user_metadata.username);
+                localStorage.setItem('userId', user.id);
             }
         };
         fetchUser();
@@ -76,20 +83,26 @@ const App: React.FC = () => {
                 path="/"
                 element={
                     <ProtectedRoute isAuthenticated={localStorage.getItem('token') != null}>
+                        <Aurora
+                            colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                            blend={0.5}
+                            amplitude={1.0}
+                            speed={0.5}
+                        />
                         <div
-                            className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
+                            className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
               relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-background md:shadow-xl"
                             style={{
                                 '--primary-color': theme.primaryColor,
                                 '--secondary-color': theme.secondaryColor,
                             } as React.CSSProperties}
                         >
-                            <BorderBeam size={400} duration={12} delay={9} />
+                            {/*<BorderBeam size={400} duration={12} delay={0} />*/}
                             <ThemeCustomizer />
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="max-w-3xl mx-auto"
+                                className="w-2/5 mx-auto"
                             >
                                 <div className="flex items-center gap-4 mb-8">
                                     <ListTodo className="w-10 h-10 text-blue-500" />

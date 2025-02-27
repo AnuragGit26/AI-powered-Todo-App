@@ -14,9 +14,10 @@ export interface Todo {
   dueDate: Date | string | null;
   priority: Priority;
   analysis?: TodoAnalysis;
-  subtasks?: Todo[];
+  subtasks?: SubTodo[];
   parentId?: string;
   status: Status;
+  userId?: string;
 }
 
 export interface SubTodo {
@@ -42,12 +43,12 @@ export interface TodoStore {
   theme: ThemeConfig;
   addTodo: (todo: Partial<Todo>) => void;
   addSubtask: (parentId: string, subtask: Partial<SubTodo>) => void;
-  toggleTodo: (id: string) => void;
+  //toggleTodo: (id: string, updatedTodo: Partial<Todo>) => void;
   removeTodo: (id: string) => void;
   updateTodo: (id: string, todo: Partial<Todo>) => void;
   setTheme: (theme: ThemeConfig) => void;
   setTodos: (todos: Todo[]) => void;
-  createSubtaskStore: (parentId: string, subtask: Partial<SubTodo>) => void;
+  createSubtaskStore: (parentId: string, subtask: SubTodo) => void;
   updateSubtaskStore: (parentId: string, subtaskId: string, subtask: Partial<SubTodo>) => void;
   deleteSubtaskStore: (parentId: string, subtaskId: string) => void;
 

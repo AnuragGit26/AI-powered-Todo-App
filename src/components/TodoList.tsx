@@ -4,34 +4,31 @@ import {AlertCircle, Check, ChevronDown, Edit3, HelpCircle, Minus, Plus, Tag, Tr
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
-} from "../components/ui/select";
+} from "./ui/select.tsx";
 import {useTodoStore} from '../store/todoStore';
 import TodoForm from './TodoForm';
-import type {SubTodo, Todo} from '../types';
+import type {Todo} from '../types';
 import {ConfettiSideCannons} from './ui/ConfettiSideCannons.ts';
 import {analyzeTodo} from "../services/gemini.ts";
 import {
     deleteSubtask,
     deleteTask,
-    fetchSubtasks,
     updateSubtask,
     updateTask
 } from '../services/taskService';
+import {Label} from "./ui/label.tsx";
 
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) => {
-    const {toggleTodo, removeTodo, updateTodo,deleteSubtaskStore,updateSubtaskStore} = useTodoStore();
+    const {removeTodo, updateTodo,deleteSubtaskStore,updateSubtaskStore} = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(todo.title);
-    const [subtasks, setSubtasks] = useState<SubTodo[]>([]);
     const [isHovered, setIsHovered] = useState(false);
 
 
@@ -60,20 +57,26 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
         removeTodo(id);
         if (todo.parentId) {
             deleteSubtaskStore(todo.parentId, id);
-            await deleteSubtask(id); // Delete subtask from Supabase
+            await deleteSubtask(id);
         } else {
-            deleteTask(id);
-            await deleteTask(id); // Delete task from Supabase
+            removeTodo(id);
+            await deleteTask(id);
         }
     };
 
     const toggleStatus = () => {
+        if(todo.completed) return;
         const newStatus = todo.status === 'Not Started' ? 'In progress' : 'Not Started';
-        updateTodo(todo.id, { status: newStatus });
-        updateTask(todo.id, { status: newStatus });
+        console.log("newStatus",newStatus);
         if(todo.parentId) {
-            updateSubtaskStore(todo.parentId, todo.id, {status: newStatus});
+            console.log("subtask toggle");
+            useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, {status: newStatus});
             updateSubtask(todo.id, {status: newStatus});
+        }
+        else{
+            console.log("task toggle");
+            updateTodo(todo.id, { status: newStatus });
+            updateTask(todo.id, { status: newStatus });
         }
     };
 
@@ -125,47 +128,26 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
 
     const handleTodoCompletion = (todo: Todo) => {
         const updatedCompleted = !todo.completed;
+        const newStatus = updatedCompleted ? "Completed" : "In progress";
+        console.log(updatedCompleted,newStatus);
         if (todo.parentId) {
-            updateSubtaskStore(todo.parentId, todo.id, { completed: updatedCompleted });
-            updateSubtask(todo.id, { completed: updatedCompleted }).catch((error) =>
+            useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, { completed: updatedCompleted,status:newStatus });
+            updateSubtask(todo.id, { completed: updatedCompleted,status:newStatus }).catch((error) =>
                 console.error("Error updating subtask:", error)
             );
         } else {
-            toggleTodo(todo.id);
-            updateTask(todo.id, { completed: updatedCompleted }).catch((error) =>
+            updateTodo(todo.id, { completed: updatedCompleted,status:newStatus });
+            updateTask(todo.id, { completed: updatedCompleted,status:newStatus }).catch((error) =>
                 console.error("Error updating task:", error)
             );
         }
     };
 
     useEffect(() => {
-        const newStatus = todo.completed ? "Completed" : "In progress";
-        if (todo.status !== newStatus) {
             if (todo.completed) {
                 ConfettiSideCannons();
             }
-            if (todo.parentId) {
-                updateSubtaskStore(todo.parentId, todo.id, { status: newStatus, completed: todo.completed });
-                updateSubtask(todo.id, { status: newStatus, completed: todo.completed });
-            } else {
-                updateTask(todo.id, { status: newStatus, completed: todo.completed });
-                updateTodo(todo.id, { status: newStatus, completed: todo.completed });
-            }
-            todo.status = newStatus;
-        }
-    }, [todo.completed]);
-
-    useEffect(() => {
-        const loadSubtasks = async () => {
-            const fetchedSubtasks = await fetchSubtasks(todo.id);
-            setSubtasks(fetchedSubtasks);
-        };
-
-        if (todo.id) {
-            loadSubtasks();
-        }
-    }, [todo.id]);
-
+    },[todo]);
 
 
     return (
@@ -173,7 +155,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
             initial={{opacity: 0, y: 20}}
             animate={{opacity: 1, y: 0}}
             exit={{opacity: 0, x: -100}}
-            className={`p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md ${level > 0 ? 'ml-8 mt-2' : 'mb-4'}`}
+            className={`p-4 bg-white dark:bg-gray-950 rounded-lg shadow-md ${level > 0 ? 'ml-8 mt-2' : 'mb-4'}`}
         >
             <div className="flex items-center gap-4">
                 <motion.button
@@ -181,7 +163,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                     whileTap={{scale: 0.9}}
                     onClick={() => handleTodoCompletion(todo)}
                     className={`p-2 rounded-full ${
-                        todo.completed ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                        todo.completed ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-800'
                     }`}
                 >
                     <Check className={`w-4 h-4 ${todo.completed ? 'text-white' : 'text-gray-400'}`}/>
@@ -198,13 +180,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                             className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                         />
                     ) : (
-                        <p className={`text-lg ${todo.completed ? 'line-through text-gray-400' : ''}`}>
+                        <p className={`text-lg ${todo.completed ? 'line-through text-gray-200' : ''}`}>
                             {todo.title}
                         </p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-white">
                         <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`}/>
-                        <div className="p-0.5 border rounded-lg">
+                        <div className="p-1 pt-1.5 pb-2 border rounded-lg dark:bg-gray-800">
                             {todo.dueDate && (
                                 <p
                                     onMouseEnter={() => setIsHovered(true)}
@@ -222,7 +204,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                         {todo.analysis && (
                             <button
                                 onClick={() => toggleInsights(todo.id)}
-                                className="flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                                className="flex items-center gap-1 text-blue-500 hover:text-blue-600 dark:text-blue-400"
                             >
                                 {expandedInsights.includes(todo.id) ? (
                                     <ChevronDown className="w-4 h-4"/>
@@ -230,19 +212,19 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                                     <img src="https://svgmix.com/uploads/e567ca-google-bard.svg" alt={"Gemini"}
                                          className="w-4 h-4"/>
                                 )}
-                                Insights
+                                <Label>Insights</Label>
                             </button>
                         )}
                         <button
                             onClick={() => setShowSubtaskForm(!showSubtaskForm)}
-                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 dark:text-blue-400"
                         >
                             {showSubtaskForm ? (
                                 <Minus className="w-4 h-4"/>
                             ) : (
                                 <Plus className="w-4 h-5"/>
                             )}
-                            Subtask
+                            <Label>Subtask</Label>
                         </button>
                     </div>
                 </div>
@@ -302,12 +284,10 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({todo, level = 0}) =
                 )}
             </AnimatePresence>
 
-            {subtasks.length > 0 && (
+            {todo.subtasks && todo.subtasks.length > 0 && (
                 <div className="mt-4 space-y-2">
-                    {subtasks.map((subtask) => (
-                        <div key={subtask.id} className="flex items-center gap-2">
-                            <TodoItem todo={subtask} level={level + 1} />
-                        </div>
+                    {todo.subtasks.map((subtask) => (
+                        <TodoItem key={subtask.id} todo={subtask} level={level + 1} />
                     ))}
                 </div>
             )}
@@ -339,19 +319,22 @@ const TodoList: React.FC = () => {
                 exit={{opacity: 0, x: -100}}
                 className={`p-2 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md mb-4`}
             >
-            <div className="flex justify-end mb-1">
-                <Select
-                    value={sortCriteria}
-                    onValueChange={(e) => setSortCriteria(e as 'date' | 'priority')}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Sort By" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="date">Sort by Date</SelectItem>
-                        <SelectItem value="priority">Sort by Priority</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+                {todos?.length !== 0 ?
+                    <div className="flex justify-end mb-1">
+                        <Select
+                            value={sortCriteria}
+                            onValueChange={(e) => setSortCriteria(e as 'date' | 'priority')}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Sort By" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="date">Sort by Date</SelectItem>
+                                <SelectItem value="priority">Sort by Priority</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div> : <div className="flex justify-center mb-1">
+                        <Label htmlFor="message">Start adding tasks to see them here.</Label>
+                    </div>}
             </motion.div>
             <AnimatePresence>
                 <div className="space-y-4">

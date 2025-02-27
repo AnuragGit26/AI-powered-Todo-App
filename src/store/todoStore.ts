@@ -43,24 +43,6 @@ export const useTodoStore = create<TodoStore>((set) => ({
                 return todo;
             }),
         })),
-    toggleTodo: (id: string) =>
-        set((state) => ({
-            todos: state.todos.map((todo) => {
-                if (todo.id === id) {
-                    return { ...todo, completed: !todo.completed };
-                }
-                // // Also check subtasks
-                // if (todo.subtasks?.some(subtask => subtask.id === id)) {
-                //     return {
-                //         ...todo,
-                //         subtasks: todo.subtasks.map(subtask =>
-                //             subtask.id === id ? { ...subtask, completed: !subtask.completed } : subtask
-                //         ),
-                //     };
-                // }
-                return todo;
-            }),
-        })),
     removeTodo: (id: string) =>
         set((state) => ({
             todos: state.todos
@@ -76,15 +58,15 @@ export const useTodoStore = create<TodoStore>((set) => ({
                 if (todo.id === id) {
                     return { ...todo, ...updatedTodo };
                 }
-                // Also check subtasks
-                if (todo.subtasks?.some(subtask => subtask.id === id)) {
-                    return {
-                        ...todo,
-                        subtasks: todo.subtasks.map(subtask =>
-                            subtask.id === id ? { ...subtask, ...updatedTodo } : subtask
-                        ),
-                    };
-                }
+                // // Also check subtasks
+                // if (todo.subtasks?.some(subtask => subtask.id === id)) {
+                //     return {
+                //         ...todo,
+                //         subtasks: todo.subtasks.map(subtask =>
+                //             subtask.id === id ? { ...subtask, ...updatedTodo } : subtask
+                //         ),
+                //     };
+                // }
                 return todo;
             }),
         })),
@@ -112,6 +94,7 @@ export const useTodoStore = create<TodoStore>((set) => ({
                         ),
                     };
                 }
+                console.log('subtask store update:', todo);
                 return todo;
             }),
         })),

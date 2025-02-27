@@ -4,6 +4,8 @@ import {useTodoStore} from "../store/todoStore.ts";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
+const  userId=localStorage.getItem('userId');
+
 export const getTaskById = (id: string): Todo | undefined => {
     const todos = useTodoStore.getState().todos;
     for (const todo of todos) {
@@ -23,10 +25,10 @@ export const getTaskById = (id: string): Todo | undefined => {
 export const fetchTasks = async () => {
     const { data, error } = await supabase
         .from('tasks')
-        .select('*');
+        .select('*').eq('userId', userId);
 
     if (error) throw error;
-    return data;
+    return !data || data.length === 0 ? null : data;
 };
 
 export const createTask = async (task: Todo) => {
@@ -45,7 +47,7 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
     const { data, error } = await supabase
         .from('tasks')
         .update(updates)
-        .eq('id', taskId);
+        .eq('id', taskId).eq('userId', userId);
 
     if (error) {
         console.error('Error updating task:', error);
@@ -58,7 +60,7 @@ export const deleteTask = async (taskId: string) => {
     const { data, error } = await supabase
         .from('tasks')
         .delete()
-        .eq('id', taskId);
+        .eq('id', taskId).eq('userId', userId);
 
     if (error) {
         console.error('Error deleting task:', error);
@@ -77,7 +79,7 @@ export const fetchSubtasks = async (parentId: string) => {
     return data;
 };
 
-export const createSubtask = async (subtask: SubTodo) => {
+export const createSubtask = async (subtask: Partial<SubTodo>) => {
     const { data, error } = await supabase
         .from('subtasks')
         .insert([subtask]);

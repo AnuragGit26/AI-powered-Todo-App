@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
@@ -7,16 +6,16 @@ import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
 import type {Priority, Status, SubTodo, Todo} from '../types';
 import {createSubtask, createTask, getTaskById} from '../services/taskService';
-import { Input } from "../components/ui/input";
+import { Input } from "./ui/input.tsx";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Button } from "../components/ui/button.tsx";
-import { Calendar } from "../components/ui/calendar.tsx";
+import { Button } from "./ui/button.tsx";
+import { Calendar } from "./ui/calendar.tsx";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "../components/ui/popover.tsx";
+} from "./ui/popover.tsx";
 import {cn} from "../lib/utils.ts";
 import {
     Select,
@@ -26,7 +25,7 @@ import {
     SelectLabel,
     SelectTrigger,
     SelectValue,
-} from "../components/ui/select";
+} from "./ui/select.tsx";
 
 
 const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
@@ -35,7 +34,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
   const [priority, setPriority] = useState<Priority>('medium');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [status, setStatus] = useState<Status>('Not Started');
-  const { addTodo ,createSubtaskStore} = useTodoStore();
+  const { addTodo } = useTodoStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,17 +53,24 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             priority,
             analysis,
             createdAt: new Date(),
+            userId:localStorage.getItem('userId') || '1',
         };
 
         if (parentId) {
-            const parentTask = await getTaskById(parentId); // Assuming you have a function to get a task by ID
+            const parentTask = getTaskById(parentId); // Assuming you have a function to get a task by ID
             if (parentTask && parentTask.id === parentId) {
                 const newSubtask: SubTodo = {
-                    ...newTodo,
+                    id: crypto.randomUUID(),
+                    title: title.trim(),
+                    completed: false,
+                    dueDate,
+                    status,
+                    priority,
+                    analysis,
+                    createdAt: new Date(),
                     parentId,
                 };
-                //addSubtask(parentId, newSubtask);
-                createSubtaskStore(parentId, newSubtask);
+                useTodoStore.getState().createSubtaskStore(parentId, newSubtask);
                 await createSubtask(newSubtask);
             } else {
                 console.error("Parent task not found or ID mismatch");
@@ -87,14 +93,14 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row gap-2">
+          <div className="relative flex-auto">
             <Input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={parentId ? "Add a subtask..." : "Add a new task..."}
-                className="w-full p-2 border rounded-lg dark:bg-white dark:border-gray-200"
+                className="w-full p-2 border rounded-lg dark:border-gray-200"
             />
             <AnimatePresence>
               {isAnalyzing && (
@@ -114,7 +120,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     <Button
                         variant={"outline"}
                         className={cn(
-                            "w-[190px] justify-start text-left font-normal",
+                            "w-fit justify-start text-left font-normal",
                             !dueDate && "text-muted-foreground"
                         )}
                     >
@@ -129,7 +135,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                         onSelect={setDueDate}
                         initialFocus
                         disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
+                            date < new Date() || date < new Date("1900-01-01")
                         }
                     />
                 </PopoverContent>
@@ -137,7 +143,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             <Select
                 value={priority}
                 onValueChange={(e) => setPriority(e as Priority)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-fit">
                     <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,7 +158,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             <Select
                 value={status}
                 onValueChange={(e) => setStatus(e as Status)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-fit">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,10 +173,10 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
           <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full md:w-auto p-2 bg-blue-500 text-white rounded-lg flex items-center justify-center"
+              className="w-full md:w-auto px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out hover:bg-blue-600"
               type="submit"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
           </motion.button>
         </div>
       </motion.form>
