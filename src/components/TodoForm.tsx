@@ -84,6 +84,8 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
         setDueDate(null);
         setPriority('medium');
         setStatus('Not Started');
+
+
     };
 
   return (
@@ -110,7 +112,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                       exit={{ opacity: 0, scale: 0.8 }}
                       className="absolute top-2.5 right-1"
                   >
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    <Loader2 className="left-3 w-5 h-5 text-blue-500 animate-spin" />
                   </motion.div>
               )}
             </AnimatePresence>
