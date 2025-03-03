@@ -29,6 +29,7 @@ import { deleteSubtask, deleteTask, updateSubtask, updateTask } from "../service
 import { Label } from "./ui/label.tsx";
 import { Input } from "./ui/input.tsx";
 import useDebounce from "../hooks/useDebounce.ts";
+import {getUserRegion} from "../hooks/getUserRegion.ts";
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 }) => {
     const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore } = useTodoStore();
@@ -110,8 +111,26 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
         setIsEditing(true);
     };
 
+    const getParentTitle = (parentId: string): string => {
+        const todos = useTodoStore.getState().todos;
+        const parentTask = todos.find((t) => t.id === parentId);
+        return parentTask ? parentTask.title : "Unknown";
+    };
+
     const handleSave = async () => {
-        const analysis = await analyzeTodo(editedTitle);
+        let region = "IN";
+        try {
+            region = await getUserRegion();
+        } catch (error) {
+            console.error("Error getting geolocation:", error);
+        }
+        const analysis = todo.parentId
+            ? await analyzeTodo(editedTitle, {
+                type: "subtask",
+                parentTitle: getParentTitle(todo.parentId),
+                region: region,
+            })
+            : await analyzeTodo(editedTitle, { type: "task",region: region, });
         updateTodo(todo.id, { title: editedTitle, analysis });
         if (todo.parentId) {
             updateSubtaskStore(todo.parentId, todo.id, { title: editedTitle, analysis });
@@ -121,7 +140,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
         }
         setIsEditing(false);
     };
-
     const handleKeyDown = async (e: React.KeyboardEvent) => {
         if (e.key === "Enter") {
             await handleSave();

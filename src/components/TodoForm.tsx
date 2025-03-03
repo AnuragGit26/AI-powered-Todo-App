@@ -41,7 +41,16 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
         if (!title.trim()) return;
 
         setIsAnalyzing(true);
-        const analysis = await analyzeTodo(title);
+        let analysis;
+        if (parentId) {
+            const parentTask = getTaskById(parentId);
+            analysis = await analyzeTodo(title, {
+                type: "subtask",
+                parentTitle: parentTask?.title || "Unknown",
+            });
+        } else {
+            analysis = await analyzeTodo(title, { type: "task" });
+        }
         setIsAnalyzing(false);
 
         const newTodo: Todo = {
