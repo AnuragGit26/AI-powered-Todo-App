@@ -83,35 +83,33 @@ const App: React.FC = () => {
                 path="/"
                 element={
                     <ProtectedRoute isAuthenticated={localStorage.getItem('token') != null}>
-                        <Aurora
-                            colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-                            blend={0.5}
-                            amplitude={1.0}
-                            speed={0.7}
-                        />
-                        <div
-                            className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 p-8 transition-colors duration-200
-              relative flex h-full w-full flex-col overflow-hidden bg-background md:shadow-xl"
-                            style={{
-                                '--primary-color': theme.primaryColor,
-                                '--secondary-color': theme.secondaryColor,
-                            } as React.CSSProperties}
-                        >
-                            {/*<BorderBeam size={400} duration={12} delay={0} />*/}
-                            <ThemeCustomizer />
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="w-2/5 mx-auto"
-                            >
-                                <div className="flex items-center gap-4 mb-8">
-                                    <ListTodo className="w-10 h-10 text-blue-500" />
-                                    <h1 className="text-4xl font-bold">Todo List</h1>
-                                </div>
-                                <TodoForm />
-                                <TodoList />
-                                <Toaster />
-                            </motion.div>
+                        <div className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                             style={{
+                                 '--primary-color': theme.primaryColor,
+                                 '--secondary-color': theme.secondaryColor,
+                             } as React.CSSProperties}>
+                            <Aurora
+                                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                                blend={0.5}
+                                amplitude={1.0}
+                                speed={0.7}
+                            />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:shadow-xl">
+                                <ThemeCustomizer />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="w-2/5 mx-auto"
+                                >
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <ListTodo className="w-10 h-10 text-blue-500" />
+                                        <h1 className="text-4xl font-bold">Todo List</h1>
+                                    </div>
+                                    <TodoForm />
+                                    <TodoList />
+                                    <Toaster />
+                                </motion.div>
+                            </div>
                         </div>
                     </ProtectedRoute>
                 }
