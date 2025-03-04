@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ListTodo } from 'lucide-react';
@@ -15,6 +16,7 @@ import { Toaster } from "./components/ui/toaster";
 import {fetchSubtasks, fetchTasks} from "./services/taskService.ts";
 import NotFound from './components/NotFound';
 import Aurora from './components/ui/AuroraBG.tsx';
+import UserProfile from "./components/UserProfile";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -79,6 +81,23 @@ const App: React.FC = () => {
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignUpForm />} />
             <Route path="/password-reset-request" element={<PasswordResetRequestForm />} />
+            <Route path="/profile" element={
+                <ProtectedRoute isAuthenticated={localStorage.getItem('token') != null}>
+                    <div className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                         style={{
+                             '--primary-color': theme.primaryColor,
+                             '--secondary-color': theme.secondaryColor,
+                         } as React.CSSProperties}>
+                        <Aurora
+                            colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                            blend={0.5}
+                            amplitude={1.0}
+                            speed={0.7}
+                        />
+                        <UserProfile />
+                        </div>
+                </ProtectedRoute>
+            } />
             <Route
                 path="/"
                 element={

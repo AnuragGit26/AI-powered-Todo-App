@@ -1,4 +1,4 @@
-export function getUserRegion(): Promise<string> {
+export function getUserRegion(): Promise<{ region: string; location: string }> {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
             return reject(new Error("Geolocation is not supported by this browser."));
@@ -11,10 +11,10 @@ export function getUserRegion(): Promise<string> {
                         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
                     );
                     const data = await response.json();
-                    localStorage.setItem("location",(data.display_name));
-                    const region_area=data.display_name;
+                    const location = data.display_name;
                     const region = data.address?.country_code?.toUpperCase() || "US";
-                    resolve(region_area);
+                    localStorage.setItem("location", location);
+                    resolve({ region, location });
                 } catch (error) {
                     reject(error);
                 }

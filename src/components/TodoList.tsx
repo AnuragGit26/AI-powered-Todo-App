@@ -1,4 +1,3 @@
-// File: TodoList.tsx
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -120,7 +119,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
     const handleSave = async () => {
         let region = "IN";
         try {
-            region = await getUserRegion();
+            region = await getUserRegion().then(()=>region);
         } catch (error) {
             console.error("Error getting geolocation:", error);
         }
