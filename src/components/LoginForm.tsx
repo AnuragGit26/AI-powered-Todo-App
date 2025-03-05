@@ -12,6 +12,8 @@ import { Label } from "./ui/label.tsx";
 import React, { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
+import {logActivity, updateUsageMetrics} from "../services/activityMetrics.ts";
+import {getUserIP} from "../services/ipService.ts";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -54,6 +56,10 @@ export function LoginForm({
             setErrorMessage('Error signing in: ' + error.message);
         } else {
             setSuccessMessage('Successfully signed in!');
+            const { data: { user } } = await supabase.auth.getUser();
+            const ipAddress= await getUserIP();
+            await logActivity(user?.id, 'User logged in');
+            await updateUsageMetrics(user?.id, { last_login: new Date(), total_logins_inc: 1,ip_address:ipAddress });
             navigate("/");
         }
     };

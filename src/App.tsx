@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ListTodo } from 'lucide-react';
@@ -24,6 +23,8 @@ const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
     const { setTodos} = useTodoStore();
+    const [preview, setPreview] = useState<string | null>(null);
+
 
     useEffect(() => {
         const loadTasksWithSubtasks = async () => {
@@ -69,7 +70,22 @@ const App: React.FC = () => {
             }
         };
         fetchUser();
+        const fetchProfileImage = async () => {
+            const{ data: { user } } = await supabase.auth.getUser();
+            const userId=user?.id;
+            const bucketName = "MultiMedia Bucket";
+            const newFilePath = `${userId}/profile.JPG`;
+            if (userId) {
+                const { data } = supabase.storage
+                    .from(bucketName)
+                    .getPublicUrl(newFilePath);
+                setPreview(data.publicUrl);
+                localStorage.setItem('profilePicture',data.publicUrl);
+            }
+        };
+        fetchProfileImage();
     }, []);
+
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
@@ -113,7 +129,7 @@ const App: React.FC = () => {
                                 amplitude={1.0}
                                 speed={0.7}
                             />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:shadow-xl">
+                            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 p-8 md:shadow-xl">
                                 <ThemeCustomizer />
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
