@@ -18,10 +18,12 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SelectLabel,
+    SelectGroup
 } from "./ui/select.tsx";
 import { useTodoStore } from "../store/todoStore";
 import TodoForm from "./TodoForm";
-import type { Todo } from "../types";
+import type {Priority, Status, Todo} from "../types";
 import { ConfettiSideCannons } from "./ui/ConfettiSideCannons.ts";
 import { analyzeTodo } from "../services/gemini.ts";
 import { deleteSubtask, deleteTask, updateSubtask, updateTask } from "../services/taskService";
@@ -37,6 +39,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(todo.title);
     const [isHovered, setIsHovered] = useState(false);
+    const [editedDueDate, setEditedDueDate] = useState(todo.dueDate ? new Date(todo.dueDate) : null);
+    const [editedPriority, setEditedPriority] = useState(todo.priority);
+    const [editedStatus, setEditedStatus] = useState(todo.status);
 
     const renderDueDate = (dueDate: Date | string | null) => {
         if (!dueDate) return null;
@@ -129,13 +134,38 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                 parentTitle: getParentTitle(todo.parentId),
                 region: region,
             })
-            : await analyzeTodo(editedTitle, { type: "task",region: region, });
-        updateTodo(todo.id, { title: editedTitle, analysis });
+            : await analyzeTodo(editedTitle, { type: "task", region: region });
+
         if (todo.parentId) {
-            updateSubtaskStore(todo.parentId, todo.id, { title: editedTitle, analysis });
-            await updateSubtask(todo.id, { title: editedTitle, analysis });
+            updateSubtaskStore(todo.parentId, todo.id, {
+                title: editedTitle,
+                analysis,
+                dueDate: editedDueDate,
+                priority: editedPriority,
+                status: editedStatus
+            });
+            await updateSubtask(todo.id, {
+                title: editedTitle,
+                analysis,
+                dueDate: editedDueDate,
+                priority: editedPriority,
+                status: editedStatus
+            });
         } else {
-            await updateTask(todo.id, { title: editedTitle, analysis });
+            updateTodo(todo.id, {
+                title: editedTitle,
+                analysis,
+                dueDate: editedDueDate,
+                priority: editedPriority,
+                status: editedStatus
+            });
+            await updateTask(todo.id, {
+                title: editedTitle,
+                analysis,
+                dueDate: editedDueDate,
+                priority: editedPriority,
+                status: editedStatus
+            });
         }
         setIsEditing(false);
     };
@@ -175,7 +205,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`p-4 bg-white dark:bg-gray-950 rounded-lg shadow-md ${level > 0 ? "ml-8 mt-2" : "mb-4"}`}
+            className={`p-4 bg-white bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg shadow-md ${level > 0 ? "ml-8 mt-2" : "mb-4"}`}
         >
             <div className="flex items-center gap-4">
                 <motion.button
@@ -190,14 +220,54 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                 </motion.button>
                 <div className="flex-1">
                     {isEditing ? (
-                        <input
-                            type="text"
-                            value={editedTitle}
-                            onChange={(e) => setEditedTitle(e.target.value)}
-                            onBlur={handleSave}
-                            onKeyDown={handleKeyDown}
-                            className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                        />
+                        <div className="flex flex-col gap-3">
+                            <input
+                                type="text"
+                                value={editedTitle}
+                                onChange={(e) => setEditedTitle(e.target.value)}
+                                onBlur={handleSave}
+                                onKeyDown={handleKeyDown}
+                                className="w-full p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
+                            />
+                            <div className="flex gap-3">
+                                <input
+                                    type="date"
+                                    value={editedDueDate ? new Date(editedDueDate.getTime() - editedDueDate.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : ""}
+                                    onChange={(e) => setEditedDueDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
+                                />
+                                <Select
+                                    value={editedPriority}
+                                    onValueChange={(val) => setEditedPriority(val as Priority)}>
+                                    <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                                        <SelectValue placeholder="Priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Priority</SelectLabel>
+                                            <SelectItem value="low">Low</SelectItem>
+                                            <SelectItem value="medium">Medium</SelectItem>
+                                            <SelectItem value="high">High</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={editedStatus}
+                                    onValueChange={(val) => setEditedStatus(val as Status)}>
+                                    <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Status</SelectLabel>
+                                            <SelectItem value="Not Started">Not Started</SelectItem>
+                                            <SelectItem value="In progress">In Progress</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     ) : (
                         <p className={`text-lg ${todo.completed ? "line-through text-gray-200" : ""}`}>
                             {todo.title}
@@ -205,7 +275,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                     )}
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-white">
                         <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`} />
-                        <div className="p-1 pt-1.5 pb-2 border rounded-lg dark:bg-gray-800">
+                        <div className="p-1 pt-1.5 pb-2 border rounded-lg dark:bg-white/5 dark:border-white/10">
                             {todo.dueDate && (
                                 <p
                                     onMouseEnter={() => setIsHovered(true)}
@@ -249,6 +319,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                         </button>
                     </div>
                 </div>
+                {isEditing? <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleSave}
+                    className="p-2 text-white rounded-lg bg-blue-500 dark:bg-blue-200"
+                >
+                    Save
+                </motion.button> : (
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -256,7 +334,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                     className="p-2 text-blue-500 hover:bg-blue-100 rounded-full"
                 >
                     <Edit3 className="w-5 h-5" />
-                </motion.button>
+                </motion.button>)}
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -341,16 +419,16 @@ const TodoList: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className={`p-2 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md mb-4`}
+                className={`p-2 bg-gray-50 dark:bg-white/5 rounded-lg shadow-md mb-4`}
             >
                 {todos?.length !== 0 ? (
-                    <div className="flex justify-between mb-1">
+                    <div className="flex justify-between mb-1 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-4 transition-all duration-300 animate-fadeIn">
                         <Input
                             type="text"
                             value={searchQuery}
                             onChange={handleSearchTasks}
                             placeholder="Search tasks..."
-                            className="w-3/5 p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                            className="w-3/5 p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
                         />
                         <Search className="relative top-2 right-14 w-5 h-5 z-50 text-gray-400" />
                         <div className="flex justify-end mb-1">

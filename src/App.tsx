@@ -4,7 +4,7 @@ import { ListTodo } from 'lucide-react';
 import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import ThemeCustomizer from './components/ThemeCustomizer';
-import { useTodoStore } from './store/todoStore';
+import { useTodoStore} from './store/todoStore';
 import { createClient, Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
@@ -22,8 +22,8 @@ const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos} = useTodoStore();
     const [preview, setPreview] = useState<string | null>(null);
+    const { setTodos, setUserToken, setUserData } = useTodoStore();
 
 
     useEffect(() => {
@@ -54,6 +54,7 @@ const App: React.FC = () => {
             if (session) {
                 setSession(session);
                 localStorage.setItem('token', session.access_token?.toString() || '');
+                setUserToken(session.access_token?.toString() || '');
             }
         });
 
@@ -67,6 +68,8 @@ const App: React.FC = () => {
                 console.log(user.user_metadata.username);
                 localStorage.setItem('username', user.user_metadata.username);
                 localStorage.setItem('userId', user.id);
+                setUserData({userId: user.id, username: user.user_metadata.username});
+
             }
         };
         fetchUser();
@@ -81,6 +84,7 @@ const App: React.FC = () => {
                     .getPublicUrl(newFilePath);
                 setPreview(data.publicUrl);
                 localStorage.setItem('profilePicture',data.publicUrl);
+                setUserData({userId: userId, profilePicture: data.publicUrl});
             }
         };
         fetchProfileImage();

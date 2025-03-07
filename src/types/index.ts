@@ -43,13 +43,25 @@ export interface TodoStore {
   theme: ThemeConfig;
   addTodo: (todo: Partial<Todo>) => void;
   addSubtask: (parentId: string, subtask: Partial<SubTodo>) => void;
-  //toggleTodo: (id: string, updatedTodo: Partial<Todo>) => void;
   removeTodo: (id: string) => void;
   updateTodo: (id: string, todo: Partial<Todo>) => void;
   setTheme: (theme: ThemeConfig) => void;
   setTodos: (todos: Todo[]) => void;
+  userToken: string | null;
+  userData: userData | null;
+  setUserToken: (token: string) => void;
+  setUserData: (data: userData) => void;
   createSubtaskStore: (parentId: string, subtask: SubTodo) => void;
   updateSubtaskStore: (parentId: string, subtaskId: string, subtask: Partial<SubTodo>) => void;
   deleteSubtaskStore: (parentId: string, subtaskId: string) => void;
+
+}
+
+export interface userData{
+    username?:string;
+    userId:string;
+    profilePicture?:string;
+    email?:string;
+    phoneNumber?:string;
 
 }

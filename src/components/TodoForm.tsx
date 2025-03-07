@@ -104,14 +104,14 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex flex-col md:flex-row gap-2">
+        <div className="flex flex-col md:flex-row gap-2 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-4 transition-all duration-300 animate-fadeIn">
           <div className="relative flex-auto">
             <Input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={parentId ? "Add a subtask..." : "Add a new task..."}
-                className="w-full p-2 border rounded-lg dark:border-gray-200"
+                className="w-full p-2 dark:bg-white/5 border  dark:border-white/10 backdrop-blur rounded-lg"
             />
             <AnimatePresence>
               {isAnalyzing && (
@@ -131,7 +131,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     <Button
                         variant={"outline"}
                         className={cn(
-                            "w-fit justify-start text-left font-normal",
+                            "w-fit justify-start text-left font-normal dark:bg-white/5 border  dark:border-white/10 backdrop-blur rounded-lg",
                             !dueDate && "text-muted-foreground"
                         )}
                     >
@@ -142,8 +142,8 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                 <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                         mode="single"
-                        selected={dueDate}
-                        onSelect={setDueDate}
+                        selected={dueDate || undefined}
+                        onSelect={(date: Date | undefined) => setDueDate(date || null)}
                         initialFocus
                         disabled={(date) =>
                             date < new Date() || date < new Date("1900-01-01")
@@ -154,7 +154,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             <Select
                 value={priority}
                 onValueChange={(e) => setPriority(e as Priority)}>
-                <SelectTrigger className="w-fit">
+                <SelectTrigger className="w-fit dark:bg-white/5 border  dark:border-white/10 backdrop-blur rounded-lg">
                     <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,7 +169,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             <Select
                 value={status}
                 onValueChange={(e) => setStatus(e as Status)}>
-                <SelectTrigger className="w-fit">
+                <SelectTrigger className="w-fit dark:bg-white/5 border  dark:border-white/10 backdrop-blur rounded-lg">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
