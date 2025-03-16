@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
     AlertCircle,
@@ -23,16 +23,16 @@ import {
 } from "./ui/select.tsx";
 import { useTodoStore } from "../store/todoStore";
 import TodoForm from "./TodoForm";
-import type {Priority, Status, Todo} from "../types";
+import type { Priority, Status, Todo } from "../types";
 import { ConfettiSideCannons } from "./ui/ConfettiSideCannons.ts";
 import { analyzeTodo } from "../services/gemini.ts";
 import { deleteSubtask, deleteTask, updateSubtask, updateTask } from "../services/taskService";
 import { Label } from "./ui/label.tsx";
 import { Input } from "./ui/input.tsx";
 import useDebounce from "../hooks/useDebounce.ts";
-import {getUserRegion} from "../hooks/getUserRegion.ts";
+import { getUserRegion } from "../hooks/getUserRegion.ts";
 
-const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 }) => {
+const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
     const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore } = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
@@ -54,7 +54,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
         } else {
             const timeLeft = parsedDate.getTime() - now.getTime();
             const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-            return <span>{`${daysLeft} days left`}</span>;
+            return <span className="text-left">{`${daysLeft} days left`}</span>;
         }
     };
 
@@ -89,13 +89,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
 
     const getStatusClasses = (status: string) => {
         if (status === "Not Started") {
-            return `cursor-pointer text-sm font-semibold bg-gray-300 text-gray-800 rounded-full px-2 py-1`;
+            return `cursor-pointer text-sm font-semibold bg-gray-300 text-gray-800 text-center rounded-full px-2 py-1`;
         } else if (status === "In progress") {
-            return `cursor-pointer text-sm font-semibold bg-orange-200 text-orange-800 rounded-full px-2 py-1`;
+            return `cursor-pointer text-sm font-semibold bg-orange-200 text-orange-800 text-center rounded-full px-2 py-1`;
         } else if (status === "Completed") {
-            return `cursor-pointer text-sm font-semibold bg-green-200 text-green-800 rounded-full px-2 py-1`;
+            return `cursor-pointer text-sm font-semibold bg-green-200 text-green-800 text-center rounded-full px-2 py-1`;
         }
-        return `cursor-pointer text-sm font-semibold rounded-full px-2 py-1`;
+        return `cursor-pointer text-sm font-semibold text-center rounded-full px-2 py-1`;
     };
 
     const getPriorityColor = (priority: string) => {
@@ -124,7 +124,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
     const handleSave = async () => {
         let region = "IN";
         try {
-            region = await getUserRegion().then(()=>region);
+            region = await getUserRegion().then(() => region);
         } catch (error) {
             console.error("Error getting geolocation:", error);
         }
@@ -142,14 +142,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                 analysis,
                 dueDate: editedDueDate,
                 priority: editedPriority,
-                status: editedStatus
+                status: editedStatus,
             });
             await updateSubtask(todo.id, {
                 title: editedTitle,
                 analysis,
                 dueDate: editedDueDate,
                 priority: editedPriority,
-                status: editedStatus
+                status: editedStatus,
             });
         } else {
             updateTodo(todo.id, {
@@ -157,18 +157,19 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                 analysis,
                 dueDate: editedDueDate,
                 priority: editedPriority,
-                status: editedStatus
+                status: editedStatus,
             });
             await updateTask(todo.id, {
                 title: editedTitle,
                 analysis,
                 dueDate: editedDueDate,
                 priority: editedPriority,
-                status: editedStatus
+                status: editedStatus,
             });
         }
         setIsEditing(false);
     };
+
     const handleKeyDown = async (e: React.KeyboardEvent) => {
         if (e.key === "Enter") {
             await handleSave();
@@ -205,7 +206,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`p-4 bg-white bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg shadow-md ${level > 0 ? "ml-8 mt-2" : "mb-4"}`}
+            className={`p-4 bg-white bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg shadow-md ${
+                level > 0 ? "ml-8 mt-2" : "mb-4"
+            }`}
         >
             <div className="flex items-center gap-4">
                 <motion.button
@@ -216,7 +219,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                         todo.completed ? "bg-green-500" : "bg-gray-200 dark:bg-gray-800"
                     }`}
                 >
-                    <Check className={`w-4 h-4 ${todo.completed ? "text-white" : "text-gray-400"}`} />
+                    <Check
+                        className={`w-4 h-4 ${
+                            todo.completed ? "text-white" : "text-gray-400"
+                        }`}
+                    />
                 </motion.button>
                 <div className="flex-1">
                     {isEditing ? (
@@ -232,13 +239,30 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                             <div className="flex gap-3">
                                 <input
                                     type="date"
-                                    value={editedDueDate ? new Date(editedDueDate.getTime() - editedDueDate.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : ""}
-                                    onChange={(e) => setEditedDueDate(e.target.value ? new Date(e.target.value) : null)}
+                                    value={
+                                        editedDueDate
+                                            ? new Date(
+                                                editedDueDate.getTime() -
+                                                editedDueDate.getTimezoneOffset() *
+                                                60000
+                                            )
+                                                .toISOString()
+                                                .slice(0, 10)
+                                            : ""
+                                    }
+                                    onChange={(e) =>
+                                        setEditedDueDate(
+                                            e.target.value ? new Date(e.target.value) : null
+                                        )
+                                    }
                                     className="p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
                                 />
                                 <Select
                                     value={editedPriority}
-                                    onValueChange={(val) => setEditedPriority(val as Priority)}>
+                                    onValueChange={(val) =>
+                                        setEditedPriority(val as Priority)
+                                    }
+                                >
                                     <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
                                         <SelectValue placeholder="Priority" />
                                     </SelectTrigger>
@@ -253,16 +277,25 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                                 </Select>
                                 <Select
                                     value={editedStatus}
-                                    onValueChange={(val) => setEditedStatus(val as Status)}>
+                                    onValueChange={(val) =>
+                                        setEditedStatus(val as Status)
+                                    }
+                                >
                                     <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectLabel>Status</SelectLabel>
-                                            <SelectItem value="Not Started">Not Started</SelectItem>
-                                            <SelectItem value="In progress">In Progress</SelectItem>
-                                            <SelectItem value="Completed">Completed</SelectItem>
+                                            <SelectItem value="Not Started">
+                                                Not Started
+                                            </SelectItem>
+                                            <SelectItem value="In progress">
+                                                In Progress
+                                            </SelectItem>
+                                            <SelectItem value="Completed">
+                                                Completed
+                                            </SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -287,8 +320,8 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                             )}
                         </div>
                         <span onClick={toggleStatus} className={getStatusClasses(todo.status)}>
-              {todo.status}
-            </span>
+                            {todo.status}
+                        </span>
                         {todo.analysis && (
                             <button
                                 onClick={() => toggleInsights(todo.id)}
@@ -299,7 +332,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                                 ) : (
                                     <img
                                         src="https://svgmix.com/uploads/e567ca-google-bard.svg"
-                                        alt={"Gemini"}
+                                        alt={`Gemini`}
                                         className="w-4 h-4"
                                     />
                                 )}
@@ -319,22 +352,25 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                         </button>
                     </div>
                 </div>
-                {isEditing? <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleSave}
-                    className="p-2 text-white rounded-lg bg-blue-500 dark:bg-blue-200"
-                >
-                    Save
-                </motion.button> : (
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleEdit}
-                    className="p-2 text-blue-500 hover:bg-blue-100 rounded-full"
-                >
-                    <Edit3 className="w-5 h-5" />
-                </motion.button>)}
+                {isEditing ? (
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleSave}
+                        className="p-2 text-white rounded-lg bg-blue-500 dark:bg-blue-200"
+                    >
+                        Save
+                    </motion.button>
+                ) : (
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleEdit}
+                        className="p-2 text-blue-500 hover:bg-blue-100 rounded-full"
+                    >
+                        <Edit3 className="w-5 h-5" />
+                    </motion.button>
+                )}
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -356,14 +392,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
                             <div className="flex items-center gap-2 text-sm">
                                 <Tag className="w-4 h-4 text-gray-500" />
                                 <span className="text-gray-600 dark:text-gray-300">
-                  {todo.analysis.category}
-                </span>
+                                    {todo.analysis.category}
+                                </span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <HelpCircle className="w-4 h-4 text-gray-500" />
                                 <span className="text-gray-600 dark:text-gray-300">
-                  {todo.analysis.howTo}
-                </span>
+                                    {todo.analysis.howTo}
+                                </span>
                             </div>
                         </div>
                     </motion.div>
@@ -387,31 +423,39 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = ({ todo, level = 0 })
             )}
         </motion.div>
     );
-};
+});
 
 const TodoList: React.FC = () => {
     const todos = useTodoStore((state) => state.todos);
     const [sortCriteria, setSortCriteria] = useState<"date" | "priority">("date");
     const [searchQuery, setSearchQuery] = useState("");
-    const sortedTodos = [...todos].sort((a, b) => {
-        if (sortCriteria === "date") {
-            return (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) -
-                (b.dueDate ? new Date(b.dueDate).getTime() : Infinity);
-        } else if (sortCriteria === "priority") {
-            const priorityOrder = { high: 1, medium: 2, low: 3 };
-            return priorityOrder[a.priority] - priorityOrder[b.priority];
-        }
-        return 0;
-    });
+
+    const sortedTodos = useMemo(() => {
+        return [...todos].sort((a, b) => {
+            if (sortCriteria === "date") {
+                return (
+                    (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) -
+                    (b.dueDate ? new Date(b.dueDate).getTime() : Infinity)
+                );
+            } else if (sortCriteria === "priority") {
+                const priorityOrder = { high: 1, medium: 2, low: 3 };
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            }
+            return 0;
+        });
+    }, [todos, sortCriteria]);
+
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-    const filteredTodos = sortedTodos.filter((todo) =>
-        todo.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-    );
+    const filteredTodos = useMemo(() => {
+        return sortedTodos.filter((todo) =>
+            todo.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+        );
+    }, [sortedTodos, debouncedSearchQuery]);
 
-    const handleSearchTasks = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchTasks = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
-    };
+    }, []);
 
     return (
         <div>
@@ -419,7 +463,7 @@ const TodoList: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className={`p-2 bg-gray-50 dark:bg-white/5 rounded-lg shadow-md mb-4`}
+                className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg shadow-md mb-4"
             >
                 {todos?.length !== 0 ? (
                     <div className="flex justify-between mb-1 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-4 transition-all duration-300 animate-fadeIn">
@@ -453,7 +497,7 @@ const TodoList: React.FC = () => {
                 )}
             </motion.div>
             <AnimatePresence>
-                <div className="space-y-4">
+                <div className="todo-list-scroll space-y-4 pr-2 pb-2 pl-1">
                     {filteredTodos.map((todo) => (
                         <TodoItem key={todo.id} todo={todo} />
                     ))}

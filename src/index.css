@@ -29,6 +29,8 @@
         --chart-2: 173 58% 39%;
         --chart-4: 43 74% 66%;
         --chart-5: 27 87% 67%;
+        --scrollbar-track-bg: #e5e7eb;
+        --scrollbar-thumb-bg: #9ca3af;
     }
 
     @layer base {
@@ -56,7 +58,28 @@
             --chart-2: 160 60% 45%;
             --chart-3: 30 80% 55%;
             --chart-4: 280 65% 60%;
+            --scrollbar-track-bg: #374151;
+            --scrollbar-thumb-bg: #6b7280;
         }
+    }
+
+    .todo-list-scroll {
+        max-height: calc(48vh);
+        overflow-y: auto;
+    }
+
+    /* Minimal custom scrollbar styles */
+    .todo-list-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .todo-list-scroll::-webkit-scrollbar-track {
+        background: var(--scrollbar-track-bg);
+    }
+
+    .todo-list-scroll::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb-bg);
+        border-radius: 3px;
     }
 }
 

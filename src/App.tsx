@@ -16,6 +16,7 @@ import {fetchSubtasks, fetchTasks} from "./services/taskService.ts";
 import NotFound from './components/NotFound';
 import Aurora from './components/ui/AuroraBG.tsx';
 import UserProfile from "./components/UserProfile";
+import SplitText from './components/ui/SplitText.jsx';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -24,6 +25,7 @@ const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const { setTodos, setUserToken, setUserData } = useTodoStore();
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
 
 
     useEffect(() => {
@@ -39,6 +41,9 @@ const App: React.FC = () => {
                 setTodos(tasksWithSubtasks);
             } catch (error) {
                 console.error('Error fetching tasks/subtasks:', error);
+            }
+            finally {
+                setIsDataLoaded(true);
             }
         };
 
@@ -94,6 +99,30 @@ const App: React.FC = () => {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
     }, [theme.mode]);
+
+    const handleAnimationComplete = () => {
+        console.log('All letters have animated!');
+    };
+
+    if (!isDataLoaded) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+                <p className="text-xl text-gray-700 dark:text-gray-300">
+                    <SplitText
+                        text="Getting things ready for you....!"
+                        className="text-2xl font-semibold text-center"
+                        delay={70}
+                        animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+                        animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+                        easing="easeOutCubic"
+                        threshold={0.2}
+                        rootMargin="-50px"
+                        onLetterAnimationComplete={handleAnimationComplete}
+                    />
+                </p>
+            </div>
+        );
+    }
 
 
     return (
