@@ -66,6 +66,16 @@
     .todo-list-scroll {
         max-height: calc(48vh);
         overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .todo-list-scroll::-webkit-scrollbar {
+        width: 6px;
+        opacity: 0;
+        transition: opacity 0.5s;
+    }
+    .todo-list-scroll:hover::-webkit-scrollbar {
+        opacity: 1;
     }
 
     /* Minimal custom scrollbar styles */
@@ -80,6 +90,10 @@
     .todo-list-scroll::-webkit-scrollbar-thumb {
         background: var(--scrollbar-thumb-bg);
         border-radius: 3px;
+    }
+    .todo-list-scroll:hover {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
     }
 }
 
