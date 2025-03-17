@@ -1,18 +1,19 @@
+// In src/App.tsx
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ListTodo } from 'lucide-react';
 import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import ThemeCustomizer from './components/ThemeCustomizer';
-import { useTodoStore} from './store/todoStore';
+import { useTodoStore } from './store/todoStore';
 import { createClient, Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from './components/ProtectedRoute';
-import {PasswordResetRequestForm} from "./components/PasswordResetRequestForm";
+import { PasswordResetRequestForm } from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
-import {fetchSubtasks, fetchTasks} from "./services/taskService.ts";
+import { fetchSubtasks, fetchTasks } from "./services/taskService.ts";
 import NotFound from './components/NotFound';
 import Aurora from './components/ui/AuroraBG.tsx';
 import UserProfile from "./components/UserProfile";
@@ -27,9 +28,26 @@ const App: React.FC = () => {
     const { setTodos, setUserToken, setUserData } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
 
+    useEffect(() => {
+        // Listen for session changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
+                setSession(session);
+                if (session) {
+                    localStorage.setItem('token', session.access_token || '');
+                    setUserToken(session.access_token || '');
+                    setIsDataLoaded(false);
+                } else {
+                    setIsDataLoaded(true);
+                }
+            }
+        );
+        return () => subscription.unsubscribe();
+    }, [setUserToken]);
 
     useEffect(() => {
-        const loadTasksWithSubtasks = async () => {
+        if (!session) return;
+        const loadData = async () => {
             try {
                 const tasks = await fetchTasks();
                 const tasksWithSubtasks = await Promise.all(
@@ -41,60 +59,37 @@ const App: React.FC = () => {
                 setTodos(tasksWithSubtasks);
             } catch (error) {
                 console.error('Error fetching tasks/subtasks:', error);
-            }
-            finally {
+            } finally {
                 setIsDataLoaded(true);
             }
         };
-
-        loadTasksWithSubtasks();
-    }, [setTodos]);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
-                setSession(session);
-                localStorage.setItem('token', session.access_token?.toString() || '');
-                setUserToken(session.access_token?.toString() || '');
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
+        loadData();
+    }, [session, setTodos]);
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                console.log(user.user_metadata.username);
                 localStorage.setItem('username', user.user_metadata.username);
                 localStorage.setItem('userId', user.id);
-                setUserData({userId: user.id, username: user.user_metadata.username});
-
+                setUserData({ userId: user.id, username: user.user_metadata.username });
             }
         };
         fetchUser();
         const fetchProfileImage = async () => {
-            const{ data: { user } } = await supabase.auth.getUser();
-            const userId=user?.id;
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user?.id;
             const bucketName = "MultiMedia Bucket";
             const newFilePath = `${userId}/profile.JPG`;
             if (userId) {
-                const { data } = supabase.storage
-                    .from(bucketName)
-                    .getPublicUrl(newFilePath);
+                const { data } = supabase.storage.from(bucketName).getPublicUrl(newFilePath);
                 setPreview(data.publicUrl);
-                localStorage.setItem('profilePicture',data.publicUrl);
-                setUserData({userId: userId, profilePicture: data.publicUrl});
+                localStorage.setItem('profilePicture', data.publicUrl);
+                setUserData({ userId, profilePicture: data.publicUrl });
             }
         };
         fetchProfileImage();
-    }, []);
-
+    }, [setUserData]);
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
@@ -124,7 +119,6 @@ const App: React.FC = () => {
         );
     }
 
-
     return (
         <Routes>
             <Route path="/login" element={<LoginForm />} />
@@ -144,7 +138,7 @@ const App: React.FC = () => {
                             speed={0.7}
                         />
                         <UserProfile />
-                        </div>
+                    </div>
                 </ProtectedRoute>
             } />
             <Route
@@ -167,11 +161,11 @@ const App: React.FC = () => {
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="w-2/5 mx-auto"
+                                    className="w-4/5 mx-auto"
                                 >
                                     <div className="flex items-center gap-4 mb-8">
                                         <ListTodo className="w-10 h-10 text-blue-500" />
-                                        <h1 className="text-4xl font-bold">Todo List</h1>
+                                        <h1 className="text-4xl font-bold">Todo List AI</h1>
                                     </div>
                                     <TodoForm />
                                     <TodoList />
