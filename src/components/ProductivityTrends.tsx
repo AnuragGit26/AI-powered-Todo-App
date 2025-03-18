@@ -44,7 +44,7 @@ const ProductivityTrends: React.FC = () => {
 
     return (
         <Card>
-        <div className="p-0 pr-1 bg-white dark:bg-gray-800 border border-white/20 dark:border-white/10 rounded-lg shadow-sm">
+        <div className="p-0 pr-1 bg-white dark:bg-black rounded-lg shadow-sm">
             <CardHeader>
                 <CardTitle>Weekly Productivity Trends</CardTitle>
             </CardHeader>
