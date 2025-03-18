@@ -35,7 +35,7 @@ export const fetchTasks = async () => {
 };
 
 export const createTask = async (task: Todo) => {
-    const { data, error } = await supabase
+    const {error } = await supabase
         .from('tasks')
         .insert([task]);
 
@@ -48,7 +48,7 @@ export const createTask = async (task: Todo) => {
 };
 
 export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
-    const { data, error } = await supabase
+    const {error } = await supabase
         .from('tasks')
         .update(updates)
         .eq('id', taskId).eq('userId', userId);
@@ -63,7 +63,7 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
 };
 
 export const deleteTask = async (taskId: string) => {
-    const { data, error } = await supabase
+    const {error } = await supabase
         .from('tasks')
         .delete()
         .eq('id', taskId).eq('userId', userId);
@@ -100,7 +100,7 @@ export const createSubtask = async (subtask: Partial<SubTodo>) => {
 };
 
 export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) => {
-    const { data, error } = await supabase
+    const {error } = await supabase
         .from('subtasks')
         .update(updates)
         .eq('id', subtaskId);
@@ -115,7 +115,7 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
 };
 
 export const deleteSubtask = async (subtaskId: string) => {
-    const { data, error } = await supabase
+    const {error } = await supabase
         .from('subtasks')
         .delete()
         .eq('id', subtaskId);
