@@ -16,24 +16,29 @@ import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from "date
 const ProductivityTrends: React.FC = () => {
     const todos = useTodoStore((state) => state.todos);
 
-    // Filter tasks that are completed and have a completedAt date.
-    const completedTasks = todos.filter(
-        (todo) => todo.completed && todo.completedAt
-    );
+    const completedDates: Date[] = [];
+    todos.forEach((todo) => {
+        if (todo.completed && todo.completedAt) {
+            completedDates.push(new Date(todo.completedAt));
+        }
+        if (todo.subtasks && todo.subtasks.length) {
+            todo.subtasks.forEach((subtask) => {
+                if (subtask.completed && subtask.completedAt) {
+                    completedDates.push(new Date(subtask.completedAt));
+                }
+            });
+        }
+    });
 
-    // Prepare data for the last eight weeks.
     const weeks = [];
     const now = new Date();
     for (let i = 7; i >= 0; i--) {
         const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
         const weekEnd = endOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
-        // Use the week start date as a label.
         const weekLabel = format(weekStart, "MMM d");
-        // Count tasks completed in the week.
-        const count = completedTasks.filter((task) => {
-            const date = new Date(task.completedAt);
-            return isWithinInterval(date, { start: weekStart, end: weekEnd });
-        }).length;
+        const count = completedDates.filter((date) =>
+            isWithinInterval(date, { start: weekStart, end: weekEnd })
+        ).length;
         weeks.push({ week: weekLabel, count });
     }
 
