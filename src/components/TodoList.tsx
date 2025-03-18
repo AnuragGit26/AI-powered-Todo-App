@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {useEffect, useState, useMemo, useCallback, useRef} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
     AlertCircle,
@@ -183,23 +183,26 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, {
                 completed: updatedCompleted,
                 status: newStatus,
+                completedAt:updatedCompleted? new Date(): null,
             });
-            updateSubtask(todo.id, { completed: updatedCompleted, status: newStatus }).catch((error) =>
+            updateSubtask(todo.id, { completed: updatedCompleted, status: newStatus,completedAt:updatedCompleted? new Date(): null }).catch((error) =>
                 console.error("Error updating subtask:", error)
             );
         } else {
-            updateTodo(todo.id, { completed: updatedCompleted, status: newStatus });
-            updateTask(todo.id, { completed: updatedCompleted, status: newStatus }).catch((error) =>
+            updateTodo(todo.id, { completed: updatedCompleted, status: newStatus ,completedAt:updatedCompleted? new Date(): null,});
+            updateTask(todo.id, { completed: updatedCompleted, status: newStatus ,completedAt:updatedCompleted? new Date(): null,}).catch((error) =>
                 console.error("Error updating task:", error)
             );
         }
     };
 
+    const prevCompletedRef = useRef(todo.completed);
     useEffect(() => {
-        if (todo.completed) {
+        if (!prevCompletedRef.current && todo.completed) {
             ConfettiSideCannons();
         }
-    }, [todo]);
+        prevCompletedRef.current = todo.completed;
+    }, [todo.completed]);
 
     return (
         <motion.div
@@ -474,7 +477,7 @@ const TodoList: React.FC = () => {
                             placeholder="Search tasks..."
                             className="w-3/5 p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
                         />
-                        <Search className="relative top-2 right-14 w-5 h-5 z-50 text-gray-400" />
+                        <Search className="relative top-2 right-28 w-5 h-5 z-50 text-gray-400" />
                         <div className="flex justify-end mb-1">
                             <Select
                                 value={sortCriteria}

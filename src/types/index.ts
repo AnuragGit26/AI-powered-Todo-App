@@ -18,6 +18,7 @@ export interface Todo {
   parentId?: string;
   status: Status;
   userId?: string;
+  completedAt?: Date | null;
 }
 
 export interface SubTodo {
@@ -30,6 +31,7 @@ export interface SubTodo {
     analysis?: TodoAnalysis;
     parentId?: string;
     status: Status;
+    completedAt?: Date | null;
 }
 
 export interface ThemeConfig {
