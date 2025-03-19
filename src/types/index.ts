@@ -2,8 +2,9 @@ export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'Not Started' | 'In progress' | 'Completed';
 
 export interface TodoAnalysis {
-  category: string;
-  howTo: string;
+    category: string;
+    howTo: string;
+    estimatedTime: string;
 }
 
 export interface Todo {
@@ -18,6 +19,7 @@ export interface Todo {
   parentId?: string;
   status: Status;
   userId?: string;
+  estimatedTime?: string | null;
   completedAt?: Date | null;
 }
 
@@ -31,6 +33,7 @@ export interface SubTodo {
     analysis?: TodoAnalysis;
     parentId?: string;
     status: Status;
+    estimatedTime?: string | null;
     completedAt?: Date | null;
 }
 

@@ -178,7 +178,7 @@ const App: React.FC = () => {
                                     <Toaster />
                                 </motion.div>
                             </div>
-                            <div className="fixed top-20 right-0 h-full w-90 p-6 pt-6 overflow-y-auto z-10">
+                            <div className="fixed top-16 right-0 max-h-full w-90 p-6 pt-6 overflow-y-scroll z-10">
                                 <TaskAnalytics />
                                 <ProductivityTrends/>
                             </div>

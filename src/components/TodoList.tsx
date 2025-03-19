@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
     AlertCircle,
     Check,
-    ChevronDown,
+    ChevronDown, Clock,
     Edit3,
     HelpCircle,
     Minus,
@@ -31,6 +31,13 @@ import { Label } from "./ui/label.tsx";
 import { Input } from "./ui/input.tsx";
 import useDebounce from "../hooks/useDebounce.ts";
 import { getUserRegion } from "../hooks/getUserRegion.ts";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "./ui/tooltip.tsx";
+
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
     const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore } = useTodoStore();
@@ -353,6 +360,17 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             )}
                             <Label>Subtask</Label>
                         </button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger className="flex items-center space-x-1">
+                                    <Clock className="w-5 h-5 text-blue-500" />
+                                    <span className="font-medium ">Estimated Time</span>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg p-2">
+                                    <p className="text-sm">{todo.estimatedTime}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                 </div>
                 {isEditing ? (

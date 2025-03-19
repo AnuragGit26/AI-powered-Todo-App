@@ -9,7 +9,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card.tsx"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card.tsx"
 import { useTodoStore } from "../store/todoStore";
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 
@@ -44,12 +44,14 @@ const ProductivityTrends: React.FC = () => {
 
     return (
         <Card>
-        <div className="p-0 pr-1 bg-white dark:bg-black rounded-lg shadow-sm">
             <CardHeader>
-                <CardTitle>Weekly Productivity Trends</CardTitle>
+                <CardTitle className='flex justify-center' >Weekly Productivity Trends</CardTitle>
+                <CardDescription className='flex justify-center'>Tasks completed in past 7 weeks</CardDescription>
             </CardHeader>
             <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        <div className="p-0 pr-1 bg-white dark:bg-black rounded-lg shadow-sm">
+
+            <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={weeks}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="week" />
@@ -58,8 +60,8 @@ const ProductivityTrends: React.FC = () => {
                     <Line type="monotone" dataKey="count" stroke="#4CAF50" strokeWidth={2} activeDot={{ r: 8 }} />
                 </LineChart>
             </ResponsiveContainer>
-        </CardContent>
         </div>
+        </CardContent>
         </Card>
     );
 };

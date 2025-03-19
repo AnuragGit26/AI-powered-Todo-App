@@ -61,6 +61,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             status,
             priority,
             analysis,
+            estimatedTime: analysis.estimatedTime,
             createdAt: new Date(),
             userId:localStorage.getItem('userId') || '1',
         };
@@ -76,6 +77,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     status,
                     priority,
                     analysis,
+                    estimatedTime: analysis.estimatedTime,
                     createdAt: new Date(),
                     parentId,
                 };

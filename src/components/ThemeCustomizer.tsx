@@ -26,7 +26,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
 
     const handleLogout = useCallback(async () => {
         const userId = localStorage.getItem('userId');
-        await logUserActivity(userId, 'User logged out');
+        await logUserActivity(userId || "", 'User logged out');
         const { error } = await supabase.auth.signOut();
         localStorage.removeItem('token');
         if (error) {
@@ -84,7 +84,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
 
                                 <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg mb-4">
                                     <div className="flex items-center gap-3">
-                                        {localStorage.getItem('profilePicture')?  <img src={localStorage.getItem('profilePicture')} alt="Profile" className="w-10 h-10 rounded-full" />:
+                                        {localStorage.getItem('profilePicture') ?
+                                            <img src={localStorage.getItem('profilePicture') || ""} alt="Profile" className="w-10 h-10 rounded-full" /> :
                                             <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
                                                 {username?.charAt(0).toUpperCase()}
                                             </div>}
