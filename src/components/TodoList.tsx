@@ -1,17 +1,16 @@
 import React, {useEffect, useState, useMemo, useCallback, useRef} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    AlertCircle,
     Check,
     ChevronDown, Clock,
     Edit3,
-    HelpCircle,
+    HelpCircle, Loader2,
     Minus,
     Plus,
     Search,
     Tag,
     Trash2,
-} from "lucide-react";
+} from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -49,6 +48,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [editedDueDate, setEditedDueDate] = useState(todo.dueDate ? new Date(todo.dueDate) : null);
     const [editedPriority, setEditedPriority] = useState(todo.priority);
     const [editedStatus, setEditedStatus] = useState(todo.status);
+
 
     const renderDueDate = (dueDate: Date | string | null) => {
         if (!dueDate) return null;
@@ -108,11 +108,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case "high":
-                return "text-red-500";
+                return "text-black cursor-pointer text-sm font-semibold bg-red-400 text-center rounded-full px-2 py-1";
             case "medium":
-                return "text-yellow-500";
+                return "text-black cursor-pointer text-sm font-semibold bg-yellow-300 text-center rounded-full px-2 py-1";
             case "low":
-                return "text-green-500";
+                return "text-black cursor-pointer text-sm font-semibold bg-green-500 text-center rounded-full px-2 py-1";
             default:
                 return "text-gray-500";
         }
@@ -150,6 +150,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 dueDate: editedDueDate,
                 priority: editedPriority,
                 status: editedStatus,
+                estimatedTime: analysis.estimatedTime,
             });
             await updateSubtask(todo.id, {
                 title: editedTitle,
@@ -157,6 +158,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 dueDate: editedDueDate,
                 priority: editedPriority,
                 status: editedStatus,
+                estimatedTime: analysis.estimatedTime,
             });
         } else {
             updateTodo(todo.id, {
@@ -165,6 +167,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 dueDate: editedDueDate,
                 priority: editedPriority,
                 status: editedStatus,
+                estimatedTime: analysis.estimatedTime,
             });
             await updateTask(todo.id, {
                 title: editedTitle,
@@ -172,6 +175,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 dueDate: editedDueDate,
                 priority: editedPriority,
                 status: editedStatus,
+                estimatedTime: analysis.estimatedTime,
             });
         }
         setIsEditing(false);
@@ -317,7 +321,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         </p>
                     )}
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-white">
-                        <AlertCircle className={`w-6 h-6 ${getPriorityColor(todo.priority)}`} />
+                        <span className={getPriorityColor(todo.priority)}>
+                             {todo.priority ? todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1) : ""}
+                        </span>
                         <div className="p-1 pt-1.5 pb-2 border rounded-lg dark:bg-white/5 dark:border-white/10">
                             {todo.dueDate && (
                                 <p
@@ -378,10 +384,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={handleSave}
-                        className="p-2 text-white rounded-lg bg-blue-500 dark:bg-blue-200"
+                        className="p-2 text-white dark:text-black rounded-lg bg-blue-500 dark:bg-blue-200"
                     >
-                        Save
+                        Save{analysisLoading?<Loader2 className="w-5 h-5 text-green-400 animate-spin mr-2" />:null}
                     </motion.button>
+
                 ) : (
                     <motion.button
                         whileHover={{ scale: 1.1 }}
