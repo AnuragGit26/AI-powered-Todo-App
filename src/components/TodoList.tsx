@@ -48,6 +48,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [editedDueDate, setEditedDueDate] = useState(todo.dueDate ? new Date(todo.dueDate) : null);
     const [editedPriority, setEditedPriority] = useState(todo.priority);
     const [editedStatus, setEditedStatus] = useState(todo.status);
+    const [analysisLoading, setAnalysisLoading] = useState(false);
 
 
     const renderDueDate = (dueDate: Date | string | null) => {
@@ -129,6 +130,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     };
 
     const handleSave = async () => {
+        setAnalysisLoading(true);
         let region = "IN";
         try {
             region = await getUserRegion().then(() => region);
@@ -178,6 +180,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 estimatedTime: analysis.estimatedTime,
             });
         }
+        setAnalysisLoading(false);
         setIsEditing(false);
     };
 
@@ -313,6 +316,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                {analysisLoading?<Loader2 className="w-8 h-8 text-green-200 animate-spin mt-1" />:null}
                             </div>
                         </div>
                     ) : (
@@ -384,9 +388,10 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={handleSave}
+                        disabled={analysisLoading}
                         className="p-2 text-white dark:text-black rounded-lg bg-blue-500 dark:bg-blue-200"
                     >
-                        Save{analysisLoading?<Loader2 className="w-5 h-5 text-green-400 animate-spin mr-2" />:null}
+                        Save
                     </motion.button>
 
                 ) : (

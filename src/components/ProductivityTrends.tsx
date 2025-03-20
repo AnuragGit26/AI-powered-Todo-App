@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
     LineChart,
@@ -9,7 +8,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card.tsx"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { useTodoStore } from "../store/todoStore";
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 
@@ -32,7 +31,7 @@ const ProductivityTrends: React.FC = () => {
 
     const weeks = [];
     const now = new Date();
-    for (let i = 7; i >= 0; i--) {
+    for (let i = 2; i >= 0; i--) {
         const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
         const weekEnd = endOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
         const weekLabel = format(weekStart, "MMM d");
@@ -45,23 +44,22 @@ const ProductivityTrends: React.FC = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className='flex justify-center' >Weekly Productivity Trends</CardTitle>
-                <CardDescription className='flex justify-center'>Tasks completed in past 7 weeks</CardDescription>
+                <CardTitle className='flex justify-center'>Weekly Productivity Trends</CardTitle>
+                <CardDescription className='flex justify-center'>Tasks completed in past 2 weeks</CardDescription>
             </CardHeader>
             <CardContent>
-        <div className="p-0 pr-1 bg-white dark:bg-black rounded-lg shadow-sm">
-
-            <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={weeks}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="week" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="count" stroke="#4CAF50" strokeWidth={2} activeDot={{ r: 8 }} />
-                </LineChart>
-            </ResponsiveContainer>
-        </div>
-        </CardContent>
+                <div className="p-0 pr-1 bg-white dark:bg-black rounded-lg shadow-sm">
+                    <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={weeks}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="week" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="count" stroke="#4CAF50" strokeWidth={2} activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
         </Card>
     );
 };
