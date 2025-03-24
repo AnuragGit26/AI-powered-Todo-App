@@ -14,6 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import {logActivity, updateUsageMetrics} from "../services/activityMetrics.ts";
 import {getUserIP} from "../services/ipService.ts";
+import Aurora from "./ui/AuroraBG.tsx";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -69,7 +70,14 @@ export function LoginForm({
     };
 
     return (
-        <div className={cn("flex items-center justify-center min-h-screen z-50", className)} {...props}>
+        <div className="overflow-hidden h-screen">
+            <Aurora
+                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                blend={0.5}
+                amplitude={1.0}
+                speed={0.7}
+            />
+        <div className={cn("absolute inset-0 flex items-center justify-center min-h-screen z-50", className)} {...props}>
             <div className="max-w-3xl flex flex-col gap-10">
                 <Card>
                     <CardHeader className="text-center">
@@ -186,5 +194,6 @@ export function LoginForm({
                 </div>
             </div>
         </div>
+       </div>
     )
 }
