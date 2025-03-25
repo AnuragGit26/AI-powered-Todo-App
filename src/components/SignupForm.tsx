@@ -7,6 +7,7 @@ import { Label } from "./ui/label";
 import { Card, CardContent, CardHeader, CardDescription } from "./ui/card";
 import SplitText from "./ui/SplitText";
 import Aurora from "./ui/AuroraBG.tsx";
+import ShinyText from "./ui/ShinyText.tsx";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -130,7 +131,7 @@ export function SignUpForm() {
                                     disabled={loading}
                                     className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-gray-800 active:scale-95 transition-transform duration-75"
                                 >
-                                    {loading ? "Signing up..." : "Sign Up"}
+                                    {loading ? <ShinyText text="Signing up..." disabled={false} speed={1.}  className=''/> :  <ShinyText text="Sign Up!" disabled={false} speed={2}  className=''/>}
                                 </Button>
                             </form>
                             <div className="text-center text-sm m-6">
