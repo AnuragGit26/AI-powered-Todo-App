@@ -58,11 +58,14 @@ export function LoginForm({
         if (error) {
             setErrorMessage('Error signing in: ' + error.message);
         } else {
-            setSuccessMessage('Successfully signed in!');
+
             const { data: { user } } = await supabase.auth.getUser();
-            const ipAddress = await getUserIP();
-            await logActivity(user?.id, 'User logged in');
-            await updateUsageMetrics(user?.id, { last_login: new Date(), total_logins_inc: 1, ip_address: ipAddress });
+            if (user) {
+                const ipAddress= await getUserIP();
+                await logActivity(user.id, 'User logged in');
+                await updateUsageMetrics(user.id, { last_login: new Date(), total_logins_inc: 1, ip_address: ipAddress });
+            }
+            setSuccessMessage('Successfully signed in!');
             navigate("/");
         }
     };

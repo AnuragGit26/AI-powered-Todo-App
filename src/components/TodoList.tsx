@@ -10,6 +10,7 @@ import {
     Search,
     Tag,
     Trash2,
+    InfoIcon
 } from "lucide-react"
 import {
     Select,
@@ -374,7 +375,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             <Tooltip>
                                 <TooltipTrigger className="flex items-center space-x-1">
                                     <Clock className="w-5 h-5 text-blue-500" />
-                                    <span className="font-medium ">Estimated Time</span>
+                                    <span className="font-medium  flex">Estimated Time <InfoIcon className="w-3 h-3 ml-1"/></span>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg p-2">
                                     <p className="text-sm">{todo.estimatedTime}</p>
