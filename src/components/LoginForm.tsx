@@ -17,8 +17,89 @@ import { getUserIP } from "../services/ipService.ts";
 import Aurora from "./ui/AuroraBG.tsx";
 import { TodoAIIntro } from "./TodoAIIntro";
 import ShinyText from './ui/ShinyText.tsx';
+import { motion } from "framer-motion";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+const ModernFooter = () => {
+    return (
+        <motion.footer 
+            className="w-full py-8 backdrop-blur-sm bg-white/10 border-t dark:border-white/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.6 }}
+        >
+            <div className="container mx-auto px-4">
+                <div className="flex flex-col md:flex-row justify-between items-center">
+                    {/* Logo and tagline */}
+                    <div className="mb-6 md:mb-0">
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 mr-2 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">T</span>
+                            </div>
+                            <h3 className="text-lg font-semibold">TodoAI</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                            Revolutionizing task management with AI-powered organization and insights.
+                        </p>
+                    </div>
+
+                    {/* Quick links */}
+                    {/*<div className="grid grid-cols-2 gap-8 mb-6 md:mb-0">*/}
+                    {/*    <div>*/}
+                    {/*        <h4 className="text-sm font-medium mb-2">Product</h4>*/}
+                    {/*        <ul className="space-y-2 text-xs text-muted-foreground">*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">API</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>*/}
+                    {/*        </ul>*/}
+                    {/*    </div>*/}
+                    {/*    <div>*/}
+                    {/*        <h4 className="text-sm font-medium mb-2">Company</h4>*/}
+                    {/*        <ul className="space-y-2 text-xs text-muted-foreground">*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">About</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>*/}
+                    {/*        </ul>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
+
+                    {/* Social icons */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-2 text-center md:text-right">Connect</h4>
+                        <div className="flex space-x-4 justify-center md:justify-end">
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                            </a>
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+                            </a>
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                            </a>
+                            <a href="https://www.linkedin.com/in/anurag2604/" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs text-muted-foreground">
+                    <div className="mb-4 md:mb-0">
+                        &copy; {new Date().getFullYear()} TodoAI. All rights reserved.
+                    </div>
+                    <div className="flex space-x-4">
+                        <a href="#" className="hover:text-primary transition-colors">Terms</a>
+                        <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-primary transition-colors">Cookies</a>
+                    </div>
+                </div>
+            </div>
+        </motion.footer>
+    );
+};
 
 export function LoginForm({
                               className,
@@ -75,18 +156,18 @@ export function LoginForm({
     };
 
     return (
-        <div className="overflow-hidden h-screen">
+        <div className="min-h-screen flex flex-col relative overflow-hidden">
             <Aurora
                 colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
                 blend={0.5}
                 amplitude={1.0}
                 speed={0.7}
             />
-            <div className={cn("absolute inset-0 flex items-center justify-center min-h-screen z-50", className)} {...props}>
-                <div className="container max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className={cn("flex-1 py-12 overflow-y-auto z-50", className)} {...props}>
+                <div className="container max-w-6xl mx-auto px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {/* Login form column */}
-                        <div>
+                        <div className="mb-8">
                             <Card>
                                 <CardHeader className="text-center">
                                     <SplitText
@@ -202,14 +283,16 @@ export function LoginForm({
                                 </CardFooter>
                             </Card>
                         </div>
-
-                        {/* Introduction column - only displayed on medium screens and up */}
-                        <div className="hidden md:block">
+                        <div className="hidden md:block mb-8">
                             <TodoAIIntro />
                         </div>
                     </div>
                 </div>
             </div>
+            
+            {/* Modern Footer */}
+            <ModernFooter />
         </div>
     );
 }
+

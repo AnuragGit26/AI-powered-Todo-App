@@ -113,8 +113,9 @@ export function TodoAIIntro() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
+            className="h-full"
         >
-            <Card className="max-w-md shadow-lg border-0 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden">
+            <Card className="max-w-md shadow-lg border-0 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden h-full">
                 <CardHeader className="pb-2 flex items-center justify-between">
                     <DecryptedText
                         text="Welcome to TodoAI"
@@ -133,7 +134,7 @@ export function TodoAIIntro() {
                         parentClassName="block mb-2"
                     />
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 overflow-y-auto">
                     <AppMockup />
                     
                     <div className="space-y-6">
@@ -178,7 +179,7 @@ export function TodoAIIntro() {
                             transition={{ delay: 0.8 }}
                         >
                             <AnimatedStat value="40%" label="Productivity Boost" />
-                            <AnimatedStat value="10K+" label="Active Users" />
+                            <AnimatedStat value="1K+" label="Active Users" />
                             <AnimatedStat value="4.9" label="User Rating" />
                         </motion.div>
 
@@ -209,3 +210,4 @@ export function TodoAIIntro() {
         </motion.div>
     );
 }
+

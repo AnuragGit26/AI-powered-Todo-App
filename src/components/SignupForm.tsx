@@ -8,11 +8,92 @@ import { Card, CardContent, CardHeader, CardDescription } from "./ui/card";
 import SplitText from "./ui/SplitText";
 import Aurora from "./ui/AuroraBG.tsx";
 import ShinyText from "./ui/ShinyText.tsx";
+import {motion} from "framer-motion";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY
 );
+
+const ModernFooter = () => {
+    return (
+        <motion.footer
+            className="w-full py-8 backdrop-blur-sm bg-white/10 border-t dark:border-white/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.6 }}
+        >
+            <div className="container mx-auto px-4">
+                <div className="flex flex-col md:flex-row justify-between items-center">
+                    {/* Logo and tagline */}
+                    <div className="mb-6 md:mb-0">
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 mr-2 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">T</span>
+                            </div>
+                            <h3 className="text-lg font-semibold">TodoAI</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                            Revolutionizing task management with AI-powered organization and insights.
+                        </p>
+                    </div>
+
+                    {/* Quick links */}
+                    {/*<div className="grid grid-cols-2 gap-8 mb-6 md:mb-0">*/}
+                    {/*    <div>*/}
+                    {/*        <h4 className="text-sm font-medium mb-2">Product</h4>*/}
+                    {/*        <ul className="space-y-2 text-xs text-muted-foreground">*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">API</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>*/}
+                    {/*        </ul>*/}
+                    {/*    </div>*/}
+                    {/*    <div>*/}
+                    {/*        <h4 className="text-sm font-medium mb-2">Company</h4>*/}
+                    {/*        <ul className="space-y-2 text-xs text-muted-foreground">*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">About</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>*/}
+                    {/*            <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>*/}
+                    {/*        </ul>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
+
+                    {/* Social icons */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-2 text-center md:text-right">Connect</h4>
+                        <div className="flex space-x-4 justify-center md:justify-end">
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                            </a>
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+                            </a>
+                            <a href="#" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                            </a>
+                            <a href="https://www.linkedin.com/in/anurag2604/" className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs text-muted-foreground">
+                    <div className="mb-4 md:mb-0">
+                        &copy; {new Date().getFullYear()} TodoAI. All rights reserved.
+                    </div>
+                    <div className="flex space-x-4">
+                        <a href="#" className="hover:text-primary transition-colors">Terms</a>
+                        <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-primary transition-colors">Cookies</a>
+                    </div>
+                </div>
+            </div>
+        </motion.footer>
+    );
+};
 
 export function SignUpForm() {
     const [email, setEmail] = useState("");
@@ -20,12 +101,103 @@ export function SignUpForm() {
     const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    
+    // Validation state variables
+    const [usernameError, setUsernameError] = useState<string | null>(null);
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    
     const navigate = useNavigate();
+
+    // Validation functions
+    const validateUsername = (value: string) => {
+        if (!value) {
+            setUsernameError("Username is required");
+            return false;
+        }
+        if (value.length < 3) {
+            setUsernameError("Username must be at least 3 characters");
+            return false;
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+            setUsernameError("Username can only contain letters, numbers and underscores");
+            return false;
+        }
+        setUsernameError(null);
+        return true;
+    };
+
+    const validateEmail = (value: string) => {
+        if (!value) {
+            setEmailError("Email is required");
+            return false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            setEmailError("Please enter a valid email address");
+            return false;
+        }
+        setEmailError(null);
+        return true;
+    };
+
+    const validatePassword = (value: string) => {
+        if (!value) {
+            setPasswordError("Password is required");
+            return false;
+        }
+        if (value.length < 8) {
+            setPasswordError("Password must be at least 8 characters");
+            return false;
+        }
+        if (!/(?=.*[a-z])/.test(value)) {
+            setPasswordError("Password must contain at least one lowercase letter");
+            return false;
+        }
+        if (!/(?=.*[A-Z])/.test(value)) {
+            setPasswordError("Password must contain at least one uppercase letter");
+            return false;
+        }
+        if (!/(?=.*\d)/.test(value)) {
+            setPasswordError("Password must contain at least one number");
+            return false;
+        }
+        setPasswordError(null);
+        return true;
+    };
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setUsername(value);
+        validateUsername(value);
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setEmail(value);
+        validateEmail(value);
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPassword(value);
+        validatePassword(value);
+    };
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Validate all fields before submission
+        const isUsernameValid = validateUsername(username);
+        const isEmailValid = validateEmail(email);
+        const isPasswordValid = validatePassword(password);
+
+        if (!isUsernameValid || !isEmailValid || !isPasswordValid) {
+            setLoading(false);
+            return;
+        }
 
         try {
             const { data, error } = await supabase.auth.signUp({
@@ -54,7 +226,7 @@ export function SignUpForm() {
     };
 
     return (
-        <div className="overflow-hidden h-screen">
+        <div className="min-h-screen flex flex-col relative overflow-hidden">
             <Aurora
                 colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
                 blend={0.5}
@@ -96,9 +268,13 @@ export function SignUpForm() {
                                         id="username"
                                         placeholder="Enter your username"
                                         value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
+                                        onChange={handleUsernameChange}
+                                        className={usernameError ? "border-red-500" : ""}
                                         required
                                     />
+                                    {usernameError && (
+                                        <p className="text-red-500 text-xs mt-1">{usernameError}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label htmlFor="email" className="block text-sm font-bold mb-2">
@@ -109,9 +285,13 @@ export function SignUpForm() {
                                         id="email"
                                         placeholder="Enter your email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={handleEmailChange}
+                                        className={emailError ? "border-red-500" : ""}
                                         required
                                     />
+                                    {emailError && (
+                                        <p className="text-red-500 text-xs mt-1">{emailError}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label htmlFor="password" className="block text-sm font-bold mb-2">
@@ -122,13 +302,17 @@ export function SignUpForm() {
                                         id="password"
                                         placeholder="Enter your password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={handlePasswordChange}
+                                        className={passwordError ? "border-red-500" : ""}
                                         required
                                     />
+                                    {passwordError && (
+                                        <p className="text-red-500 text-xs mt-1">{passwordError}</p>
+                                    )}
                                 </div>
                                 <Button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || !!usernameError || !!emailError || !!passwordError}
                                     className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-gray-800 active:scale-95 transition-transform duration-75"
                                 >
                                     {loading ? <ShinyText text="Signing up..." disabled={false} speed={1.}  className=''/> :  <ShinyText text="Sign Up!" disabled={false} speed={2}  className=''/>}
@@ -147,7 +331,6 @@ export function SignUpForm() {
                         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
                         and <a href="#">Privacy Policy</a>.
                     </div>
-
                 </div>
             </div>
         </div>
