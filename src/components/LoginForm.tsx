@@ -4,7 +4,7 @@ import SplitText from './ui/SplitText';
 import {
     Card,
     CardContent,
-    CardDescription,
+    CardDescription, CardFooter,
     CardHeader,
 } from "./ui/card.tsx";
 import { Input } from "./ui/input.tsx";
@@ -194,6 +194,12 @@ export function LoginForm({
                                         </div>
                                     </form>
                                 </CardContent>
+                                <CardFooter>
+                                    <div className="text-center justify-center text-xs text-muted-foreground mt-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
+                                        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
+                                        and <a href="#">Privacy Policy</a>.
+                                    </div>
+                                </CardFooter>
                             </Card>
                         </div>
 
@@ -201,11 +207,6 @@ export function LoginForm({
                         <div className="hidden md:block">
                             <TodoAIIntro />
                         </div>
-                    </div>
-
-                    <div className="text-center text-xs text-muted-foreground mt-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-                        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                        and <a href="#">Privacy Policy</a>.
                     </div>
                 </div>
             </div>

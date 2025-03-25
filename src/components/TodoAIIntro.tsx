@@ -24,6 +24,89 @@ const FeatureItem = ({ title, description, icon }: FeatureItemProps) => (
     </motion.div>
 );
 
+// Mockup component to display a stylized task app screen
+const AppMockup = () => (
+    <motion.div 
+        className="relative mb-6 p-3 bg-black/5 rounded-lg shadow-inner overflow-hidden"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.7, delay: 0.3 }}
+    >
+        <div className="flex items-center justify-between mb-3">
+            <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+            <div className="text-[10px] text-muted-foreground">TodoAI</div>
+        </div>
+        
+        <div className="space-y-2">
+            <motion.div 
+                className="flex items-center bg-white/70 p-2 rounded-md"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+            >
+                <div className="h-3 w-3 bg-blue-400 rounded-full mr-2"></div>
+                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                <div className="ml-2 h-3 w-3 text-xs">✓</div>
+            </motion.div>
+            
+            <motion.div 
+                className="flex items-center bg-white/70 p-2 rounded-md"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+            >
+                <div className="h-3 w-3 bg-green-400 rounded-full mr-2"></div>
+                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                <div className="ml-2 h-3 w-3 text-xs">⚡</div>
+            </motion.div>
+            
+            <motion.div 
+                className="flex items-center bg-white/70 p-2 rounded-md"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.7 }}
+            >
+                <div className="h-3 w-3 bg-purple-400 rounded-full mr-2"></div>
+                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+            </motion.div>
+            
+            <motion.div 
+                className="absolute -bottom-2 -right-2 h-12 w-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.9, type: "spring" }}
+                whileHover={{ scale: 1.05 }}
+            >
+                <span className="text-white text-lg">+</span>
+            </motion.div>
+        </div>
+    </motion.div>
+);
+
+// Stats animation component
+const AnimatedStat = ({ value, label }: { value: string; label: string }) => (
+    <motion.div 
+        className="text-center"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 1 }}
+    >
+        <motion.p 
+            className="text-lg font-bold text-primary"
+            initial={{ scale: 0.5 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, delay: 1.2 }}
+        >
+            {value}
+        </motion.p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+    </motion.div>
+);
+
 export function TodoAIIntro() {
     return (
         <motion.div
@@ -31,8 +114,8 @@ export function TodoAIIntro() {
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
         >
-            <Card className="max-w-md shadow-lg border-0 bg-white/70 backdrop-blur-md rounded-lg">
-                <CardHeader className="pb-2">
+            <Card className="max-w-md shadow-lg border-0 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden">
+                <CardHeader className="pb-2 flex items-center justify-between">
                     <DecryptedText
                         text="Welcome to TodoAI"
                         className="text-xl font-bold text-center"
@@ -41,11 +124,18 @@ export function TodoAIIntro() {
                         animateOn="view"
                         parentClassName="block mb-2"
                     />
-                    <p className="text-sm text-muted-foreground text-center">
-                        The smart way to organize your tasks
-                    </p>
+                    <DecryptedText
+                        text="The smart way to organize your tasks"
+                        className="text-sm text-muted-foreground text-center"
+                        speed={35}
+                        sequential={true}
+                        animateOn="view"
+                        parentClassName="block mb-2"
+                    />
                 </CardHeader>
                 <CardContent className="pt-4">
+                    <AppMockup />
+                    
                     <div className="space-y-6">
                         <div className="space-y-3">
                             <FeatureItem
@@ -68,12 +158,50 @@ export function TodoAIIntro() {
                                 title="Cross-platform Sync"
                                 description="Access your tasks from any device with real-time synchronization"
                             />
+                            <FeatureItem
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>}
+                                title="Task Categories & Tags"
+                                description="Organize tasks with custom categories and smart tag suggestions"
+                            />
+                            <FeatureItem
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M20 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/></svg>}
+                                title="Progress Insights"
+                                description="Visual reports show your productivity trends and completion rates"
+                            />
                         </div>
+                        
+                        {/* Stats section */}
+                        <motion.div 
+                            className="py-3 grid grid-cols-3 gap-2 border-t border-b border-border"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                        >
+                            <AnimatedStat value="40%" label="Productivity Boost" />
+                            <AnimatedStat value="10K+" label="Active Users" />
+                            <AnimatedStat value="4.9" label="User Rating" />
+                        </motion.div>
 
-                        <div className="pt-2 border-t border-border">
+                        <div className="pt-2">
                             <p className="text-xs text-center text-muted-foreground">
-                                Join thousands of users who have boosted their productivity by 40%
+                                Join thousands of professionals who have transformed their task management experience
                             </p>
+                            
+                            <motion.div 
+                                className="flex justify-center mt-3"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.3 }}
+                            >
+                                <div className="flex -space-x-2">
+                                    {[1, 2, 3, 4, 5].map((i) => (
+                                        <div 
+                                            key={i} 
+                                            className={`w-6 h-6 rounded-full bg-gradient-to-r from-indigo-${300 + i*100} to-purple-${400 + i*100} border border-white`} 
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
                         </div>
                     </div>
                 </CardContent>
