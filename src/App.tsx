@@ -34,7 +34,7 @@ const App: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             if (session) {
-                localStorage.setItem("token", session.access_token || "");
+                sessionStorage.setItem("token", session.access_token || "");
                 setUserToken(session.access_token || "");
                 setIsDataLoaded(false);
             } else {
@@ -126,7 +126,7 @@ const App: React.FC = () => {
             <Route
                 path="/profile"
                 element={
-                    <ProtectedRoute isAuthenticated={localStorage.getItem("token") != null}>
+                    <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
                         <div
                             className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
                             style={{
@@ -148,7 +148,7 @@ const App: React.FC = () => {
             <Route
                 path="/"
                 element={
-                    <ProtectedRoute isAuthenticated={localStorage.getItem("token") != null}>
+                    <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
                         <div
                             className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
                             style={{
