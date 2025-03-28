@@ -20,13 +20,13 @@ import UserProfile from "./components/UserProfile";
 import SplitText from "./components/ui/SplitText.jsx";
 import TaskAnalytics from "./components/TaskAnalytics.jsx";
 import ProductivityTrends from "./components/ProductivityTrends.tsx";
+import Footer from "./components/ui/Footer";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
     const { setTodos, setUserToken, setUserData } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -82,7 +82,6 @@ const App: React.FC = () => {
             const newFilePath = `${userId}/profile.JPG`;
             if (userId) {
                 const { data } = supabase.storage.from(bucketName).getPublicUrl(newFilePath);
-                setPreview(data.publicUrl);
                 localStorage.setItem("profilePicture", data.publicUrl);
                 setUserData({ userId, profilePicture: data.publicUrl });
             }
@@ -120,9 +119,9 @@ const App: React.FC = () => {
 
     return (
         <Routes>
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/signup" element={<SignUpForm />} />
-            <Route path="/password-reset-request" element={<PasswordResetRequestForm />} />
+            <Route path="/login" element={<><LoginForm /><Footer /></>} />
+            <Route path="/signup" element={<><SignUpForm /><Footer /></>} />
+            <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Footer /></>} />
             <Route
                 path="/profile"
                 element={
@@ -141,6 +140,7 @@ const App: React.FC = () => {
                                 speed={0.7}
                             />
                             <UserProfile />
+                            <Footer />
                         </div>
                     </ProtectedRoute>
                 }
@@ -180,13 +180,14 @@ const App: React.FC = () => {
                             </div>
                             <div className="fixed top-16 right-0 max-h-full w-90 p-6 pt-6 overflow-y-scroll z-10">
                                 <TaskAnalytics />
-                                <ProductivityTrends/>
+                                <ProductivityTrends />
                             </div>
+                            <Footer />
                         </div>
                     </ProtectedRoute>
                 }
             />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<><NotFound /><Footer /></>} />
         </Routes>
     );
 };
