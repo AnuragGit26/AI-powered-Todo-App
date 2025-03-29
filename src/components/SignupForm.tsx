@@ -14,6 +14,7 @@ import { Loader, User, Mail, Lock, Check, Info, ArrowRight, UserCheck } from "lu
 import Logo from "./Logo";
 import { Badge } from "./ui/badge.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip.tsx";
+import ASCIIText from "./ui/ASCIIText.tsx";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -30,7 +31,6 @@ const ModernFooter = () => {
         >
             <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row justify-between items-center">
-                    {/* Logo and tagline */}
                     <div className="mb-6 md:mb-0">
                         <Logo size={32} showText={true} />
                         <p className="text-xs text-muted-foreground mt-2 max-w-xs">
@@ -240,17 +240,17 @@ export function SignUpForm() {
                 amplitude={1.0}
                 speed={0.7}
             />
-            
+
             {/* Logo in top left corner */}
-            <motion.div 
+            <motion.div
                 className="absolute top-6 left-6 z-50"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <Logo size={40} showText={true} />
+
             </motion.div>
-            
+
             <div className="absolute inset-0 flex items-center justify-center min-h-screen z-50">
                 <div className="max-w-md w-full px-4">
                     <motion.div
@@ -260,11 +260,6 @@ export function SignUpForm() {
                     >
                         <Card className="backdrop-blur-sm border border-white/20 shadow-xl overflow-hidden">
                             <CardHeader className="text-center pb-3">
-                                <div className="mx-auto mb-2">
-                                    <Badge variant="outline" className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                                        Join Us Today!
-                                    </Badge>
-                                </div>
                                 <SplitText
                                     text="Create an Account"
                                     className="text-2xl font-semibold text-center"
@@ -319,8 +314,8 @@ export function SignUpForm() {
 
                                 <form onSubmit={handleSignUp} className="grid gap-5">
                                     <div>
-                                        <Label 
-                                            htmlFor="username" 
+                                        <Label
+                                            htmlFor="username"
                                             className="text-sm font-medium flex items-center mb-1"
                                         >
                                             <User className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -351,7 +346,7 @@ export function SignUpForm() {
                                         </div>
                                         <AnimatePresence>
                                             {usernameError && (
-                                                <motion.p 
+                                                <motion.p
                                                     className="text-sm text-red-500 mt-1"
                                                     initial={{ opacity: 0, height: 0 }}
                                                     animate={{ opacity: 1, height: 'auto' }}
@@ -363,8 +358,8 @@ export function SignUpForm() {
                                         </AnimatePresence>
                                     </div>
                                     <div>
-                                        <Label 
-                                            htmlFor="email" 
+                                        <Label
+                                            htmlFor="email"
                                             className="text-sm font-medium flex items-center mb-1"
                                         >
                                             <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -395,7 +390,7 @@ export function SignUpForm() {
                                         </div>
                                         <AnimatePresence>
                                             {emailError && (
-                                                <motion.p 
+                                                <motion.p
                                                     className="text-sm text-red-500 mt-1"
                                                     initial={{ opacity: 0, height: 0 }}
                                                     animate={{ opacity: 1, height: 'auto' }}
@@ -407,8 +402,8 @@ export function SignUpForm() {
                                         </AnimatePresence>
                                     </div>
                                     <div>
-                                        <Label 
-                                            htmlFor="password" 
+                                        <Label
+                                            htmlFor="password"
                                             className="text-sm font-medium flex items-center mb-1"
                                         >
                                             <Lock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -443,7 +438,7 @@ export function SignUpForm() {
                                         </div>
                                         <AnimatePresence>
                                             {passwordError && (
-                                                <motion.p 
+                                                <motion.p
                                                     className="text-sm text-red-500 mt-1"
                                                     initial={{ opacity: 0, height: 0 }}
                                                     animate={{ opacity: 1, height: 'auto' }}
@@ -455,7 +450,7 @@ export function SignUpForm() {
                                         </AnimatePresence>
                                         {/* Password strength indicator */}
                                         {password && !passwordError && (
-                                            <motion.div 
+                                            <motion.div
                                                 className="mt-2"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
@@ -463,33 +458,65 @@ export function SignUpForm() {
                                             >
                                                 <div className="flex gap-1">
                                                     {Array.from({ length: 4 }).map((_, i) => {
-                                                        const passLen = password.length;
-                                                        const isActive = 
-                                                            i === 0 ? passLen >= 1 : 
-                                                            i === 1 ? passLen >= 8 : 
-                                                            i === 2 ? /(?=.*[a-z])(?=.*[A-Z])/.test(password) : 
-                                                            /(?=.*\d)/.test(password);
-                                                        
+                                                        const hasLowercase = /[a-z]/.test(password);
+                                                        const hasUppercase = /[A-Z]/.test(password);
+                                                        const hasNumber = /\d/.test(password);
+                                                        const hasMinLength = password.length >= 8;
+                                                        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
+                                                        const hasLongLength = password.length >= 12;
+
+                                                        // Calculate password strength
+                                                        const isWeak = password.length >= 1 && (!hasMinLength || (!hasLowercase && !hasUppercase && !hasNumber));
+                                                        const isGood = hasMinLength && ((hasLowercase && hasUppercase) || (hasLowercase && hasNumber) || (hasUppercase && hasNumber));
+                                                        const isStrong = hasMinLength && hasLowercase && hasUppercase && hasNumber;
+                                                        const isVeryStrong = isStrong && hasSpecialChar && hasLongLength;
+
+                                                        // Determine if this segment should be active and its color
+                                                        let isSegmentActive = false;
+                                                        let color = "bg-gray-200 dark:bg-gray-700"; // default inactive
+
+                                                        if (isVeryStrong) {
+                                                            isSegmentActive = true; // All segments for very strong
+                                                            color = "bg-purple-500"; // Purple for very strong
+                                                        } else if (isStrong) {
+                                                            isSegmentActive = true; // All segments for strong
+                                                            color = "bg-green-500";
+                                                        } else if (isGood) {
+                                                            isSegmentActive = i < 3; // First three segments for good
+                                                            if (isSegmentActive) color = "bg-amber-500";
+                                                        } else if (isWeak) {
+                                                            isSegmentActive = i < 1; // Only first segment for weak
+                                                            if (isSegmentActive) color = "bg-red-500";
+                                                        }
+
                                                         return (
-                                                            <div 
-                                                                key={i} 
-                                                                className={`h-1 flex-1 rounded-full transition-colors ${
-                                                                    isActive 
-                                                                        ? i < 2 ? "bg-amber-500" : "bg-green-500"
-                                                                        : "bg-gray-200 dark:bg-gray-700"
-                                                                }`}
+                                                            <div
+                                                                key={i}
+                                                                className={`h-1 flex-1 rounded-full transition-all duration-300 ${color}`}
                                                             />
                                                         );
                                                     })}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground mt-1">
-                                                    {password.length < 8 
-                                                        ? "Password should be at least 8 characters" 
-                                                        : !(/(?=.*[a-z])(?=.*[A-Z])/.test(password))
-                                                        ? "Add lowercase and uppercase letters"
-                                                        : !(/(?=.*\d)/.test(password))
-                                                        ? "Add at least one number"
-                                                        : "Strong password!"}
+                                                <div className="text-xs text-muted-foreground mt-1 transition-all duration-300">
+                                                    {(() => {
+                                                        const hasLowercase = /[a-z]/.test(password);
+                                                        const hasUppercase = /[A-Z]/.test(password);
+                                                        const hasNumber = /\d/.test(password);
+                                                        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
+                                                        const hasLongLength = password.length >= 12;
+
+                                                        if (password.length < 1) {
+                                                            return "Enter a password";
+                                                        } else if (password.length < 8) {
+                                                            return <span className="text-red-500 font-medium">Weak: Password should be at least 8 characters</span>;
+                                                        } else if (!hasLowercase || !hasUppercase || !hasNumber) {
+                                                            return <span className="text-amber-500 font-medium">Good: Add lowercase, uppercase letters and numbers</span>;
+                                                        } else if (!hasSpecialChar || !hasLongLength) {
+                                                            return <span className="text-green-500 font-medium">Strong password!</span>;
+                                                        } else {
+                                                            return <span className="text-purple-500 font-medium">Very Strong: Perfect password!</span>;
+                                                        }
+                                                    })()}
                                                 </div>
                                             </motion.div>
                                         )}
@@ -502,12 +529,11 @@ export function SignUpForm() {
                                         {loading ? (
                                             <div className="flex items-center justify-center">
                                                 <Loader className="h-5 w-5 mr-2 animate-spin" />
-                                                <span>Creating account...</span>
+                                                <ShinyText text="Creating account..." disabled={false} speed={4} className='' />
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center">
-                                                <span className="mr-1">Create Account</span>
-                                                <ArrowRight className="h-4 w-4 ml-1" />
+                                                <ShinyText text="Sign Up!" disabled={false} speed={2} className='' />
                                             </div>
                                         )}
                                     </Button>
