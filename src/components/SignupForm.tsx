@@ -4,14 +4,16 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Card, CardContent, CardHeader, CardDescription } from "./ui/card";
+import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "./ui/card";
 import SplitText from "./ui/SplitText";
 import Aurora from "./ui/AuroraBG.tsx";
 import ShinyText from "./ui/ShinyText.tsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
-import { Loader } from "lucide-react";
+import { Loader, User, Mail, Lock, Check, Info, ArrowRight, UserCheck } from "lucide-react";
 import Logo from "./Logo";
+import { Badge } from "./ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip.tsx";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -100,6 +102,7 @@ export function SignUpForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Validation state variables
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -237,119 +240,321 @@ export function SignUpForm() {
                 amplitude={1.0}
                 speed={0.7}
             />
+            
+            {/* Logo in top left corner */}
+            <motion.div 
+                className="absolute top-6 left-6 z-50"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+            >
+                <Logo size={40} showText={true} />
+            </motion.div>
+            
             <div className="absolute inset-0 flex items-center justify-center min-h-screen z-50">
                 <div className="max-w-md w-full px-4">
-                    <Card>
-                        <CardHeader className="text-center">
-                            <SplitText
-                                text="Create an Account"
-                                className="text-2xl font-semibold text-center"
-                                delay={70}
-                                animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
-                                animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
-                                easing="easeOutCubic"
-                                threshold={0.2}
-                                rootMargin="-50px"
-                                onLetterAnimationComplete={handleAnimationComplete}
-                            />
-                            <CardDescription>
-                                Please fill in the details to get started.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {error && (
-                                <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
-                                    <AlertTitle>Registration failed</AlertTitle>
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <Card className="backdrop-blur-sm border border-white/20 shadow-xl overflow-hidden">
+                            <CardHeader className="text-center pb-3">
+                                <div className="mx-auto mb-2">
+                                    <Badge variant="outline" className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                                        Join Us Today!
+                                    </Badge>
+                                </div>
+                                <SplitText
+                                    text="Create an Account"
+                                    className="text-2xl font-semibold text-center"
+                                    delay={70}
+                                    animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+                                    animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+                                    easing="easeOutCubic"
+                                    threshold={0.2}
+                                    rootMargin="-50px"
+                                    onLetterAnimationComplete={handleAnimationComplete}
+                                />
+                                <CardDescription className="mt-2 text-muted-foreground">
+                                    Start your productivity journey today
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pb-4">
+                                <AnimatePresence mode="wait">
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <Alert variant="destructive" className="mb-4">
+                                                <AlertTitle className="flex items-center">
+                                                    <Info className="h-4 w-4 mr-2" />
+                                                    Registration failed
+                                                </AlertTitle>
+                                                <AlertDescription>{error}</AlertDescription>
+                                            </Alert>
+                                        </motion.div>
+                                    )}
 
-                            {success && (
-                                <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
-                                    <AlertTitle>Registration successful</AlertTitle>
-                                    <AlertDescription>{success}</AlertDescription>
-                                </Alert>
-                            )}
+                                    {success && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <Alert variant="success" className="mb-4 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                                <AlertTitle className="flex items-center">
+                                                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                                                    Registration successful
+                                                </AlertTitle>
+                                                <AlertDescription>{success}</AlertDescription>
+                                            </Alert>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
-                            <form onSubmit={handleSignUp} className="grid gap-6">
-                                <div>
-                                    <Label htmlFor="username" className="block text-sm font-medium mb-2">
-                                        Username:
-                                    </Label>
-                                    <Input
-                                        type="text"
-                                        id="username"
-                                        placeholder="Enter your username"
-                                        value={username}
-                                        onChange={handleUsernameChange}
-                                        className={usernameError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                                        required
-                                    />
-                                    {usernameError && (
-                                        <p className="text-red-500 text-xs mt-1">{usernameError}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <Label htmlFor="email" className="block text-sm font-medium mb-2">
-                                        Email:
-                                    </Label>
-                                    <Input
-                                        type="email"
-                                        id="email"
-                                        placeholder="Enter your email"
-                                        value={email}
-                                        onChange={handleEmailChange}
-                                        className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                                        required
-                                    />
-                                    {emailError && (
-                                        <p className="text-red-500 text-xs mt-1">{emailError}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <Label htmlFor="password" className="block text-sm font-medium mb-2">
-                                        Password:
-                                    </Label>
-                                    <Input
-                                        type="password"
-                                        id="password"
-                                        placeholder="Enter your password"
-                                        value={password}
-                                        onChange={handlePasswordChange}
-                                        className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                                        required
-                                    />
-                                    {passwordError && (
-                                        <p className="text-red-500 text-xs mt-1">{passwordError}</p>
-                                    )}
-                                </div>
-                                <Button
-                                    type="submit"
-                                    disabled={loading || !!usernameError || !!emailError || !!passwordError}
-                                    className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-gray-800 active:scale-95 transition-transform duration-75"
-                                >
-                                    {loading ? (
-                                        <div className="flex items-center justify-center">
-                                            <Loader className="h-5 w-5 mr-2 animate-spin" />
-                                            <span>Creating account...</span>
+                                <form onSubmit={handleSignUp} className="grid gap-5">
+                                    <div>
+                                        <Label 
+                                            htmlFor="username" 
+                                            className="text-sm font-medium flex items-center mb-1"
+                                        >
+                                            <User className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                            Username
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                type="text"
+                                                id="username"
+                                                placeholder="Choose a username"
+                                                value={username}
+                                                onChange={handleUsernameChange}
+                                                className={`pl-3 pr-3 py-2 h-10 ${usernameError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
+                                                required
+                                            />
+                                            <AnimatePresence>
+                                                {username && !usernameError && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.5 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.5 }}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                                                    >
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
-                                    ) : (
-                                        <ShinyText text="Sign Up!" disabled={false} speed={2} className='' />
-                                    )}
-                                </Button>
-                                <div className="text-center text-sm">
-                                    Already have an account?{" "}
-                                    <Link to="/login" className="text-blue-500 underline underline-offset-4">
-                                        Login
-                                    </Link>
+                                        <AnimatePresence>
+                                            {usernameError && (
+                                                <motion.p 
+                                                    className="text-sm text-red-500 mt-1"
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                >
+                                                    {usernameError}
+                                                </motion.p>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                    <div>
+                                        <Label 
+                                            htmlFor="email" 
+                                            className="text-sm font-medium flex items-center mb-1"
+                                        >
+                                            <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                            Email address
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                type="email"
+                                                id="email"
+                                                placeholder="you@example.com"
+                                                value={email}
+                                                onChange={handleEmailChange}
+                                                className={`pl-3 pr-3 py-2 h-10 ${emailError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
+                                                required
+                                            />
+                                            <AnimatePresence>
+                                                {email && !emailError && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.5 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.5 }}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                                                    >
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                        <AnimatePresence>
+                                            {emailError && (
+                                                <motion.p 
+                                                    className="text-sm text-red-500 mt-1"
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                >
+                                                    {emailError}
+                                                </motion.p>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                    <div>
+                                        <Label 
+                                            htmlFor="password" 
+                                            className="text-sm font-medium flex items-center mb-1"
+                                        >
+                                            <Lock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                            Password
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                type={showPassword ? "text" : "password"}
+                                                id="password"
+                                                placeholder="Create a secure password"
+                                                value={password}
+                                                onChange={handlePasswordChange}
+                                                className={`pl-3 pr-10 py-2 h-10 ${passwordError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                            >
+                                                {showPassword ? (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <AnimatePresence>
+                                            {passwordError && (
+                                                <motion.p 
+                                                    className="text-sm text-red-500 mt-1"
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                >
+                                                    {passwordError}
+                                                </motion.p>
+                                            )}
+                                        </AnimatePresence>
+                                        {/* Password strength indicator */}
+                                        {password && !passwordError && (
+                                            <motion.div 
+                                                className="mt-2"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                <div className="flex gap-1">
+                                                    {Array.from({ length: 4 }).map((_, i) => {
+                                                        const passLen = password.length;
+                                                        const isActive = 
+                                                            i === 0 ? passLen >= 1 : 
+                                                            i === 1 ? passLen >= 8 : 
+                                                            i === 2 ? /(?=.*[a-z])(?=.*[A-Z])/.test(password) : 
+                                                            /(?=.*\d)/.test(password);
+                                                        
+                                                        return (
+                                                            <div 
+                                                                key={i} 
+                                                                className={`h-1 flex-1 rounded-full transition-colors ${
+                                                                    isActive 
+                                                                        ? i < 2 ? "bg-amber-500" : "bg-green-500"
+                                                                        : "bg-gray-200 dark:bg-gray-700"
+                                                                }`}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {password.length < 8 
+                                                        ? "Password should be at least 8 characters" 
+                                                        : !(/(?=.*[a-z])(?=.*[A-Z])/.test(password))
+                                                        ? "Add lowercase and uppercase letters"
+                                                        : !(/(?=.*\d)/.test(password))
+                                                        ? "Add at least one number"
+                                                        : "Strong password!"}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        disabled={loading || !!usernameError || !!emailError || !!passwordError}
+                                        className="w-full h-10 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md active:scale-95 transition-transform duration-75"
+                                    >
+                                        {loading ? (
+                                            <div className="flex items-center justify-center">
+                                                <Loader className="h-5 w-5 mr-2 animate-spin" />
+                                                <span>Creating account...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center">
+                                                <span className="mr-1">Create Account</span>
+                                                <ArrowRight className="h-4 w-4 ml-1" />
+                                            </div>
+                                        )}
+                                    </Button>
+                                    <div className="text-center text-sm mt-2">
+                                        <span className="text-muted-foreground">Already have an account?</span>{" "}
+                                        <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors">
+                                            Sign in
+                                        </Link>
+                                    </div>
+                                </form>
+                            </CardContent>
+                            <CardFooter className="bg-gray-50 dark:bg-gray-800/50 pt-5 pb-5 px-6 border-t border-gray-100 dark:border-gray-800">
+                                <div className="text-center justify-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary w-full">
+                                    <TooltipProvider>
+                                        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                                            By signing up, you agree to our{" "}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <a href="#" className="hover:text-primary transition-colors">
+                                                        Terms of Service
+                                                    </a>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="w-60 text-xs">
+                                                        Our terms of service outline the rules and guidelines for using TaskMind AI.
+                                                    </p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            {" and "}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <a href="#" className="hover:text-primary transition-colors">
+                                                        Privacy Policy
+                                                    </a>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="w-60 text-xs">
+                                                        Our privacy policy explains how we collect, use, and protect your personal information.
+                                                    </p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                    </TooltipProvider>
                                 </div>
-                            </form>
-                            <div className="text-center text-xs text-muted-foreground mt-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-                                By signing up, you agree to our <a href="#">Terms of Service</a>{" "}
-                                and <a href="#">Privacy Policy</a>.
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardFooter>
+                        </Card>
+                    </motion.div>
                 </div>
             </div>
         </div>

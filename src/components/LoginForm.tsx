@@ -17,11 +17,21 @@ import { getUserIP } from "../services/ipService.ts";
 import Aurora from "./ui/AuroraBG.tsx";
 import { TodoAIIntro } from "./TodoAIIntro";
 import ShinyText from './ui/ShinyText.tsx';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { recordSession } from '../lib/sessionUtils';
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader } from "lucide-react";
 import Logo from "./Logo";
+import {
+    Github,
+    Mail,
+    Lock,
+    Check,
+    ArrowRight,
+    Info
+} from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Badge } from "./ui/badge";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -111,6 +121,7 @@ export function LoginForm({
     const [errorMessage, setErrorMessage] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const validateEmail = (value: string) => {
@@ -220,15 +231,36 @@ export function LoginForm({
                 amplitude={1.0}
                 speed={0.7}
             />
+
+            {/* Logo in top left corner */}
+            <motion.div
+                className="absolute top-6 left-6 z-50"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+            >
+                <Logo size={40} showText={true} />
+            </motion.div>
+
             <div className={cn("flex-1 py-12 overflow-y-auto z-50", className)} {...props}>
                 <div className="container max-w-6xl mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {/* Login form column */}
-                        <div className="mb-8">
-                            <Card>
-                                <CardHeader className="text-center">
+                        <motion.div
+                            className="mb-8"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <Card className="backdrop-blur-sm border border-white/20 shadow-xl overflow-hidden">
+                                <CardHeader className="text-center pb-3">
+                                    <div className="mx-auto mb-2">
+                                        <Badge variant="outline" className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
+                                            Welcome Back!
+                                        </Badge>
+                                    </div>
                                     <SplitText
-                                        text="Hello, Welcome Back!"
+                                        text="Sign in to TaskMind"
                                         className="text-2xl font-semibold text-center"
                                         delay={70}
                                         animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
@@ -238,95 +270,187 @@ export function LoginForm({
                                         rootMargin="-50px"
                                         onLetterAnimationComplete={handleAnimationComplete}
                                     />
-                                    <CardDescription>
-                                        Login with your Apple or Google account
+                                    <CardDescription className="mt-2 text-muted-foreground">
+                                        Continue your productivity journey
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    {errorMessage && (
-                                        <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
-                                            <AlertTitle>Sign in failed</AlertTitle>
-                                            <AlertDescription>{errorMessage}</AlertDescription>
-                                        </Alert>
-                                    )}
+                                <CardContent className="pb-4">
+                                    <AnimatePresence mode="wait">
+                                        {errorMessage && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <Alert variant="destructive" className="mb-4">
+                                                    <AlertTitle className="flex items-center">
+                                                        <Info className="h-4 w-4 mr-2" />
+                                                        Sign in failed
+                                                    </AlertTitle>
+                                                    <AlertDescription>{errorMessage}</AlertDescription>
+                                                </Alert>
+                                            </motion.div>
+                                        )}
 
-                                    {successMessage && (
-                                        <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
-                                            <AlertTitle>Success</AlertTitle>
-                                            <AlertDescription>{successMessage}</AlertDescription>
-                                        </Alert>
-                                    )}
+                                        {successMessage && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <Alert variant="success" className="mb-4 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                                    <AlertTitle className="flex items-center">
+                                                        <Check className="h-4 w-4 mr-2 text-green-500" />
+                                                        Success
+                                                    </AlertTitle>
+                                                    <AlertDescription>{successMessage}</AlertDescription>
+                                                </Alert>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
                                     <form onSubmit={handleSignIn}>
-                                        <div className="grid gap-6">
-                                            <div className="flex flex-col gap-4">
-                                                <Button variant="outline" className="w-full" onClick={handleGithubSignIn} disabled={loading}>
-                                                    <svg viewBox="0 0 438.549 438.549" className="mr-2 h-4 w-4">
-                                                        <path
-                                                            fill="currentColor"
-                                                            d="M409.132 114.573c-19.608-33.596-46.205-60.194-79.798-79.8-33.598-19.607-70.277-29.408-110.063-29.408-39.781 0-76.472 9.804-110.063 29.408-33.596 19.605-60.192 46.204-79.8 79.8C9.803 148.168 0 184.854 0 224.63c0 47.78 13.94 90.745 41.827 128.906 27.884 38.164 63.906 64.572 108.063 79.227 5.14.954 8.945.283 11.419-1.996 2.475-2.282 3.711-5.14 3.711-8.562 0-.571-.049-5.708-.144-15.417a2549.81 2549.81 0 01-.144-25.406l-6.567 1.136c-4.187.767-9.469 1.092-15.846 1-6.374-.089-12.991-.757-19.842-1.999-6.854-1.231-13.229-4.086-19.13-8.559-5.898-4.473-10.085-10.328-12.56-17.556l-2.855-6.57c-1.903-4.374-4.899-9.233-8.992-14.559-4.093-5.331-8.232-8.945-12.419-10.848l-1.999-1.431c-1.332-.951-2.568-2.098-3.711-3.429-1.142-1.331-1.997-2.663-2.568-3.997-.572-1.335-.098-2.43 1.427-3.289 1.525-.859 4.281-1.276 8.28-1.276l5.708.853c3.807.763 8.516 3.042 14.133 6.851 5.614 3.806 10.229 8.754 13.846 14.842 4.38 7.806 9.657 13.754 15.846 17.847 6.184 4.093 12.419 6.136 18.699 6.136 6.28 0 11.704-.476 16.274-1.423 4.565-.952 8.848-2.383 12.847-4.285 1.713-12.758 6.377-22.559 13.988-29.41-10.848-1.14-20.601-2.857-29.264-5.14-8.658-2.286-17.605-5.996-26.835-11.14-9.235-5.137-16.896-11.516-22.985-19.126-6.09-7.614-11.088-17.61-14.987-29.979-3.901-12.374-5.852-26.648-5.852-42.826 0-23.035 7.52-42.637 22.557-58.817-7.044-17.318-6.379-36.732 1.997-58.24 5.52-1.715 13.706-.428 24.554 3.853 10.85 4.283 18.794 7.952 23.84 10.994 5.046 3.041 9.089 5.618 12.135 7.708 17.705-4.947 35.976-7.421 54.818-7.421s37.117 2.474 54.823 7.421l10.849-6.849c7.419-4.57 16.18-8.758 26.262-12.565 10.088-3.805 17.802-4.853 23.134-3.138 8.562 21.509 9.325 40.922 2.279 58.24 15.036 16.18 22.559 35.787 22.559 58.817 0 16.178-1.958 30.497-5.853 42.966-3.9 12.471-8.941 22.457-15.125 29.979-6.191 7.521-13.901 13.85-23.131 18.986-9.232 5.14-18.182 8.85-26.84 11.136-8.662 2.286-18.415 4.004-29.263 5.146 9.894 8.562 14.842 22.077 14.842 40.539v60.237c0 3.422 1.19 6.279 3.572 8.562 2.379 2.279 6.136 2.95 11.276 1.995 44.163-14.653 80.185-41.062 108.068-79.226 27.88-38.161 41.825-81.126 41.825-128.906-.01-39.771-9.818-76.454-29.414-110.049z"
-                                                        ></path>
-                                                    </svg>
-                                                    Login with GitHub
+                                        <div className="grid gap-5">
+                                            <div className="flex flex-col gap-3">
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full relative group overflow-hidden transition-all duration-300"
+                                                    onClick={handleGithubSignIn}
+                                                    disabled={loading}
+                                                >
+                                                    <motion.span
+                                                        className="absolute inset-0 bg-black/5 dark:bg-white/5 w-0 group-hover:w-full transition-all duration-300"
+                                                        initial={false}
+                                                        animate={{ width: loading ? "100%" : "0%" }}
+                                                    />
+                                                    <Github className="mr-2 h-4 w-4" />
+                                                    <span>Continue with GitHub</span>
                                                 </Button>
-                                                <Button variant="outline" className="w-full">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full relative group overflow-hidden transition-all duration-300"
+                                                >
+                                                    <motion.span
+                                                        className="absolute inset-0 bg-black/5 dark:bg-white/5 w-0 group-hover:w-full transition-all duration-300"
+                                                    />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                                                         <path
                                                             d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                                                             fill="currentColor"
                                                         />
                                                     </svg>
-                                                    Login with Google
+                                                    <span>Continue with Google</span>
                                                 </Button>
                                             </div>
                                             <div
                                                 className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-neutral-200 dark:after:border-neutral-800">
-                                                <span
-                                                    className="relative z-10 bg-white px-2 text-neutral-500 dark:bg-neutral-950 dark:text-neutral-400">
-                                                    Or continue with
+                                                <span className="relative z-10 bg-white px-2 text-neutral-500 dark:bg-neutral-950 dark:text-neutral-400">
+                                                    Or continue with email
                                                 </span>
                                             </div>
-                                            <div className="grid gap-6">
+                                            <div className="grid gap-5">
                                                 <div className="grid gap-2">
-                                                    <Label htmlFor="email">Email</Label>
-                                                    <Input
-                                                        id="email"
-                                                        type="email"
-                                                        placeholder="john.doe@example.com"
-                                                        value={email}
-                                                        onChange={handleEmailChange}
-                                                        className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                                                        required
-                                                    />
-                                                    {emailError && (
-                                                        <p className="text-sm text-red-500">{emailError}</p>
-                                                    )}
+                                                    <Label
+                                                        htmlFor="email"
+                                                        className="text-sm font-medium flex items-center mb-1"
+                                                    >
+                                                        <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                                        Email address
+                                                    </Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            id="email"
+                                                            type="email"
+                                                            placeholder="you@example.com"
+                                                            value={email}
+                                                            onChange={handleEmailChange}
+                                                            className={`pl-3 pr-3 py-2 h-10 ${emailError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
+                                                            required
+                                                        />
+                                                        {/* Status indicator */}
+                                                        <AnimatePresence>
+                                                            {email && !emailError && (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, scale: 0.5 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    exit={{ opacity: 0, scale: 0.5 }}
+                                                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                                                >
+                                                                    <Check className="h-4 w-4 text-green-500" />
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                    <AnimatePresence>
+                                                        {emailError && (
+                                                            <motion.p
+                                                                className="text-sm text-red-500 mt-1"
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                            >
+                                                                {emailError}
+                                                            </motion.p>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </div>
                                                 <div className="grid gap-2">
-                                                    <div className="flex items-center">
-                                                        <Label htmlFor="password">Password</Label>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <Label htmlFor="password" className="text-sm font-medium flex items-center">
+                                                            <Lock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                                            Password
+                                                        </Label>
                                                         <a
                                                             href="/password-reset-request"
-                                                            className="ml-auto text-sm underline-offset-4 hover:underline"
+                                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                                                         >
-                                                            Forgot your password?
+                                                            Forgot password?
                                                         </a>
                                                     </div>
-                                                    <Input
-                                                        id="password"
-                                                        type="password"
-                                                        value={password}
-                                                        onChange={handlePasswordChange}
-                                                        className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                                                        required
-                                                    />
-                                                    {passwordError && (
-                                                        <p className="text-sm text-red-500">{passwordError}</p>
-                                                    )}
+                                                    <div className="relative">
+                                                        <Input
+                                                            id="password"
+                                                            type={showPassword ? "text" : "password"}
+                                                            value={password}
+                                                            onChange={handlePasswordChange}
+                                                            className={`pl-3 pr-10 py-2 h-10 ${passwordError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                        >
+                                                            {showPassword ? (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    <AnimatePresence>
+                                                        {passwordError && (
+                                                            <motion.p
+                                                                className="text-sm text-red-500 mt-1"
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                            >
+                                                                {passwordError}
+                                                            </motion.p>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </div>
                                                 <Button
                                                     type="submit"
-                                                    className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-grey-700 active:scale-95 transition-transform duration-75"
+                                                    className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md active:scale-95 transition-transform duration-75"
                                                     disabled={loading}
                                                 >
                                                     {loading ? (
@@ -335,30 +459,66 @@ export function LoginForm({
                                                             <span>Signing in...</span>
                                                         </div>
                                                     ) : (
-                                                        <ShinyText text="Sign In!" disabled={false} speed={2} className='' />
+                                                        <div className="flex items-center justify-center">
+                                                            <span className="mr-1">Sign In</span>
+                                                            <ArrowRight className="h-4 w-4 ml-1" />
+                                                        </div>
                                                     )}
                                                 </Button>
                                             </div>
-                                            <div className="text-center text-sm">
-                                                Don&apos;t have an account?{" "}
-                                                <a href="/signup" className="underline underline-offset-4">
-                                                    Sign up
+                                            <div className="text-center text-sm mt-2">
+                                                <span className="text-muted-foreground">Don&apos;t have an account?</span>{" "}
+                                                <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors">
+                                                    Create one
                                                 </a>
                                             </div>
                                         </div>
                                     </form>
                                 </CardContent>
-                                <CardFooter>
-                                    <div className="text-center justify-center text-xs text-muted-foreground mt-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-                                        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                                        and <a href="#">Privacy Policy</a>.
+                                <CardFooter className="bg-gray-50 dark:bg-gray-800/50 pt-5 pb-5 px-6 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="text-center justify-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary w-full">
+                                        <TooltipProvider>
+                                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                                                By signing in, you agree to our{" "}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <a href="#" className="hover:text-primary transition-colors">
+                                                            Terms of Service
+                                                        </a>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="w-60 text-xs">
+                                                            Our terms of service outline the rules and guidelines for using TaskMind AI.
+                                                        </p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                {" and "}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <a href="#" className="hover:text-primary transition-colors">
+                                                            Privacy Policy
+                                                        </a>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="w-60 text-xs">
+                                                            Our privacy policy explains how we collect, use, and protect your personal information.
+                                                        </p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        </TooltipProvider>
                                     </div>
                                 </CardFooter>
                             </Card>
-                        </div>
-                        <div className="hidden md:block mb-8">
+                        </motion.div>
+                        <motion.div
+                            className="hidden md:block mb-8"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
                             <TodoAIIntro />
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </div>
