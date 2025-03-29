@@ -23,6 +23,7 @@ import ProductivityTrends from "./components/ProductivityTrends.tsx";
 import Footer from "./components/ui/Footer";
 import { useSessionRecording } from './hooks/useSessionRecording';
 import { RunDatabaseMigration } from './db/RunDatabaseMigration';
+import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -34,12 +35,42 @@ const App: React.FC = () => {
     const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
 
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             if (session) {
                 sessionStorage.setItem("token", session.access_token || "");
                 setUserToken(session.access_token || "");
                 setIsDataLoaded(false);
+
+                // Start session operations in the background without waiting or blocking app loading
+                (async () => {
+                    try {
+                        // Longer timeout (10 seconds) that won't block the app
+                        const timeoutPromise = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Session initialization timed out')), 10000)
+                        );
+
+                        // Race between normal initialization and timeout
+                        await Promise.race([
+                            (async () => {
+                                // Check for existing session or create a new one
+                                await checkExistingSession();
+
+                                // Clean up any duplicate sessions for this user on this device
+                                if (session.user?.id) {
+                                    await cleanupDuplicateSessions(session.user.id);
+                                }
+                            })(),
+                            timeoutPromise
+                        ]);
+                    } catch (error) {
+                        // Log but don't block the app
+                        console.warn('Session initialization background task:', error);
+                    }
+                })();
+
+                // Continue loading the app immediately without waiting for session operations
+                // Tasks will still load based on the loadData function result
             } else {
                 setIsDataLoaded(true);
             }

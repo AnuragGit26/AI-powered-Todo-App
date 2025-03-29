@@ -11,10 +11,25 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     -- IP address
     device_type TEXT,
     -- Desktop, Mobile, Tablet, etc.
-    location TEXT -- Optional location information
+    location TEXT,
+    -- Optional location information
+    device_fingerprint TEXT -- Unique device identifier
 );
+-- Ensure we have the device_fingerprint column (this is idempotent, runs only if column doesn't exist)
+DO $$ BEGIN IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'user_sessions'
+        AND column_name = 'device_fingerprint'
+) THEN
+ALTER TABLE user_sessions
+ADD COLUMN device_fingerprint TEXT;
+END IF;
+END $$;
 -- Create index for faster lookups by user_id
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+-- Create index for faster lookups by device_fingerprint 
+CREATE INDEX IF NOT EXISTS idx_user_sessions_device_fingerprint ON user_sessions(device_fingerprint);
 -- Create a trigger to automatically clean up expired sessions (older than 30 days)
 CREATE OR REPLACE FUNCTION clean_expired_sessions() RETURNS TRIGGER AS $$ BEGIN
 DELETE FROM user_sessions

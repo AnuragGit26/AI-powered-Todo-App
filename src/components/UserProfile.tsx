@@ -92,11 +92,11 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                         email: user.email || '',
                         username: localStorage.getItem('username') || '',
                         bio: userBio,
-                        profilePicture: user.user_metadata?.profile_picture || ''
+                        profilePicture: localStorage.getItem('profilePicture') || user.user_metadata?.profile_picture || ''
                     });
                     setNewUsername(localStorage.getItem('username') || '');
                     setPhoneNumber(user.phone || '');
-                    setProfilePicture(user.user_metadata?.profile_picture || '');
+                    setProfilePicture(localStorage.getItem('profilePicture') || user.user_metadata?.profile_picture || '');
                     setBio(userBio);
                 }
             } catch (error) {
@@ -117,7 +117,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                     .select('*')
                     .eq('user_id', userId)
                     .order('timestamp', { ascending: false })
-                    .limit(5);
+                    .limit(7);
                 if (error) throw error;
                 setActivityLogs(data);
             } catch (error) {
