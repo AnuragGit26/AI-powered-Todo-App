@@ -5,14 +5,12 @@ export const Footer: React.FC = () => {
     const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
     useEffect(() => {
-        // Update online status when it changes
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Clean up event listeners on unmount
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);

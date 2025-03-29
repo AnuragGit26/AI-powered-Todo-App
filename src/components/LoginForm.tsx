@@ -18,12 +18,15 @@ import Aurora from "./ui/AuroraBG.tsx";
 import { TodoAIIntro } from "./TodoAIIntro";
 import ShinyText from './ui/ShinyText.tsx';
 import { motion } from "framer-motion";
+import { recordSession } from '../lib/sessionUtils';
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
+import { Loader } from "lucide-react";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const ModernFooter = () => {
     return (
-        <motion.footer 
+        <motion.footer
             className="w-full py-8 backdrop-blur-sm bg-white/10 border-t dark:border-white/20"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -37,7 +40,7 @@ const ModernFooter = () => {
                             <div className="w-8 h-8 mr-2 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                                 <span className="text-white font-bold text-sm">T</span>
                             </div>
-                            <h3 className="text-lg font-semibold">TodoAI</h3>
+                            <h3 className="text-lg font-semibold">TaskMind AI</h3>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2 max-w-xs">
                             Revolutionizing task management with AI-powered organization and insights.
@@ -102,18 +105,66 @@ const ModernFooter = () => {
 };
 
 export function LoginForm({
-                              className,
-                              ...props
-                          }: React.ComponentPropsWithoutRef<"div">) {
+    className,
+    ...props
+}: React.ComponentPropsWithoutRef<"div">) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
     const navigate = useNavigate();
+
+    const validateEmail = (value: string) => {
+        if (!value.trim()) {
+            setEmailError("Email is required");
+            return false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            setEmailError("Please enter a valid email address");
+            return false;
+        }
+
+        setEmailError("");
+        return true;
+    };
+
+    const validatePassword = (value: string) => {
+        if (!value.trim()) {
+            setPasswordError("Password is required");
+            return false;
+        }
+
+        if (value.length < 6) {
+            setPasswordError("Password must be at least 6 characters");
+            return false;
+        }
+
+        setPasswordError("");
+        return true;
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setEmail(value);
+        if (emailError) validateEmail(value);
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPassword(value);
+        if (passwordError) validatePassword(value);
+    };
 
     const handleGithubSignIn = async () => {
         setLoading(true);
+        setErrorMessage("");
+        setSuccessMessage("");
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
         });
@@ -128,9 +179,19 @@ export function LoginForm({
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate inputs before submission
+        const isEmailValid = validateEmail(email);
+        const isPasswordValid = validatePassword(password);
+
+        if (!isEmailValid || !isPasswordValid) {
+            return;
+        }
+
         setLoading(true);
         setErrorMessage("");
         setSuccessMessage("");
+
         const { error } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
@@ -139,13 +200,13 @@ export function LoginForm({
         if (error) {
             setErrorMessage('Error signing in: ' + error.message);
         } else {
-
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const ipAddress= await getUserIP();
+                const ipAddress = await getUserIP();
                 await logActivity(user.id, 'User logged in');
                 await updateUsageMetrics(user.id, { last_login: new Date(), total_logins_inc: 1, ip_address: ipAddress });
             }
+            await recordSession();
             setSuccessMessage('Successfully signed in!');
             navigate("/");
         }
@@ -186,6 +247,20 @@ export function LoginForm({
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
+                                    {errorMessage && (
+                                        <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
+                                            <AlertTitle>Sign in failed</AlertTitle>
+                                            <AlertDescription>{errorMessage}</AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    {successMessage && (
+                                        <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
+                                            <AlertTitle>Success</AlertTitle>
+                                            <AlertDescription>{successMessage}</AlertDescription>
+                                        </Alert>
+                                    )}
+
                                     <form onSubmit={handleSignIn}>
                                         <div className="grid gap-6">
                                             <div className="flex flex-col gap-4">
@@ -223,9 +298,13 @@ export function LoginForm({
                                                         type="email"
                                                         placeholder="john.doe@example.com"
                                                         value={email}
-                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        onChange={handleEmailChange}
+                                                        className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                                         required
                                                     />
+                                                    {emailError && (
+                                                        <p className="text-sm text-red-500">{emailError}</p>
+                                                    )}
                                                 </div>
                                                 <div className="grid gap-2">
                                                     <div className="flex items-center">
@@ -241,31 +320,29 @@ export function LoginForm({
                                                         id="password"
                                                         type="password"
                                                         value={password}
-                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        onChange={handlePasswordChange}
+                                                        className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                                         required
                                                     />
+                                                    {passwordError && (
+                                                        <p className="text-sm text-red-500">{passwordError}</p>
+                                                    )}
                                                 </div>
-                                                <Button type="submit" className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-grey-700 active:scale-95 transition-transform duration-75" disabled={loading}>
+                                                <Button
+                                                    type="submit"
+                                                    className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-grey-700 active:scale-95 transition-transform duration-75"
+                                                    disabled={loading}
+                                                >
                                                     {loading ? (
-                                                        <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                                        </svg>
+                                                        <div className="flex items-center justify-center">
+                                                            <Loader className="h-5 w-5 mr-2 animate-spin" />
+                                                            <span>Signing in...</span>
+                                                        </div>
                                                     ) : (
-                                                        <ShinyText text="Sign In!" disabled={false} speed={2}  className=''/>
+                                                        <ShinyText text="Sign In!" disabled={false} speed={2} className='' />
                                                     )}
                                                 </Button>
                                             </div>
-                                            {successMessage && (
-                                                <div className="text-center text-green-500">
-                                                    {successMessage}
-                                                </div>
-                                            )}
-                                            {errorMessage && (
-                                                <div className="text-center text-red-500">
-                                                    {errorMessage}
-                                                </div>
-                                            )}
                                             <div className="text-center text-sm">
                                                 Don&apos;t have an account?{" "}
                                                 <a href="/signup" className="underline underline-offset-4">
@@ -289,7 +366,7 @@ export function LoginForm({
                     </div>
                 </div>
             </div>
-            
+
             {/* Modern Footer */}
             <ModernFooter />
         </div>

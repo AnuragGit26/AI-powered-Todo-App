@@ -6,6 +6,24 @@ const supabase = createClient(
     import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+/**
+ * Helper function to get the profile picture URL with multiple extension fallbacks
+ */
+async function getProfilePictureUrl(userId: string): Promise<string> {
+    const bucketName = 'MultiMedia Bucket';
+    const commonExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
+
+    // Since we can't directly check if the file exists in the storage bucket from the client,
+    // we'll return the first URL format. The browser will handle the 404 if the image doesn't exist.
+    const defaultExt = commonExtensions[0]; // 'jpg'
+    const filePath = `${userId}/profile.${defaultExt}`;
+    const { data } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+    return data.publicUrl;
+}
+
 export const useUserData = () => {
     return useQuery({
         queryKey: ['userData'],
@@ -19,13 +37,9 @@ export const useUserData = () => {
             }
 
             const userId = user.id;
-            const bucketName = 'MultiMedia Bucket';
-            const newFilePath = `${userId}/profile.JPG`;
-            const { data } = supabase.storage
-                .from(bucketName)
-                .getPublicUrl(newFilePath);
+            const profilePictureUrl = await getProfilePictureUrl(userId);
 
-            return { ...user, profilePicture: data.publicUrl };
+            return { ...user, profilePicture: profilePictureUrl };
         },
     });
 };

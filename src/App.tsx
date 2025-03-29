@@ -21,14 +21,17 @@ import SplitText from "./components/ui/SplitText.jsx";
 import TaskAnalytics from "./components/TaskAnalytics.jsx";
 import ProductivityTrends from "./components/ProductivityTrends.tsx";
 import Footer from "./components/ui/Footer";
+import { useSessionRecording } from './hooks/useSessionRecording';
+import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos, setUserToken, setUserData } = useTodoStore();
+    const { setTodos, setUserToken } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,9 +48,53 @@ const App: React.FC = () => {
     }, [setUserToken]);
 
     useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                localStorage.setItem("username", user.user_metadata.username);
+                localStorage.setItem("userId", user.id);
+                setUserData({ userId: user.id, username: user.user_metadata.username });
+            }
+        };
+        fetchUser();
+        const fetchProfileImage = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user?.id;
+            if (!userId) return;
+
+            const bucketName = "MultiMedia Bucket";
+
+            // Try lowercase first (the standard we're using when uploading)
+            const filePath = `${userId}/profile.jpg`;
+            const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+
+            // Store the URL in localStorage - the browser will handle if the image 
+            // doesn't exist (will show the fallback avatar in the UI)
+            localStorage.setItem("profilePicture", data.publicUrl);
+            setUserData(prev => ({ ...prev, userId, profilePicture: data.publicUrl }));
+        };
+        fetchProfileImage();
+    }, [setUserData]);
+
+    useEffect(() => {
         if (!session) return;
         const loadData = async () => {
             try {
+                // Get current userId to ensure it's available at fetch time
+                const userId = localStorage.getItem('userId');
+
+                if (!userId) {
+                    // If userId is not available yet, try to get it from session
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        localStorage.setItem("userId", user.id);
+                    } else {
+                        console.error("User ID not available");
+                        setIsDataLoaded(true);
+                        return;
+                    }
+                }
+
                 const tasks = await fetchTasks();
                 const tasksWithSubtasks = await Promise.all(
                     (tasks || []).map(async (task) => {
@@ -63,31 +110,7 @@ const App: React.FC = () => {
             }
         };
         loadData();
-    }, [session, setTodos]);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                localStorage.setItem("username", user.user_metadata.username);
-                localStorage.setItem("userId", user.id);
-                setUserData({ userId: user.id, username: user.user_metadata.username });
-            }
-        };
-        fetchUser();
-        const fetchProfileImage = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user?.id;
-            const bucketName = "MultiMedia Bucket";
-            const newFilePath = `${userId}/profile.JPG`;
-            if (userId) {
-                const { data } = supabase.storage.from(bucketName).getPublicUrl(newFilePath);
-                localStorage.setItem("profilePicture", data.publicUrl);
-                setUserData({ userId, profilePicture: data.publicUrl });
-            }
-        };
-        fetchProfileImage();
-    }, [setUserData]);
+    }, [session, setTodos, userData.userId]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
@@ -97,10 +120,13 @@ const App: React.FC = () => {
         console.log("All letters have animated!");
     };
 
+    // Record user sessions when logged in
+    useSessionRecording();
+
     if (!isDataLoaded) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-                <p className="text-xl text-gray-700 dark:text-gray-300">
+                <div className="text-xl text-gray-700 dark:text-gray-300">
                     <SplitText
                         text="Getting things ready for you....!"
                         className="text-2xl font-semibold text-center"
@@ -112,16 +138,16 @@ const App: React.FC = () => {
                         rootMargin="-50px"
                         onLetterAnimationComplete={handleAnimationComplete}
                     />
-                </p>
+                </div>
             </div>
         );
     }
 
     return (
         <Routes>
-            <Route path="/login" element={<><LoginForm /><Footer /></>} />
-            <Route path="/signup" element={<><SignUpForm /><Footer /></>} />
-            <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Footer /></>} />
+            <Route path="/login" element={<><LoginForm /><Toaster /></>} />
+            <Route path="/signup" element={<><SignUpForm /><Toaster /></>} />
+            <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Toaster /></>} />
             <Route
                 path="/profile"
                 element={
@@ -141,6 +167,7 @@ const App: React.FC = () => {
                             />
                             <UserProfile />
                             <Footer />
+                            <Toaster />
                         </div>
                     </ProtectedRoute>
                 }
@@ -187,7 +214,12 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                 }
             />
-            <Route path="*" element={<><NotFound /><Footer /></>} />
+            <Route path="/admin/migration" element={
+                <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                    <RunDatabaseMigration />
+                </ProtectedRoute>
+            } />
+            <Route path="*" element={<><NotFound /><Toaster /></>} />
         </Routes>
     );
 };

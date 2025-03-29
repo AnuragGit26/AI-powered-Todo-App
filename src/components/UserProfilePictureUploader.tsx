@@ -2,7 +2,7 @@ import React, { useState, useEffect, ChangeEvent } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import {useMetrics} from "../hooks/useMetrics.ts";
+import { useMetrics } from "../hooks/useMetrics.ts";
 
 
 const supabase = createClient(
@@ -12,13 +12,11 @@ const supabase = createClient(
 
 interface UserProfilePictureUploaderProps {
     onUploadSuccess?: () => void;
-    oldFilePath?: string;
 }
 
 const UserProfilePictureUploader: React.FC<UserProfilePictureUploaderProps> = ({
-                                                                                   onUploadSuccess,
-                                                                                   oldFilePath,
-                                                                               }) => {
+    onUploadSuccess,
+}) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -38,18 +36,21 @@ const UserProfilePictureUploader: React.FC<UserProfilePictureUploaderProps> = ({
     useEffect(() => {
         const fetchProfileImage = async () => {
             const userId = await getUserId();
-            const newFilePath = `${userId}/profile.jpg`;
             if (userId) {
+                const filePath = `${userId}/profile.jpg`;
                 const { data } = supabase.storage
                     .from(bucketName)
-                    .getPublicUrl(newFilePath);
+                    .getPublicUrl(filePath);
                 setPreview(data.publicUrl);
             }
         };
         fetchProfileImage();
     }, []);
+
     useEffect(() => {
-        localStorage.setItem('profilePicture',preview);
+        if (preview) {
+            localStorage.setItem('profilePicture', preview);
+        }
     }, [preview]);
 
     // When a file is selected, update state and show a temporary local preview.
@@ -74,22 +75,20 @@ const UserProfilePictureUploader: React.FC<UserProfilePictureUploaderProps> = ({
         }
 
         try {
-            // Delete the old file if oldFilePath exists.
-            const oldFileName = `profile.jpg`;
-            const oldFilePath = `${userId}/${oldFileName}`
-            if (oldFilePath) {
-                const { error: deleteError } = await supabase.storage
+            // Try to delete any potential existing profile images with different extensions
+            const commonExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
+            for (const ext of commonExtensions) {
+                const oldFilePath = `${userId}/profile.${ext}`;
+                await supabase.storage
                     .from(bucketName)
-                    .remove([oldFilePath]);
-                if (deleteError) {
-                    console.error("Error deleting old file:", deleteError);
-                    // Continue to upload even if deletion fails.
-                }
+                    .remove([oldFilePath])
+                    .catch(() => {
+                        // Ignore errors if file doesn't exist
+                    });
             }
 
-            // Generate a unique filename.
-            const fileExt = file.name.split(".").pop();
-            const newFileName = `profile.${fileExt}`;
+            // Always save as jpg for consistency with App.tsx and useUserData.ts
+            const newFileName = `profile.jpg`;
             const newFilePath = `${userId}/${newFileName}`;
 
             // Upload the new file.
@@ -106,6 +105,10 @@ const UserProfilePictureUploader: React.FC<UserProfilePictureUploaderProps> = ({
                 .from(bucketName)
                 .getPublicUrl(newFilePath);
             setPreview(data.publicUrl);
+
+            // Save to localStorage for immediate use across the app
+            localStorage.setItem('profilePicture', data.publicUrl);
+
             setUploadSuccess(true);
             logUserActivity(userId, "User updated profile picture");
 

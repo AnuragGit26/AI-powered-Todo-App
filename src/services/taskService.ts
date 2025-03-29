@@ -1,13 +1,10 @@
-import type {SubTodo, Todo} from '../types';
+import type { SubTodo, Todo } from '../types';
 import { createClient } from '@supabase/supabase-js';
-import {useTodoStore} from "../store/todoStore.ts";
-import {logActivity} from "./activityMetrics.ts";
+import { useTodoStore } from "../store/todoStore.ts";
+import { logActivity } from "./activityMetrics.ts";
 
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
-
-const  userId=localStorage.getItem('userId');
-
 
 export const getTaskById = (id: string): Todo | undefined => {
     const todos = useTodoStore.getState().todos;
@@ -25,7 +22,14 @@ export const getTaskById = (id: string): Todo | undefined => {
     }
     return undefined;
 };
+
 export const fetchTasks = async () => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error("User ID not available for fetching tasks");
+        return null;
+    }
+
     const { data, error } = await supabase
         .from('tasks')
         .select('*').eq('userId', userId);
@@ -35,7 +39,7 @@ export const fetchTasks = async () => {
 };
 
 export const createTask = async (task: Todo) => {
-    const {error } = await supabase
+    const { error } = await supabase
         .from('tasks')
         .insert([task]);
 
@@ -43,12 +47,21 @@ export const createTask = async (task: Todo) => {
         console.error('Error creating task:', error);
     } else {
         console.log('Task created:', task.id);
-        await logActivity(localStorage.getItem('userId'),`Task Created ${task.title}`);
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            await logActivity(userId, `Task Created ${task.title}`);
+        }
     }
 };
 
 export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
-    const {error } = await supabase
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error("User ID not available for updating task");
+        return;
+    }
+
+    const { error } = await supabase
         .from('tasks')
         .update(updates)
         .eq('id', taskId).eq('userId', userId);
@@ -63,7 +76,13 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
 };
 
 export const deleteTask = async (taskId: string) => {
-    const {error } = await supabase
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error("User ID not available for deleting task");
+        return;
+    }
+
+    const { error } = await supabase
         .from('tasks')
         .delete()
         .eq('id', taskId).eq('userId', userId);
@@ -72,7 +91,7 @@ export const deleteTask = async (taskId: string) => {
         console.error('Error deleting task:', error);
     } else {
         console.log('Task deleted:', taskId);
-        await logActivity(localStorage.getItem('userId'),`Task Deleted ${taskId}`);
+        await logActivity(userId, `Task Deleted ${taskId}`);
     }
 };
 
@@ -87,7 +106,7 @@ export const fetchSubtasks = async (parentId: string) => {
 };
 
 export const createSubtask = async (subtask: Partial<SubTodo>) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from('subtasks')
         .insert([subtask]);
 
@@ -95,12 +114,21 @@ export const createSubtask = async (subtask: Partial<SubTodo>) => {
         console.error('Error creating subtask:', error);
     } else {
         console.log('Subtask created:', subtask.id);
-        await logActivity(localStorage.getItem('userId'),`SubTask Created ${subtask?.id}`);
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            await logActivity(userId, `SubTask Created ${subtask?.id}`);
+        }
     }
 };
 
 export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) => {
-    const {error } = await supabase
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error("User ID not available for updating subtask");
+        return;
+    }
+
+    const { error } = await supabase
         .from('subtasks')
         .update(updates)
         .eq('id', subtaskId);
@@ -108,14 +136,20 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
     if (error) {
         console.error('Error updating subtask:', error);
     } else {
-        console.log('Subtask updated:',subtaskId);
+        console.log('Subtask updated:', subtaskId);
         const changedFields = Object.keys(updates).join(', ');
-        await logActivity(localStorage.getItem('userId'),`Subtask Updated: ${subtaskId} (Changed: ${changedFields})`);
+        await logActivity(userId, `Subtask Updated: ${subtaskId} (Changed: ${changedFields})`);
     }
 };
 
 export const deleteSubtask = async (subtaskId: string) => {
-    const {error } = await supabase
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error("User ID not available for deleting subtask");
+        return;
+    }
+
+    const { error } = await supabase
         .from('subtasks')
         .delete()
         .eq('id', subtaskId);
@@ -124,6 +158,6 @@ export const deleteSubtask = async (subtaskId: string) => {
         console.error('Error deleting subtask:', error);
     } else {
         console.log('Subtask deleted:', subtaskId);
-        await logActivity(localStorage.getItem('userId'),`SubTask Deleted ${subtaskId}`);
+        await logActivity(userId, `SubTask Deleted ${subtaskId}`);
     }
 };

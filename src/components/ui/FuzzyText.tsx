@@ -9,18 +9,20 @@ interface FuzzyTextProps {
     enableHover?: boolean;
     baseIntensity?: number;
     hoverIntensity?: number;
+    className?: string;
 }
 
 const FuzzyText: React.FC<FuzzyTextProps> = ({
-                                                 children,
-                                                 fontSize = "clamp(2rem, 8vw, 8rem)",
-                                                 fontWeight = 900,
-                                                 fontFamily = "inherit",
-                                                 color = "#fff",
-                                                 enableHover = true,
-                                                 baseIntensity = 0.18,
-                                                 hoverIntensity = 0.5,
-                                             }) => {
+    children,
+    fontSize = "clamp(2rem, 8vw, 8rem)",
+    fontWeight = 900,
+    fontFamily = "inherit",
+    color = "#fff",
+    enableHover = true,
+    baseIntensity = 0.18,
+    hoverIntensity = 0.5,
+    className,
+}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -204,7 +206,7 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
         hoverIntensity,
     ]);
 
-    return <canvas ref={canvasRef} />;
+    return <canvas ref={canvasRef} className={className} />;
 };
 
 export default FuzzyText;

@@ -1,18 +1,18 @@
-import React, {useState, useCallback} from 'react';
+import React, { useState, useCallback } from 'react';
 import { Settings, Moon, Sun, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTodoStore } from '../store/todoStore';
 import { createClient } from '@supabase/supabase-js';
-import {useNavigate} from "react-router-dom";
-import {useMetrics} from "../hooks/useMetrics.ts";
+import { useNavigate } from "react-router-dom";
+import { useMetrics } from "../hooks/useMetrics.ts";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const ThemeCustomizer: React.FC = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const { theme, setTheme } = useTodoStore();
-    const navigate=useNavigate();
-    const username=localStorage.getItem('username');
+    const navigate = useNavigate();
+    const username = localStorage.getItem('username');
     const { logUserActivity } = useMetrics();
 
     const toggleTheme = useCallback(() => {
@@ -28,11 +28,12 @@ const ThemeCustomizer: React.FC = React.memo(() => {
         const userId = localStorage.getItem('userId');
         await logUserActivity(userId || "", 'User logged out');
         const { error } = await supabase.auth.signOut();
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        localStorage.clear();
         if (error) {
             console.error('Error logging out:', error.message);
         }
-        else{
+        else {
             window.location.reload();
         }
     }, []);
@@ -90,7 +91,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                 {username?.charAt(0).toUpperCase()}
                                             </div>}
                                         <div className="flex flex-col">
-                                            <span className="font-medium cursor-pointer dark:text-white" onClick={()=>navigate('/profile')}>{username}</span>
+                                            <span className="font-medium cursor-pointer dark:text-white" onClick={() => navigate('/profile')}>{username}</span>
                                             <span className="text-sm text-gray-500 dark:text-gray-400">User Profile</span>
                                         </div>
                                     </div>
@@ -104,17 +105,16 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                         onClick={toggleTheme}
                                         className="w-full p-3 flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                     >
-                    <span className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                      {theme.mode === 'light' ? (
-                          <Sun className="w-5 h-5" />
-                      ) : (
-                          <Moon className="w-5 h-5" />
-                      )}
-                        {theme.mode === 'light' ? 'Light Mode' : 'Dark Mode'}
-                    </span>
-                                        <div className={`w-10 h-6 rounded-full p-1 transition-colors ${
-                                            theme.mode === 'dark' ? 'bg-blue-500' : 'bg-gray-300'
-                                        }`}>
+                                        <span className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                            {theme.mode === 'light' ? (
+                                                <Sun className="w-5 h-5" />
+                                            ) : (
+                                                <Moon className="w-5 h-5" />
+                                            )}
+                                            {theme.mode === 'light' ? 'Light Mode' : 'Dark Mode'}
+                                        </span>
+                                        <div className={`w-10 h-6 rounded-full p-1 transition-colors ${theme.mode === 'dark' ? 'bg-blue-500' : 'bg-gray-300'
+                                            }`}>
                                             <motion.div
                                                 className="w-4 h-4 bg-white rounded-full"
                                                 animate={{ x: theme.mode === 'dark' ? 16 : 0 }}

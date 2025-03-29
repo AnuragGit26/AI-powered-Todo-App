@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardDescription } from "./ui/card";
 import SplitText from "./ui/SplitText";
 import Aurora from "./ui/AuroraBG.tsx";
 import ShinyText from "./ui/ShinyText.tsx";
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
+import { Loader } from "lucide-react";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -101,6 +103,7 @@ export function SignUpForm() {
     const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     
     // Validation state variables
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -188,6 +191,7 @@ export function SignUpForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         // Validate all fields before submission
         const isUsernameValid = validateUsername(username);
@@ -212,7 +216,11 @@ export function SignUpForm() {
                 setError(error.message);
             } else {
                 console.log("Sign up successful", data);
-                navigate("/login");
+                setSuccess("Registration successful! Please check your email to confirm your account.");
+                // Wait a bit before redirecting to login
+                setTimeout(() => {
+                    navigate("/login");
+                }, 3000);
             }
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred");
@@ -234,7 +242,7 @@ export function SignUpForm() {
                 speed={0.7}
             />
             <div className="absolute inset-0 flex items-center justify-center min-h-screen z-50">
-                <div className="max-w-3xl flex flex-col gap-10">
+                <div className="max-w-md w-full px-4">
                     <Card>
                         <CardHeader className="text-center">
                             <SplitText
@@ -254,13 +262,22 @@ export function SignUpForm() {
                         </CardHeader>
                         <CardContent>
                             {error && (
-                                <div className="bg-red-200 text-red-800 p-3 rounded mb-4">
-                                    {error}
-                                </div>
+                                <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
+                                    <AlertTitle>Registration failed</AlertTitle>
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
                             )}
-                            <form onSubmit={handleSignUp} className="grid gap-8">
+                            
+                            {success && (
+                                <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
+                                    <AlertTitle>Registration successful</AlertTitle>
+                                    <AlertDescription>{success}</AlertDescription>
+                                </Alert>
+                            )}
+                            
+                            <form onSubmit={handleSignUp} className="grid gap-6">
                                 <div>
-                                    <Label htmlFor="username" className="block text-sm font-bold mb-2">
+                                    <Label htmlFor="username" className="block text-sm font-medium mb-2">
                                         Username:
                                     </Label>
                                     <Input
@@ -269,7 +286,7 @@ export function SignUpForm() {
                                         placeholder="Enter your username"
                                         value={username}
                                         onChange={handleUsernameChange}
-                                        className={usernameError ? "border-red-500" : ""}
+                                        className={usernameError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                         required
                                     />
                                     {usernameError && (
@@ -277,7 +294,7 @@ export function SignUpForm() {
                                     )}
                                 </div>
                                 <div>
-                                    <Label htmlFor="email" className="block text-sm font-bold mb-2">
+                                    <Label htmlFor="email" className="block text-sm font-medium mb-2">
                                         Email:
                                     </Label>
                                     <Input
@@ -286,7 +303,7 @@ export function SignUpForm() {
                                         placeholder="Enter your email"
                                         value={email}
                                         onChange={handleEmailChange}
-                                        className={emailError ? "border-red-500" : ""}
+                                        className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                         required
                                     />
                                     {emailError && (
@@ -294,7 +311,7 @@ export function SignUpForm() {
                                     )}
                                 </div>
                                 <div>
-                                    <Label htmlFor="password" className="block text-sm font-bold mb-2">
+                                    <Label htmlFor="password" className="block text-sm font-medium mb-2">
                                         Password:
                                     </Label>
                                     <Input
@@ -303,7 +320,7 @@ export function SignUpForm() {
                                         placeholder="Enter your password"
                                         value={password}
                                         onChange={handlePasswordChange}
-                                        className={passwordError ? "border-red-500" : ""}
+                                        className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                         required
                                     />
                                     {passwordError && (
@@ -315,22 +332,28 @@ export function SignUpForm() {
                                     disabled={loading || !!usernameError || !!emailError || !!passwordError}
                                     className="w-full px-4 py-2 bg-black text-white rounded-lg shadow-md hover:bg-gray-800 active:scale-95 transition-transform duration-75"
                                 >
-                                    {loading ? <ShinyText text="Signing up..." disabled={false} speed={1.}  className=''/> :  <ShinyText text="Sign Up!" disabled={false} speed={2}  className=''/>}
+                                    {loading ? (
+                                        <div className="flex items-center justify-center">
+                                            <Loader className="h-5 w-5 mr-2 animate-spin" />
+                                            <span>Creating account...</span>
+                                        </div>
+                                    ) : (
+                                        <ShinyText text="Sign Up!" disabled={false} speed={2} className=''/>
+                                    )}
                                 </Button>
+                                <div className="text-center text-sm">
+                                    Already have an account?{" "}
+                                    <Link to="/login" className="text-blue-500 underline underline-offset-4">
+                                        Login
+                                    </Link>
+                                </div>
                             </form>
-                            <div className="text-center text-sm m-6">
-                                Already have an account?{" "}
-                                <Link to="/login" className="underline underline-offset-4">
-                                    Login
-                                </Link>
+                            <div className="text-center text-xs text-muted-foreground mt-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
+                                By signing up, you agree to our <a href="#">Terms of Service</a>{" "}
+                                and <a href="#">Privacy Policy</a>.
                             </div>
                         </CardContent>
                     </Card>
-                    <div
-                        className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
-                        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                        and <a href="#">Privacy Policy</a>.
-                    </div>
                 </div>
             </div>
         </div>
