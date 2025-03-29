@@ -254,13 +254,8 @@ export function LoginForm({
                         >
                             <Card className="backdrop-blur-sm border border-white/20 shadow-xl overflow-hidden">
                                 <CardHeader className="text-center pb-3">
-                                    <div className="mx-auto mb-2">
-                                        <Badge variant="outline" className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
-                                            Welcome Back!
-                                        </Badge>
-                                    </div>
                                     <SplitText
-                                        text="Sign in to TaskMind"
+                                        text="Hello!! Welcome back to TaskMind AI"
                                         className="text-2xl font-semibold text-center"
                                         delay={70}
                                         animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
