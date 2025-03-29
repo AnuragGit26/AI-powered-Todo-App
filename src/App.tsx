@@ -1,7 +1,7 @@
 // In src/App.tsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListTodo, BarChart3, X } from "lucide-react";
+import { ListTodo, BarChart3, X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 import ThemeCustomizer from "./components/ThemeCustomizer";
@@ -25,6 +25,7 @@ import { useSessionRecording } from './hooks/useSessionRecording';
 import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
+import ShinyText from "./components/ui/ShinyText.tsx";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
     const [showAnalytics, setShowAnalytics] = useState(false);
+    const [showTodoForm, setShowTodoForm] = useState(false);
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -155,17 +157,30 @@ const App: React.FC = () => {
 
     // Media query for screens larger than 1600px
     const [isLargeScreen, setIsLargeScreen] = useState(false);
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(min-width: 1600px)');
-        setIsLargeScreen(mediaQuery.matches);
+        const largeMediaQuery = window.matchMedia('(min-width: 1600px)');
+        const smallMediaQuery = window.matchMedia('(max-width: 639px)');
 
-        const handleResize = (e: MediaQueryListEvent) => {
+        setIsLargeScreen(largeMediaQuery.matches);
+        setIsSmallScreen(smallMediaQuery.matches);
+
+        const handleLargeResize = (e: MediaQueryListEvent) => {
             setIsLargeScreen(e.matches);
         };
 
-        mediaQuery.addEventListener('change', handleResize);
-        return () => mediaQuery.removeEventListener('change', handleResize);
+        const handleSmallResize = (e: MediaQueryListEvent) => {
+            setIsSmallScreen(e.matches);
+        };
+
+        largeMediaQuery.addEventListener('change', handleLargeResize);
+        smallMediaQuery.addEventListener('change', handleSmallResize);
+
+        return () => {
+            largeMediaQuery.removeEventListener('change', handleLargeResize);
+            smallMediaQuery.removeEventListener('change', handleSmallResize);
+        };
     }, []);
 
     // Record user sessions when logged in
@@ -190,6 +205,140 @@ const App: React.FC = () => {
             </div>
         );
     }
+
+    // Home route component
+    const HomeContent = (
+        <div
+            className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+            style={{
+                "--primary-color": theme.primaryColor,
+                "--secondary-color": theme.secondaryColor,
+            } as React.CSSProperties}
+        >
+            <Aurora
+                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                blend={0.5}
+                amplitude={1.0}
+                speed={0.7}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-24 p-4 sm:p-6 md:p-8">
+                <div className="fixed top-4 right-4 z-20 flex flex-col items-center gap-8">
+                    <div className="mb-4">
+                        <ThemeCustomizer />
+                    </div>
+                    {!isLargeScreen && (
+                        <div className="mt-2">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowAnalytics(true)}
+                                className="rounded-full h-10 w-10 flex items-center justify-center border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm"
+                            >
+                                <BarChart3 className="h-[1.2rem] w-[1.2rem]" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full sm:w-4/5 md:w-3/5 mx-auto"
+                >
+                    <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
+                        <ListTodo className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500" />
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1>
+                    </div>
+
+                    {/* Create Task Button for Small Screens */}
+                    {isSmallScreen && (
+                        <div className="w-full mb-4">
+                            <Button
+                                onClick={() => setShowTodoForm(!showTodoForm)}
+                                className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
+                            >
+                                {showTodoForm ? (
+                                    <>
+                                        <X className="w-5 h-5" />
+                                        <span>Close</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-5 h-5" />
+                                        <ShinyText text="Create a Task" disabled={false} speed={2} className='text-white font-medium' />
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* TodoForm - shown by default on large screens, toggled on small screens */}
+                    <AnimatePresence>
+                        {(!isSmallScreen || (isSmallScreen && showTodoForm)) && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <TodoForm />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <TodoList />
+                    <Toaster />
+                </motion.div>
+            </div>
+
+            {/* Analytics panel for large screens */}
+            {isLargeScreen && (
+                <div className="fixed top-16 right-0 max-h-full w-auto p-2 sm:p-4 md:p-6 pt-6 overflow-y-auto z-10">
+                    <TaskAnalytics />
+                    <ProductivityTrends />
+                </div>
+            )}
+
+            {/* Slide-in analytics panel for smaller screens */}
+            <AnimatePresence>
+                {showAnalytics && !isLargeScreen && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/50 z-50 flex justify-end"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowAnalytics(false)}
+                    >
+                        <motion.div
+                            className="w-full sm:w-96 md:w-[500px] bg-white dark:bg-black h-full p-4 overflow-y-auto"
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold">Analytics</h2>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowAnalytics(false)}
+                                >
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                            <TaskAnalytics />
+                            <div className="mt-4">
+                                <ProductivityTrends />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <Footer />
+        </div>
+    );
 
     return (
         <Routes>
@@ -224,95 +373,7 @@ const App: React.FC = () => {
                 path="/"
                 element={
                     <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
-                        <div
-                            className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
-                            style={{
-                                "--primary-color": theme.primaryColor,
-                                "--secondary-color": theme.secondaryColor,
-                            } as React.CSSProperties}
-                        >
-                            <Aurora
-                                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-                                blend={0.5}
-                                amplitude={1.0}
-                                speed={0.7}
-                            />
-                            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-24 p-4 sm:p-6 md:p-8">
-                                <div className="flex justify-end w-full sm:w-4/5 md:w-3/5 mx-auto mb-4">
-                                    {!isLargeScreen && (
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setShowAnalytics(true)}
-                                            className="mr-2"
-                                        >
-                                            <BarChart3 className="h-5 w-5" />
-                                        </Button>
-                                    )}
-                                    <ThemeCustomizer />
-                                </div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="w-full sm:w-4/5 md:w-3/5 mx-auto"
-                                >
-                                    <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
-                                        <ListTodo className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500" />
-                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1>
-                                    </div>
-                                    <TodoForm />
-                                    <TodoList />
-                                    <Toaster />
-                                </motion.div>
-                            </div>
-
-                            {/* Analytics panel for large screens */}
-                            {isLargeScreen && (
-                                <div className="fixed top-16 right-0 max-h-full w-auto p-2 sm:p-4 md:p-6 pt-6 overflow-y-auto z-10">
-                                    <TaskAnalytics />
-                                    <ProductivityTrends />
-                                </div>
-                            )}
-
-                            {/* Slide-in analytics panel for smaller screens */}
-                            <AnimatePresence>
-                                {showAnalytics && !isLargeScreen && (
-                                    <motion.div
-                                        className="fixed inset-0 bg-black/50 z-50 flex justify-end"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        onClick={() => setShowAnalytics(false)}
-                                    >
-                                        <motion.div
-                                            className="w-full sm:w-96 md:w-[500px] bg-white dark:bg-black h-full p-4 overflow-y-auto"
-                                            initial={{ x: "100%" }}
-                                            animate={{ x: 0 }}
-                                            exit={{ x: "100%" }}
-                                            transition={{ type: "spring", damping: 20 }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h2 className="text-xl font-bold">Analytics</h2>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => setShowAnalytics(false)}
-                                                >
-                                                    <X className="h-5 w-5" />
-                                                </Button>
-                                            </div>
-                                            <TaskAnalytics />
-                                            <div className="mt-4">
-                                                <ProductivityTrends />
-                                            </div>
-                                        </motion.div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            <Footer />
-                        </div>
+                        {HomeContent}
                     </ProtectedRoute>
                 }
             />
