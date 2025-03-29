@@ -1,7 +1,7 @@
 // In src/App.tsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListTodo, BarChart3, X, Plus } from "lucide-react";
+import { BarChart3, X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 import ThemeCustomizer from "./components/ThemeCustomizer";
@@ -26,17 +26,35 @@ import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
 import ShinyText from "./components/ui/ShinyText.tsx";
+import Logo from "./components/Logo.tsx";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const App: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos, setUserToken } = useTodoStore();
+    const { setTodos, setUserToken, setTheme } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
+
+    // Force light mode on first load
+    useEffect(() => {
+        // If no theme preference has been set in localStorage
+        if (!localStorage.getItem('todo-storage')) {
+            // Set light mode
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+
+            // Update the store
+            setTheme({
+                mode: 'light',
+                primaryColor: '#53c9d9',
+                secondaryColor: '#5f4ae8',
+            });
+        }
+    }, [setTheme]);
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -221,7 +239,8 @@ const App: React.FC = () => {
                 amplitude={1.0}
                 speed={0.7}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-24 p-4 sm:p-6 md:p-8">
+
+            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-20 p-4 sm:p-6 md:p-8">
                 <div className="fixed top-4 right-4 z-20 flex flex-col items-center gap-8">
                     <div className="mb-4">
                         <ThemeCustomizer />
@@ -244,11 +263,9 @@ const App: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full sm:w-4/5 md:w-3/5 mx-auto"
                 >
-                    <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
-                        <ListTodo className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500" />
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1>
+                    <div className="flex justify-start -mt-16 mb-2">
+                        <Logo size={120} />
                     </div>
-
                     {/* Create Task Button for Small Screens */}
                     {isSmallScreen && (
                         <div className="w-full mb-4">
@@ -293,9 +310,11 @@ const App: React.FC = () => {
 
             {/* Analytics panel for large screens */}
             {isLargeScreen && (
-                <div className="fixed top-16 right-0 max-h-full w-auto p-2 sm:p-4 md:p-6 pt-6 overflow-y-auto z-10">
-                    <TaskAnalytics />
-                    <ProductivityTrends />
+                <div className="fixed top-16 right-0 max-h-full w-72 lg:w-80 p-4 overflow-y-auto z-10 pr-6">
+                    <div className="space-y-2">
+                        <TaskAnalytics />
+                        <ProductivityTrends />
+                    </div>
                 </div>
             )}
 
@@ -303,14 +322,14 @@ const App: React.FC = () => {
             <AnimatePresence>
                 {showAnalytics && !isLargeScreen && (
                     <motion.div
-                        className="fixed inset-0 bg-black/50 z-50 flex justify-end"
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setShowAnalytics(false)}
                     >
                         <motion.div
-                            className="w-full sm:w-96 md:w-[500px] bg-white dark:bg-black h-full p-4 overflow-y-auto"
+                            className="w-full sm:w-96 md:w-[420px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black h-full p-4 overflow-y-auto"
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
@@ -318,17 +337,18 @@ const App: React.FC = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold">Analytics</h2>
+                                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Analytics Dashboard</h2>
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setShowAnalytics(false)}
+                                    className="rounded-full h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800"
                                 >
                                     <X className="h-5 w-5" />
                                 </Button>
                             </div>
-                            <TaskAnalytics />
-                            <div className="mt-4">
+                            <div className="space-y-5">
+                                <TaskAnalytics />
                                 <ProductivityTrends />
                             </div>
                         </motion.div>

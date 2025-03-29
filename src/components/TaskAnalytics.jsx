@@ -2,8 +2,8 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp } from "lucide-react"
-import { Pie, PieChart } from "recharts"
+import { TrendingUp, CheckCircle, ClipboardList } from "lucide-react"
+import { Pie, PieChart, Cell, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card.tsx"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "./ui/chart"
 import { useTodoStore } from "../store/todoStore"
@@ -26,57 +26,78 @@ export default function Component() {
     const totalTasks = allTodos.length
     const completedTasks = allTodos.filter((todo) => todo.completed).length
     const pendingTasks = totalTasks - completedTasks
+    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    // Replace CSS variables with color hex values.
+    // More vibrant colors with gradient
     const chartData = [
-        { name: "Completed", value: completedTasks, fill: "#4CAF50" },
-        { name: "Pending", value: pendingTasks, fill: "#FFC107" },
+        { name: "Completed", value: completedTasks, fill: "#4ade80" },
+        { name: "Pending", value: pendingTasks, fill: "#fbbf24" },
     ]
 
     const chartConfig = {
         completed: {
             label: "Completed",
-            color: "#4CAF50",
+            color: "#4ade80",
         },
         pending: {
             label: "Pending",
-            color: "#FFC107",
+            color: "#fbbf24",
         },
     }
 
     return (
-        <Card className="flex flex-col">
-            <CardHeader className="items-center pb-0">
-                <CardTitle>Task Completion Progress</CardTitle>
-                <CardDescription>Overview of task progress</CardDescription>
+        <Card className="shadow-md backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-all hover:shadow-lg">
+            <CardHeader className="items-center pb-2 space-y-0">
+                <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Task Completion Progress</CardTitle>
+                <CardDescription className="text-sm text-gray-500 dark:text-gray-400">Overview of task progress</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex-1 p-4">
                 <ChartContainer
                     config={chartConfig}
-                    className="mx-auto aspect-square max-h-[250px]"
+                    className="mx-auto aspect-square max-h-[220px]"
                 >
-                    <PieChart>
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Pie
-                            data={chartData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={60}
-                            strokeWidth={5}
-                        />
-                    </PieChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent hideLabel />}
+                            />
+                            <Pie
+                                data={chartData}
+                                dataKey="value"
+                                nameKey="name"
+                                innerRadius={58}
+                                outerRadius={80}
+                                strokeWidth={4}
+                                paddingAngle={2}
+                            >
+                                {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                        </PieChart>
+                    </ResponsiveContainer>
                 </ChartContainer>
-            </CardContent>
-            <CardFooter className="flex-col gap-2 text-sm">
-                <div className="flex items-center gap-2 font-medium leading-none">
-                    {totalTasks > 0 ? `Completed ${completedTasks} out of ${totalTasks} tasks` : "No tasks available"}
-                    <TrendingUp className="h-4 w-4" />
+
+                {/* Completion percentage in the center of pie */}
+                <div className="flex justify-center -mt-32 mb-12 relative z-10">
+                    <div className="text-center">
+                        <span className="text-3xl font-bold text-gray-800 dark:text-white">{completionPercentage}%</span>
+                    </div>
                 </div>
-                <div className="leading-none text-muted-foreground">
-                    Task status based on current progress
+            </CardContent>
+            <CardFooter className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {completedTasks} Completed
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {pendingTasks} Pending
+                    </span>
                 </div>
             </CardFooter>
         </Card>

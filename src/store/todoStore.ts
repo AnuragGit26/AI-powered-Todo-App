@@ -1,17 +1,28 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import {TodoStore, Todo, SubTodo, userData} from '../types';
+import { TodoStore, Todo, SubTodo, userData } from '../types';
+
+// Helper function to force light mode on first app load
+const ensureLightMode = () => {
+    // Check if this is the first load (no localStorage entry for the theme yet)
+    if (!localStorage.getItem('todo-storage')) {
+        // Set the HTML document to light mode
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+    }
+    return {
+        mode: 'light',
+        primaryColor: '#53c9d9',
+        secondaryColor: '#5f4ae8',
+    };
+};
 
 export const useTodoStore = create<TodoStore>()(
     devtools(
         persist(
             (set) => ({
                 todos: [],
-                theme: {
-                    mode: 'light',
-                    primaryColor: '#53c9d9',
-                    secondaryColor: '#5f4ae8',
-                },
+                theme: ensureLightMode(),
                 userToken: null,
                 userData: null,
                 setUserToken: (token: string) => set({ userToken: token }),

@@ -11,6 +11,7 @@ import ShinyText from "./ui/ShinyText.tsx";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader } from "lucide-react";
+import Logo from "./Logo";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -29,12 +30,7 @@ const ModernFooter = () => {
                 <div className="flex flex-col md:flex-row justify-between items-center">
                     {/* Logo and tagline */}
                     <div className="mb-6 md:mb-0">
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 mr-2 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">T</span>
-                            </div>
-                            <h3 className="text-lg font-semibold">TodoAI</h3>
-                        </div>
+                        <Logo size={32} showText={true} />
                         <p className="text-xs text-muted-foreground mt-2 max-w-xs">
                             Revolutionizing task management with AI-powered organization and insights.
                         </p>
@@ -84,7 +80,7 @@ const ModernFooter = () => {
 
                 <div className="mt-8 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs text-muted-foreground">
                     <div className="mb-4 md:mb-0">
-                        &copy; {new Date().getFullYear()} TodoAI. All rights reserved.
+                        &copy; {new Date().getFullYear()} TaskMind AI. All rights reserved.
                     </div>
                     <div className="flex space-x-4">
                         <a href="#" className="hover:text-primary transition-colors">Terms</a>
@@ -104,12 +100,12 @@ export function SignUpForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    
+
     // Validation state variables
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
-    
+
     const navigate = useNavigate();
 
     // Validation functions
@@ -267,14 +263,14 @@ export function SignUpForm() {
                                     <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
-                            
+
                             {success && (
                                 <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
                                     <AlertTitle>Registration successful</AlertTitle>
                                     <AlertDescription>{success}</AlertDescription>
                                 </Alert>
                             )}
-                            
+
                             <form onSubmit={handleSignUp} className="grid gap-6">
                                 <div>
                                     <Label htmlFor="username" className="block text-sm font-medium mb-2">
@@ -338,7 +334,7 @@ export function SignUpForm() {
                                             <span>Creating account...</span>
                                         </div>
                                     ) : (
-                                        <ShinyText text="Sign Up!" disabled={false} speed={2} className=''/>
+                                        <ShinyText text="Sign Up!" disabled={false} speed={2} className='' />
                                     )}
                                 </Button>
                                 <div className="text-center text-sm">
