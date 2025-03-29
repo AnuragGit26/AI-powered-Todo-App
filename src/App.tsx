@@ -310,8 +310,8 @@ const App: React.FC = () => {
 
             {/* Analytics panel for large screens */}
             {isLargeScreen && (
-                <div className="fixed top-16 right-0 max-h-full w-72 lg:w-80 p-4 overflow-y-auto z-10 pr-6">
-                    <div className="space-y-2">
+                <div className="fixed top-16 right-0 max-h-full w-72 lg:w-80 p-4 overflow-y-auto z-10 pr-5">
+                    <div className="space-y-4">
                         <TaskAnalytics />
                         <ProductivityTrends />
                     </div>
@@ -329,14 +329,14 @@ const App: React.FC = () => {
                         onClick={() => setShowAnalytics(false)}
                     >
                         <motion.div
-                            className="w-full sm:w-96 md:w-[420px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black h-full p-4 overflow-y-auto"
+                            className="w-full sm:w-96 md:w-[400px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black h-full p-4 overflow-y-auto"
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 20 }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="flex justify-between items-center mb-6 px-2">
                                 <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Analytics Dashboard</h2>
                                 <Button
                                     variant="ghost"
@@ -347,7 +347,7 @@ const App: React.FC = () => {
                                     <X className="h-5 w-5" />
                                 </Button>
                             </div>
-                            <div className="space-y-5">
+                            <div className="space-y-4 px-1">
                                 <TaskAnalytics />
                                 <ProductivityTrends />
                             </div>

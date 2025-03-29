@@ -51,15 +51,15 @@ const ProductivityTrends: React.FC = () => {
         Math.round((trend / weeks[weeks.length - 2].count) * 100) : 0;
 
     return (
-        <Card className="shadow-md backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-all hover:shadow-lg mt-6">
-            <CardHeader className="items-center pb-2 space-y-0">
+        <Card className="shadow-md backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-all hover:shadow-lg mt-4">
+            <CardHeader className="items-center pb-1 pt-4 px-6 space-y-1">
                 <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Weekly Productivity Trends</CardTitle>
                 <CardDescription className="text-sm text-gray-500 dark:text-gray-400">Tasks completed in past 2 weeks</CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
-                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-inner p-3">
-                    <ResponsiveContainer width="100%" height={220}>
-                        <AreaChart data={weeks} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CardContent className="pt-2 pb-4 px-6">
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-inner p-2">
+                    <ResponsiveContainer width="100%" height={190}>
+                        <AreaChart data={weeks} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
