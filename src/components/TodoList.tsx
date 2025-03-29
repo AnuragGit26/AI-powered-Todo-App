@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo, useCallback, useRef} from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
     Check,
@@ -198,14 +198,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, {
                 completed: updatedCompleted,
                 status: newStatus,
-                completedAt:updatedCompleted? new Date(): null,
+                completedAt: updatedCompleted ? new Date() : null,
             });
-            updateSubtask(todo.id, { completed: updatedCompleted, status: newStatus,completedAt:updatedCompleted? new Date(): null }).catch((error) =>
+            updateSubtask(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null }).catch((error) =>
                 console.error("Error updating subtask:", error)
             );
         } else {
-            updateTodo(todo.id, { completed: updatedCompleted, status: newStatus ,completedAt:updatedCompleted? new Date(): null,});
-            updateTask(todo.id, { completed: updatedCompleted, status: newStatus ,completedAt:updatedCompleted? new Date(): null,}).catch((error) =>
+            updateTodo(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null, });
+            updateTask(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null, }).catch((error) =>
                 console.error("Error updating task:", error)
             );
         }
@@ -224,28 +224,25 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`p-4 bg-white bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg shadow-md ${
-                level > 0 ? "ml-8 mt-2" : "mb-4"
-            }`}
+            className={`p-3 sm:p-4 bg-white bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg shadow-md ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
+                }`}
         >
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => handleTodoCompletion(todo)}
-                    className={`p-2 rounded-full ${
-                        todo.completed ? "bg-green-500" : "bg-gray-200 dark:bg-gray-800"
-                    }`}
+                    className={`p-2 rounded-full ${todo.completed ? "bg-green-500" : "bg-gray-200 dark:bg-gray-800"
+                        }`}
                 >
                     <Check
-                        className={`w-4 h-4 ${
-                            todo.completed ? "text-white" : "text-gray-400"
-                        }`}
+                        className={`w-4 h-4 ${todo.completed ? "text-white" : "text-gray-400"
+                            }`}
                     />
                 </motion.button>
                 <div className="flex-1">
                     {isEditing ? (
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 w-full">
                             <input
                                 type="text"
                                 value={editedTitle}
@@ -254,7 +251,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                 onKeyDown={handleKeyDown}
                                 className="w-full p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
                             />
-                            <div className="flex gap-3">
+                            <div className="flex flex-wrap gap-2 sm:gap-3">
                                 <input
                                     type="date"
                                     value={
@@ -273,7 +270,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                             e.target.value ? new Date(e.target.value) : null
                                         )
                                     }
-                                    className="p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
+                                    className="p-2 border rounded-lg dark:bg-white/5 dark:border-white/10 flex-grow sm:flex-grow-0"
                                 />
                                 <Select
                                     value={editedPriority}
@@ -281,7 +278,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                         setEditedPriority(val as Priority)
                                     }
                                 >
-                                    <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                                    <SelectTrigger className="w-full sm:w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
                                         <SelectValue placeholder="Priority" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -299,7 +296,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                         setEditedStatus(val as Status)
                                     }
                                 >
-                                    <SelectTrigger className="w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                                    <SelectTrigger className="w-full sm:w-28 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -317,17 +314,17 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                {analysisLoading?<Loader2 className="w-8 h-8 text-green-200 animate-spin mt-1" />:null}
+                                {analysisLoading ? <Loader2 className="w-8 h-8 text-green-200 animate-spin mt-1" /> : null}
                             </div>
                         </div>
                     ) : (
-                        <p className={`text-lg ${todo.completed ? "line-through text-gray-200" : ""}`}>
+                        <p className={`text-base sm:text-lg ${todo.completed ? "line-through text-gray-200" : ""}`}>
                             {todo.title}
                         </p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-white">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500 dark:text-white">
                         <span className={getPriorityColor(todo.priority)}>
-                             {todo.priority ? todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1) : ""}
+                            {todo.priority ? todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1) : ""}
                         </span>
                         <div className="p-1 pt-1.5 pb-2 border rounded-lg dark:bg-white/5 dark:border-white/10">
                             {todo.dueDate && (
@@ -374,8 +371,8 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger className="flex items-center space-x-1">
-                                    <Clock className="w-5 h-5 text-blue-500" />
-                                    <span className="font-medium  flex">Estimated Time <InfoIcon className="w-3 h-3 ml-1"/></span>
+                                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+                                    <span className="font-medium flex text-xs sm:text-sm">Estimated Time <InfoIcon className="w-3 h-3 ml-1" /></span>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg p-2">
                                     <p className="text-sm">{todo.estimatedTime}</p>
@@ -384,35 +381,38 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         </TooltipProvider>
                     </div>
                 </div>
-                {isEditing ? (
-                    <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleSave}
-                        disabled={analysisLoading}
-                        className="p-2 text-white dark:text-black rounded-lg bg-blue-500 dark:bg-blue-200"
-                    >
-                        Save
-                    </motion.button>
-
-                ) : (
-                    <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleEdit}
-                        className="p-2 text-blue-500 hover:bg-blue-100 rounded-full"
-                    >
-                        <Edit3 className="w-5 h-5" />
-                    </motion.button>
-                )}
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleRemove(todo.id)}
-                    className="p-2 text-red-500 hover:bg-red-100 rounded-full"
-                >
-                    <Trash2 className="w-5 h-5" />
-                </motion.button>
+                <div className="flex sm:mt-0 mt-2 w-full sm:w-auto justify-end">
+                    {isEditing ? (
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleSave}
+                            disabled={analysisLoading}
+                            className="p-2 text-white dark:text-black rounded-lg bg-blue-500 dark:bg-blue-200"
+                        >
+                            Save
+                        </motion.button>
+                    ) : (
+                        <div className="flex gap-1">
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={handleEdit}
+                                className="p-2 text-blue-500 hover:bg-blue-100 rounded-full"
+                            >
+                                <Edit3 className="w-5 h-5" />
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleRemove(todo.id)}
+                                className="p-2 text-red-500 hover:bg-red-100 rounded-full"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </motion.button>
+                        </div>
+                    )}
+                </div>
             </div>
             <AnimatePresence>
                 {expandedInsights.includes(todo.id) && todo.analysis && (
@@ -423,13 +423,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         className="overflow-hidden"
                     >
                         <div className="mt-3 pt-3 border-t dark:border-gray-700 space-y-2">
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2 text-xs sm:text-sm">
                                 <Tag className="w-4 h-4 text-gray-500" />
                                 <span className="text-gray-600 dark:text-gray-300">
                                     {todo.analysis.category}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2 text-xs sm:text-sm">
                                 <HelpCircle className="w-4 h-4 text-gray-500" />
                                 <span className="text-gray-600 dark:text-gray-300">
                                     {todo.analysis.howTo}
@@ -500,21 +500,23 @@ const TodoList: React.FC = () => {
                 className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg shadow-md mb-4"
             >
                 {todos?.length !== 0 ? (
-                    <div className="flex justify-between mb-1 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-4 transition-all duration-300 animate-fadeIn">
-                        <Input
-                            type="text"
-                            value={searchQuery}
-                            onChange={handleSearchTasks}
-                            placeholder="Search tasks..."
-                            className="w-3/5 p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
-                        />
-                        <Search className="relative top-2 right-28 w-5 h-5 z-50 text-gray-400" />
-                        <div className="flex justify-end mb-1">
+                    <div className="flex flex-col sm:flex-row justify-between mb-1 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-4 transition-all duration-300 animate-fadeIn">
+                        <div className="relative w-full sm:w-3/5 mb-2 sm:mb-0">
+                            <Input
+                                type="text"
+                                value={searchQuery}
+                                onChange={handleSearchTasks}
+                                placeholder="Search tasks..."
+                                className="w-full p-2 border rounded-lg dark:bg-white/5 dark:border-white/10"
+                            />
+                            <Search className="absolute top-2 right-2 w-5 h-5 text-gray-400" />
+                        </div>
+                        <div className="flex justify-start sm:justify-end">
                             <Select
                                 value={sortCriteria}
                                 onValueChange={(e) => setSortCriteria(e as "date" | "priority")}
                             >
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Sort By" />
                                 </SelectTrigger>
                                 <SelectContent>

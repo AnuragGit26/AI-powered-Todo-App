@@ -1,7 +1,7 @@
 // In src/App.tsx
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ListTodo } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ListTodo, BarChart3, X } from "lucide-react";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 import ThemeCustomizer from "./components/ThemeCustomizer";
@@ -24,6 +24,7 @@ import Footer from "./components/ui/Footer";
 import { useSessionRecording } from './hooks/useSessionRecording';
 import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
+import { Button } from "./components/ui/button.tsx";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -33,6 +34,7 @@ const App: React.FC = () => {
     const { setTodos, setUserToken } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
+    const [showAnalytics, setShowAnalytics] = useState(false);
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -151,6 +153,21 @@ const App: React.FC = () => {
         console.log("All letters have animated!");
     };
 
+    // Media query for screens larger than 1600px
+    const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 1600px)');
+        setIsLargeScreen(mediaQuery.matches);
+
+        const handleResize = (e: MediaQueryListEvent) => {
+            setIsLargeScreen(e.matches);
+        };
+
+        mediaQuery.addEventListener('change', handleResize);
+        return () => mediaQuery.removeEventListener('change', handleResize);
+    }, []);
+
     // Record user sessions when logged in
     useSessionRecording();
 
@@ -220,26 +237,80 @@ const App: React.FC = () => {
                                 amplitude={1.0}
                                 speed={0.7}
                             />
-                            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 p-8 md:shadow-xl">
-                                <ThemeCustomizer />
+                            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-24 p-4 sm:p-6 md:p-8">
+                                <div className="flex justify-end w-full sm:w-4/5 md:w-3/5 mx-auto mb-4">
+                                    {!isLargeScreen && (
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setShowAnalytics(true)}
+                                            className="mr-2"
+                                        >
+                                            <BarChart3 className="h-5 w-5" />
+                                        </Button>
+                                    )}
+                                    <ThemeCustomizer />
+                                </div>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="w-3/5 mx-auto"
+                                    className="w-full sm:w-4/5 md:w-3/5 mx-auto"
                                 >
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <ListTodo className="w-10 h-10 text-blue-500" />
-                                        <h1 className="text-4xl font-bold">TaskMind AI</h1>
+                                    <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
+                                        <ListTodo className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500" />
+                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1>
                                     </div>
                                     <TodoForm />
                                     <TodoList />
                                     <Toaster />
                                 </motion.div>
                             </div>
-                            <div className="fixed top-16 right-0 max-h-full w-90 p-6 pt-6 overflow-y-scroll z-10">
-                                <TaskAnalytics />
-                                <ProductivityTrends />
-                            </div>
+
+                            {/* Analytics panel for large screens */}
+                            {isLargeScreen && (
+                                <div className="fixed top-16 right-0 max-h-full w-auto p-2 sm:p-4 md:p-6 pt-6 overflow-y-auto z-10">
+                                    <TaskAnalytics />
+                                    <ProductivityTrends />
+                                </div>
+                            )}
+
+                            {/* Slide-in analytics panel for smaller screens */}
+                            <AnimatePresence>
+                                {showAnalytics && !isLargeScreen && (
+                                    <motion.div
+                                        className="fixed inset-0 bg-black/50 z-50 flex justify-end"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => setShowAnalytics(false)}
+                                    >
+                                        <motion.div
+                                            className="w-full sm:w-96 md:w-[500px] bg-white dark:bg-black h-full p-4 overflow-y-auto"
+                                            initial={{ x: "100%" }}
+                                            animate={{ x: 0 }}
+                                            exit={{ x: "100%" }}
+                                            transition={{ type: "spring", damping: 20 }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h2 className="text-xl font-bold">Analytics</h2>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setShowAnalytics(false)}
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </Button>
+                                            </div>
+                                            <TaskAnalytics />
+                                            <div className="mt-4">
+                                                <ProductivityTrends />
+                                            </div>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             <Footer />
                         </div>
                     </ProtectedRoute>
