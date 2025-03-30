@@ -203,25 +203,41 @@ export function SignUpForm() {
         }
 
         try {
+            console.log("Attempting signup with:", { email, username });
+
+            // Create the auth user - profile will be created automatically by the database trigger
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
-                    data: { username: username },
-                    redirectTo: `${window.location.origin}/`,
+                    data: {
+                        username: username
+                    },
+                    emailRedirectTo: `${window.location.origin}/`,
                 },
             });
+
             if (error) {
+                console.error("Signup error details:", error);
                 setError(error.message);
-            } else {
-                console.log("Sign up successful", data);
-                setSuccess("Registration successful! Please check your email to confirm your account.");
-                // Wait a bit before redirecting to login
-                setTimeout(() => {
-                    navigate("/login");
-                }, 3000);
+                return;
             }
+
+            // Check if user was created successfully
+            if (!data?.user) {
+                setError("Failed to create user account. Please try again.");
+                return;
+            }
+
+            console.log("Sign up successful", data);
+            setSuccess("Registration successful! Please check your email to confirm your account.");
+            // Wait a bit before redirecting to login
+            setTimeout(() => {
+                navigate("/login");
+            }, 3000);
+
         } catch (err: any) {
+            console.error("Unexpected signup error:", err);
             setError(err.message || "An unexpected error occurred");
         } finally {
             setLoading(false);
