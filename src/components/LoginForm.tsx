@@ -29,8 +29,6 @@ import {
     Info
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { Badge } from "./ui/badge";
-import ASCIIText from "./ui/ASCIIText.tsx";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 

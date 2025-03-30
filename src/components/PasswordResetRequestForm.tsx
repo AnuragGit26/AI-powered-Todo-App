@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { cn } from "../lib/utils";
 import { Button } from "./ui/button.tsx";
-import SplitText from './ui/SplitText';
+import SplitText from './ui/SplitText.tsx';
 import { useToast } from "../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
-import { Loader } from "lucide-react";
+import { Loader, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
+    CardFooter
 } from "./ui/card.tsx";
 import { Input } from "./ui/input.tsx";
 import { Label } from "./ui/label.tsx";
@@ -60,6 +62,11 @@ export function PasswordResetRequestForm({
 
         // Validate email
         if (!validateEmail(email)) {
+            toast({
+                title: "Validation Error",
+                description: "Please provide a valid email address",
+                variant: "destructive"
+            });
             return;
         }
 
@@ -73,107 +80,142 @@ export function PasswordResetRequestForm({
             if (error) {
                 console.error('Error sending password reset email:', error.message);
                 setFormError(error.message);
+                toast({
+                    title: "Error",
+                    description: error.message,
+                    variant: "destructive"
+                });
             } else {
                 setFormSuccess('Password reset email sent successfully. Please check your inbox.');
                 console.log('Password reset email sent');
                 toast({
-                    title: "Email Reset Link Sent!",
-                    description: "Please check your inbox for further instructions."
+                    title: "Success",
+                    description: "Password reset link sent to your email",
+                    variant: "default"
                 });
             }
         } catch (error) {
             console.error('Unexpected error:', error);
             setFormError('An unexpected error occurred. Please try again later.');
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred. Please try again later.",
+                variant: "destructive"
+            });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAnimationComplete = () => {
-        console.log('All letters have animated!');
-    };
-
     return (
-        <div className={cn("flex items-center justify-center min-h-screen z-50", className)} {...props}>
-            <div className="max-w-3xl flex flex-col gap-10">
-                <Card>
-                    <CardHeader className="text-center">
+        <div className={cn("flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 md:p-8", className)} {...props}>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full max-w-md"
+            >
+                <Card className="border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-gray-900/30 overflow-hidden backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
+                    <CardHeader className="space-y-1 pb-6 pt-8 px-6 text-center bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/80">
+                        <div className="mx-auto mb-4 p-3 rounded-full bg-blue-50 dark:bg-blue-900/30 w-16 h-16 flex items-center justify-center">
+                            <ShieldCheck className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        </div>
                         <SplitText
                             text="Reset Your Password"
-                            className="text-2xl font-semibold text-center"
+                            className="text-2xl font-bold text-gray-900 dark:text-gray-100"
                             delay={70}
-                            animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+                            animationFrom={{ opacity: 0, transform: 'translate3d(0,20px,0)' }}
                             animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
                             easing="easeOutCubic"
                             threshold={0.2}
-                            rootMargin="-50px"
-                            onLetterAnimationComplete={handleAnimationComplete}
+                            rootMargin="-20px"
                         />
-                        <CardDescription>
+                        <CardDescription className="text-gray-600 dark:text-gray-300 mt-2">
                             Enter your email to receive a password reset link
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                         {formError && (
-                            <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
-                                <AlertTitle>Error</AlertTitle>
+                            <Alert variant="destructive" className="mb-4 animate-in fade-in-50 slide-in-from-top-5 border-red-200 text-red-800 dark:text-red-200 dark:border-red-800/30">
+                                <AlertTitle className="flex items-center gap-2 font-semibold">
+                                    <div className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400"></div>Error
+                                </AlertTitle>
                                 <AlertDescription>{formError}</AlertDescription>
                             </Alert>
                         )}
 
                         {formSuccess && (
-                            <Alert className="mb-4 animate-in fade-in-50 slide-in-from-top-5 bg-green-50 text-green-800 border-green-200">
-                                <AlertTitle>Success</AlertTitle>
+                            <Alert className="mb-4 animate-in fade-in-50 slide-in-from-top-5 bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-200 dark:border-green-800/30">
+                                <AlertTitle className="flex items-center gap-2 font-semibold">
+                                    <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400"></div>Success
+                                </AlertTitle>
                                 <AlertDescription>{formSuccess}</AlertDescription>
                             </Alert>
                         )}
 
-                        <form onSubmit={handlePasswordResetRequest}>
-                            <div className="grid gap-6">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                        <form onSubmit={handlePasswordResetRequest} className="space-y-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email Address</Label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Mail className="h-5 w-5 text-gray-400" />
+                                    </div>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="john.doe@example.com"
+                                        placeholder="you@example.com"
                                         value={email}
                                         onChange={handleEmailChange}
-                                        className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                                        className={cn(
+                                            "pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 rounded-lg",
+                                            emailError ? "border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:ring-red-400" : ""
+                                        )}
                                         required
                                     />
-                                    {emailError && (
-                                        <p className="text-sm text-red-500">{emailError}</p>
-                                    )}
                                 </div>
-                                <Button
-                                    type="submit"
-                                    className="w-full"
-                                    disabled={loading}
+                                {emailError && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-1"
+                                    >
+                                        <span className="h-1.5 w-1.5 rounded-full bg-red-600 dark:bg-red-400"></span>
+                                        {emailError}
+                                    </motion.p>
+                                )}
+                            </div>
+                            <Button
+                                type="submit"
+                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center">
+                                        <Loader className="h-5 w-5 mr-2 animate-spin" />
+                                        <span>Sending...</span>
+                                    </div>
+                                ) : (
+                                    "Send Password Reset Link"
+                                )}
+                            </Button>
+                            <div className="text-center">
+                                <a
+                                    href="/login"
+                                    className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors duration-200"
                                 >
-                                    {loading ? (
-                                        <div className="flex items-center justify-center">
-                                            <Loader className="h-5 w-5 mr-2 animate-spin" />
-                                            <span>Sending...</span>
-                                        </div>
-                                    ) : (
-                                        "Send Password Reset Email"
-                                    )}
-                                </Button>
-                                <div className="text-center text-sm">
-                                    <a href="/login" className="text-blue-500 hover:underline">
-                                        Back to login
-                                    </a>
-                                </div>
+                                    <ArrowLeft className="h-4 w-4 mr-1" />
+                                    Back to login
+                                </a>
                             </div>
                         </form>
                     </CardContent>
+                    <CardFooter className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-center w-full text-gray-500 dark:text-gray-400">
+                            By requesting a password reset, you agree to our <a href="#" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">Privacy Policy</a>.
+                        </p>
+                    </CardFooter>
                 </Card>
-                <div
-                    className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
-                    By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                    and <a href="#">Privacy Policy</a>.
-                </div>
-            </div>
+            </motion.div>
         </div>
     );
 }
