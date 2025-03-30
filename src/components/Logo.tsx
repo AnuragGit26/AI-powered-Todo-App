@@ -54,11 +54,11 @@ const Logo: React.FC<LogoProps> = ({ size = 40, className = "", showText = false
                     className="object-contain"
                     style={{ aspectRatio: '1/1' }}
                 />
-                : <><ListTodo className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500" />
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1></>}
+                : <div className="flex flex-row mt-8 m-4"><ListTodo className="w-7 h-7 pr-2 sm:w-10 sm:h-10 text-blue-600 dark:text-blue-400" />
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">TaskMind AI</h1></div>}
             {showText && (
-                <div className="flex flex-row ml-2">
-                    <span className="font-bold text-2xl text-gray-900 dark:text-white font-['Open_Sans']">
+                <div className="flex flex-row m-2">
+                    <span className="font-bold text-2xl text-gray-900 dark:text-white font-['Open_Sans'] p-4">
                         TaskMind AI
                     </span>
                 </div>

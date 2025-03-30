@@ -1,10 +1,9 @@
 // In src/App.tsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, X, Plus } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
-import ThemeCustomizer from "./components/ThemeCustomizer";
 import { useTodoStore } from "./store/todoStore";
 import { createClient, Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
@@ -27,6 +26,8 @@ import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUti
 import { Button } from "./components/ui/button.tsx";
 import ShinyText from "./components/ui/ShinyText.tsx";
 import Logo from "./components/Logo.tsx";
+import NavBar from "./components/NavBar";
+import { initializeTheme } from "./lib/themeUtils";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -39,22 +40,37 @@ const App: React.FC = () => {
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
 
-    // Force light mode on first load
+    // Initialize theme on first load and whenever theme changes
     useEffect(() => {
         // If no theme preference has been set in localStorage
         if (!localStorage.getItem('todo-storage')) {
-            // Set light mode
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-
-            // Update the store
-            setTheme({
-                mode: 'light',
+            // Set light mode default theme
+            const defaultTheme = {
+                mode: 'light' as 'light' | 'dark',
                 primaryColor: '#53c9d9',
                 secondaryColor: '#5f4ae8',
-            });
+            };
+
+            // Update the store
+            setTheme(defaultTheme);
         }
-    }, [setTheme]);
+
+        // Initialize theme with current settings
+        initializeTheme(theme);
+    }, [theme, setTheme]);
+
+    // Listen for analytics toggle event from NavBar
+    useEffect(() => {
+        const handleToggleAnalytics = () => {
+            setShowAnalytics(prev => !prev);
+        };
+
+        window.addEventListener('toggleAnalytics', handleToggleAnalytics);
+
+        return () => {
+            window.removeEventListener('toggleAnalytics', handleToggleAnalytics);
+        };
+    }, []);
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -234,36 +250,15 @@ const App: React.FC = () => {
             } as React.CSSProperties}
         >
             <Aurora
-                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+                colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
                 blend={0.5}
-                amplitude={1.0}
+                amplitude={3.0}
                 speed={0.7}
             />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-start mt-12 sm:mt-16 md:mt-20 p-4 sm:p-6 md:p-8">
-                <div className="fixed top-4 right-4 z-20 flex flex-col items-center gap-8">
-                    <div className="mb-4">
-                        <ThemeCustomizer />
-                    </div>
-                    {!isLargeScreen && (
-                        <div className="mt-2">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => setShowAnalytics(true)}
-                                className="rounded-full h-10 w-10 flex items-center justify-center border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm"
-                            >
-                                <BarChart3 className="h-[1.2rem] w-[1.2rem]" />
-                            </Button>
-                        </div>
-                    )}
-                </div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full sm:w-4/5 md:w-3/5 mx-auto"
-                >
-                    <div className="flex justify-start -mt-16 mb-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8">
+                <div className="w-full sm:w-4/5 md:w-3/5 mx-auto">
+                    <div className="flex justify-start -mt-28 mb-1">
                         <Logo size={120} />
                     </div>
                     {/* Create Task Button for Small Screens */}
@@ -302,10 +297,9 @@ const App: React.FC = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-
                     <TodoList />
                     <Toaster />
-                </motion.div>
+                </div>
             </div>
 
             {/* Analytics panel for large screens */}
@@ -361,49 +355,52 @@ const App: React.FC = () => {
     );
 
     return (
-        <Routes>
-            <Route path="/login" element={<><LoginForm /><Toaster /></>} />
-            <Route path="/signup" element={<><SignUpForm /><Toaster /></>} />
-            <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Toaster /></>} />
-            <Route
-                path="/profile"
-                element={
+        <>
+            <NavBar />
+            <Routes>
+                <Route path="/login" element={<><LoginForm /><Toaster /></>} />
+                <Route path="/signup" element={<><SignUpForm /><Toaster /></>} />
+                <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Toaster /></>} />
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                            <div
+                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                                style={{
+                                    "--primary-color": theme.primaryColor,
+                                    "--secondary-color": theme.secondaryColor,
+                                } as React.CSSProperties}
+                            >
+                                <Aurora
+                                    colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
+                                    blend={0.5}
+                                    amplitude={1.0}
+                                    speed={0.7}
+                                />
+                                <UserProfile />
+                                <Footer />
+                                <Toaster />
+                            </div>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                            {HomeContent}
+                        </ProtectedRoute>
+                    }
+                />
+                <Route path="/admin/migration" element={
                     <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
-                        <div
-                            className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
-                            style={{
-                                "--primary-color": theme.primaryColor,
-                                "--secondary-color": theme.secondaryColor,
-                            } as React.CSSProperties}
-                        >
-                            <Aurora
-                                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-                                blend={0.5}
-                                amplitude={1.0}
-                                speed={0.7}
-                            />
-                            <UserProfile />
-                            <Footer />
-                            <Toaster />
-                        </div>
+                        <RunDatabaseMigration />
                     </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/"
-                element={
-                    <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
-                        {HomeContent}
-                    </ProtectedRoute>
-                }
-            />
-            <Route path="/admin/migration" element={
-                <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
-                    <RunDatabaseMigration />
-                </ProtectedRoute>
-            } />
-            <Route path="*" element={<><NotFound /><Toaster /></>} />
-        </Routes>
+                } />
+                <Route path="*" element={<><NotFound /><Toaster /></>} />
+            </Routes>
+        </>
     );
 };
 

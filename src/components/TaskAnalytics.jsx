@@ -66,20 +66,19 @@ export default function Component() {
             <Card className="shadow-md backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-all hover:shadow-lg">
                 <CardHeader className="items-center pb-1 pt-4 px-6 space-y-1">
                     <div className="flex items-center mb-1">
-                        <Activity className="h-5 w-5 mr-2 text-indigo-500" />
-                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                        <CardTitle className="text-xl font-bold text-blue-600 dark:text-blue-400">
                             Task Completion Progress
                         </CardTitle>
                     </div>
-                    <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+                    <CardDescription className="text-sm text-gray-600 dark:text-gray-300">
                         {totalTasks > 0 ? `${getCompletionMessage()} (${completedTasks}/${totalTasks})` : "No tasks yet"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-2 pb-4 px-6">
-                    <div className="mb-6">
+                    <div className="relative w-full h-[190px] mx-auto">
                         <ChartContainer
                             config={chartConfig}
-                            className="mx-auto aspect-square max-h-[190px]"
+                            className="w-full h-full"
                         >
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -107,6 +106,8 @@ export default function Component() {
                                         paddingAngle={2}
                                         animationDuration={750}
                                         animationBegin={250}
+                                        cx="50%"
+                                        cy="50%"
                                     >
                                         {chartData.map((entry, index) => (
                                             <Cell
@@ -120,42 +121,22 @@ export default function Component() {
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* Completion percentage in the center of pie */}
-                        <div className="flex justify-center -mt-28 relative z-10">
+                        {/* Centered percentage display */}
+                        <div className="absolute inset-0 flex items-center justify-center">
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={completionPercentage}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                    className="text-center"
                                 >
-                                    <span className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
+                                    <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                                         {completionPercentage}%
-                                    </span>
+                                    </div>
                                 </motion.div>
                             </AnimatePresence>
                         </div>
                     </div>
-
-                    {/* Progress status message */}
-                    {totalTasks > 0 && (
-                        <motion.div
-                            className="text-center mt-2 mb-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <Badge
-                                variant={completionPercentage === 100 ? "success" : "default"}
-                                className={completionPercentage === 100
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"}
-                            >
-                                {getCompletionMessage()}
-                            </Badge>
-                        </motion.div>
-                    )}
                 </CardContent>
                 <CardFooter className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-t border-gray-100 dark:border-gray-700">
                     <motion.div
@@ -164,7 +145,7 @@ export default function Component() {
                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
                         <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
-                            <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </div>
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {completedTasks} Completed
@@ -176,7 +157,7 @@ export default function Component() {
                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
                         <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                            <ClipboardList className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                            <ClipboardList className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {pendingTasks} Pending

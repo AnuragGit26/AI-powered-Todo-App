@@ -10,9 +10,9 @@ import { Label } from './ui/label';
 import { getUserRegion } from '../hooks/getUserRegion';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Home, X, User, Activity, BarChart3, CreditCard, Shield,
+    User, Activity, BarChart3, CreditCard, Shield,
     Camera, Monitor, Smartphone, Tablet, LogIn, LogOut, Edit,
-    FileEdit
+    FileEdit, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UserProfilePictureUploader from './UserProfilePictureUploader';
@@ -306,17 +306,6 @@ const UserProfile: React.FC<UserProfileProps> = () => {
 
     return (
         <div className="min-h-screen bg-white/10 p-4 md:p-8">
-            <div className="fixed top-4 right-4 z-50">
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/')}
-                    className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition duration-300 ease-in-out border border-gray-200 dark:border-gray-700"
-                >
-                    <Home className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                </motion.button>
-            </div>
-
             <div className="max-w-4xl mx-auto rounded-xl bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800">
                     <div className="flex items-center gap-4">

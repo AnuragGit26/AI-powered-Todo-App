@@ -102,18 +102,18 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
     return (
         <motion.form
             onSubmit={handleSubmit}
-            className={`mb-4 sm:mb-6 space-y-4 ${parentId ? 'ml-2 sm:ml-4 md:ml-8 mt-2' : ''}`}
+            className={`mb-1 sm:mb-2 space-y-4 ${parentId ? 'ml-2 sm:ml-4 md:ml-8 mt-2' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
         >
-            <div className="flex flex-col gap-2 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur rounded-lg p-3 sm:p-4 transition-all duration-300 animate-fadeIn">
+            <div className="flex flex-col gap-2 bg-white/80 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-600 backdrop-blur rounded-lg p-3 sm:p-4 transition-all duration-300 animate-fadeIn">
                 <div className="relative flex-auto">
                     <Input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder={parentId ? "Add a subtask..." : "Add a new task..."}
-                        className="w-full p-2 dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg"
+                        className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg"
                     />
                     <AnimatePresence>
                         {isAnalyzing && (
@@ -128,13 +128,13 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                         )}
                     </AnimatePresence>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
                                 className={cn(
-                                    "w-full justify-start text-left font-normal dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg",
+                                    "w-full justify-start text-left font-normal bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg",
                                     !dueDate && "text-muted-foreground"
                                 )}
                             >
@@ -157,7 +157,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     <Select
                         value={priority}
                         onValueChange={(e) => setPriority(e as Priority)}>
-                        <SelectTrigger className="w-full dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                        <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg">
                             <SelectValue placeholder="Priority" />
                         </SelectTrigger>
                         <SelectContent>
@@ -172,7 +172,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     <Select
                         value={status}
                         onValueChange={(e) => setStatus(e as Status)}>
-                        <SelectTrigger className="w-full dark:bg-white/5 border dark:border-white/10 backdrop-blur rounded-lg">
+                        <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -187,7 +187,7 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out hover:bg-blue-600"
+                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out shadow-sm"
                         type="submit"
                     >
                         <Plus className="w-5 h-5" />

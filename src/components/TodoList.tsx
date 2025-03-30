@@ -9,7 +9,12 @@ import {
     Plus,
     Search,
     Tag,
-    Trash2
+    Trash2,
+    MapPin,
+    FileText,
+    ExternalLink,
+    Book,
+    Wrench
 } from "lucide-react"
 import {
     Select,
@@ -97,23 +102,23 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
 
     const getStatusClasses = (status: string) => {
         if (status === "Not Started") {
-            return `cursor-pointer text-sm font-semibold bg-gray-200 text-gray-700 text-center rounded-full px-3 py-1 truncate shadow-sm border border-gray-300`;
+            return `cursor-pointer text-sm font-semibold bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-100 text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm border border-gray-300 dark:border-gray-500`;
         } else if (status === "In progress") {
-            return `cursor-pointer text-sm font-semibold bg-gradient-to-r from-blue-400 to-indigo-500 text-white text-center rounded-full px-3 py-1 truncate shadow-sm`;
+            return `cursor-pointer text-sm font-semibold theme-secondary-bg text-white text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
         } else if (status === "Completed") {
-            return `cursor-pointer text-sm font-semibold bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-center rounded-full px-3 py-1 truncate shadow-sm`;
+            return `cursor-pointer text-sm font-semibold theme-accent-bg text-white text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
         }
-        return `cursor-pointer text-sm font-semibold text-center rounded-full px-3 py-1 truncate shadow-sm`;
+        return `cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
     };
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case "high":
-                return "text-white bg-gradient-to-r from-red-500 to-pink-500 cursor-pointer text-sm font-semibold text-center rounded-full px-3 py-1 shadow-sm";
+                return "text-white bg-gradient-to-r from-red-500 to-pink-500 dark:from-red-600 dark:to-pink-600 cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 shadow-sm";
             case "medium":
-                return "text-gray-800 bg-gradient-to-r from-amber-300 to-yellow-400 cursor-pointer text-sm font-semibold text-center rounded-full px-3 py-1 shadow-sm";
+                return "text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-300 to-yellow-400 dark:from-amber-500 dark:to-yellow-600 cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 shadow-sm";
             case "low":
-                return "text-gray-800 bg-gradient-to-r from-green-300 to-emerald-400 cursor-pointer text-sm font-semibold text-center rounded-full px-3 py-1 shadow-sm";
+                return "text-gray-800 dark:text-white theme-accent-bg cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 shadow-sm";
             default:
                 return "text-gray-500";
         }
@@ -223,7 +228,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`p-3 sm:p-4 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
+            className={`p-3 sm:p-4 backdrop-blur-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
                 } ${todo.completed ? "border-l-4 border-l-emerald-500" : "hover:border-l-4 hover:border-l-blue-500"}`}
         >
             {/* Row 1: Checkbox and Title */}
@@ -234,11 +239,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                     onClick={() => handleTodoCompletion(todo)}
                     className={`p-3 rounded-full ${todo.completed
                         ? "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md"
-                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600"
                         } mr-4 shadow-sm flex-shrink-0 transition-all duration-200`}
                 >
                     <Check
-                        className={`w-5 h-5 ${todo.completed ? "text-white" : "text-gray-400"
+                        className={`w-5 h-5 ${todo.completed ? "text-white" : "text-gray-500 dark:text-gray-400"
                             }`}
                     />
                 </motion.button>
@@ -264,7 +269,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(219 234 254)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={handleEdit}
-                            className="flex items-center justify-center p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                            className="flex items-center justify-center p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-blue-100 dark:border-blue-800/30"
                         >
                             <Edit3 className="w-5 h-5" />
                         </motion.button>
@@ -272,7 +277,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(254 226 226)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleRemove(todo.id)}
-                            className="flex items-center justify-center p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                            className="flex items-center justify-center p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-red-100 dark:border-red-800/30"
                         >
                             <Trash2 className="w-5 h-5" />
                         </motion.button>
@@ -285,7 +290,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         whileTap={{ scale: 0.95 }}
                         onClick={handleSave}
                         disabled={analysisLoading}
-                        className="flex items-center gap-1 ml-2 px-4 py-2 text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                        className="flex items-center gap-1 ml-2 px-4 py-2 text-white theme-accent-bg rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                     >
                         <Check className="w-4 h-4" />
                         <span className="font-medium">Save</span>
@@ -296,7 +301,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             {!isEditing && (
                 <>
                     {/* Row 2: Priority, Time left, Status */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/50 backdrop-blur-sm border border-gray-100 dark:border-gray-700 transition-all duration-200 p-2 gap-0.5 mb-2">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2 gap-1 mb-2">
                         <div className="flex-1 flex items-center justify-center">
                             <span className={`${getPriorityColor(todo.priority)} min-w-16 text-center`}>
                                 {todo.priority ? todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1) : ""}
@@ -308,9 +313,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                 <p
                                     onMouseEnter={() => setIsHovered(true)}
                                     onMouseLeave={() => setIsHovered(false)}
-                                    className={`transition-colors duration-200 text-center border rounded-lg py-1 px-3 text-sm ${renderDueDate(todo.dueDate)?.toString().includes("days left")
-                                        ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-800"
-                                        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800"
+                                    className={`transition-colors duration-200 text-center border rounded-lg py-1 px-2 sm:px-3 text-sm ${renderDueDate(todo.dueDate)?.toString().includes("days left")
+                                        ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700"
+                                        : "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700"
                                         }`}
                                 >
                                     {renderDueDate(todo.dueDate)}
@@ -326,12 +331,12 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                     </div>
 
                     {/* Row 3: Insights, Subtask, Time buttons */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/50 backdrop-blur-sm border border-gray-100 dark:border-gray-700 transition-all duration-200 p-2">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2">
                         <div className="flex-1 flex items-center justify-center">
                             {todo.analysis && (
                                 <button
                                     onClick={() => toggleInsights(todo.id)}
-                                    className="flex items-center gap-1 text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 px-3 py-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all duration-200 shadow-sm"
+                                    className="flex items-center gap-1 text-indigo-700 dark:text-indigo-200 hover:text-indigo-900 dark:hover:text-indigo-100 px-2 sm:px-3 py-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-all duration-200 shadow-sm"
                                 >
                                     {expandedInsights.includes(todo.id) ? (
                                         <ChevronDown className="w-4 h-4" />
@@ -350,7 +355,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         <div className="flex-1 flex items-center justify-center">
                             <button
                                 onClick={() => setShowSubtaskForm(!showSubtaskForm)}
-                                className="flex items-center gap-1 text-violet-600 dark:text-violet-300 hover:text-violet-800 dark:hover:text-violet-200 px-3 py-1.5 rounded-md bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-all duration-200 shadow-sm"
+                                className="flex items-center gap-1 text-violet-700 dark:text-violet-200 hover:text-violet-900 dark:hover:text-violet-100 px-2 sm:px-3 py-1.5 rounded-md bg-violet-100 dark:bg-violet-900/50 hover:bg-violet-200 dark:hover:bg-violet-900/70 transition-all duration-200 shadow-sm"
                             >
                                 {showSubtaskForm ? (
                                     <Minus className="w-4 h-4" />
@@ -364,7 +369,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         <div className="flex-1 flex items-center justify-center">
                             <TooltipProvider delayDuration={0}>
                                 <Tooltip>
-                                    <TooltipTrigger className="flex items-center gap-1 text-cyan-600 dark:text-cyan-300 hover:text-cyan-800 dark:hover:text-cyan-200 px-3 py-1.5 rounded-md bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-all duration-200 shadow-sm">
+                                    <TooltipTrigger className="flex items-center gap-1 text-cyan-700 dark:text-cyan-200 hover:text-cyan-900 dark:hover:text-cyan-100 px-2 sm:px-3 py-1.5 rounded-md bg-cyan-100 dark:bg-cyan-900/50 hover:bg-cyan-200 dark:hover:bg-cyan-900/70 transition-all duration-200 shadow-sm">
                                         <Clock className="w-4 h-4" />
                                         <span className="font-medium">Time</span>
                                     </TooltipTrigger>
@@ -466,17 +471,169 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         className="overflow-hidden"
                     >
                         <div className="mt-4 pt-3 border-t border-indigo-100 dark:border-indigo-800/50 space-y-3 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/10 dark:to-purple-900/10 p-4 rounded-lg shadow-inner">
-                            <div className="flex items-center gap-3 text-xs sm:text-sm">
-                                <Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                <span className="text-indigo-800 dark:text-indigo-200 font-medium">
-                                    {todo.analysis.category}
-                                </span>
+                            {/* Header with category and estimated time */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-indigo-100 dark:border-indigo-800/30">
+                                <div className="flex items-center gap-2">
+                                    <Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                    <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md font-medium text-xs sm:text-sm">
+                                        {todo.analysis?.category || 'General Task'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                    <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md font-medium text-xs sm:text-sm">
+                                        {todo.analysis?.estimatedTime || 'Varies by complexity'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex items-start gap-3 text-xs sm:text-sm">
-                                <HelpCircle className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-1 flex-shrink-0" />
-                                <span className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                                    {todo.analysis.howTo}
-                                </span>
+
+                            {/* How To section */}
+                            <div className="flex flex-col gap-1.5">
+                                <h4 className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">How To Approach</h4>
+                                <div className="flex items-start gap-3">
+                                    <HelpCircle className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-1 flex-shrink-0" />
+                                    <div className="p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-md border border-indigo-100 dark:border-indigo-900/30 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                        {todo.analysis?.howTo || 'Break this task down into smaller steps for easier completion.'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Advanced insights grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                {/* Difficulty indicator */}
+                                <div className="flex flex-col gap-1.5">
+                                    <h4 className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Difficulty</h4>
+                                    <div className={`p-2 rounded-md ${todo.analysis?.difficulty?.toLowerCase?.()?.includes('easy')
+                                        ? 'bg-green-100/70 dark:bg-green-900/20 border-green-200 dark:border-green-800/30'
+                                        : todo.analysis?.difficulty?.toLowerCase?.()?.includes('medium')
+                                            ? 'bg-amber-100/70 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/30'
+                                            : 'bg-red-100/70 dark:bg-red-900/20 border-red-200 dark:border-red-800/30'
+                                        } border text-sm`}>
+                                        <div className="flex items-center mb-1">
+                                            <div className={`w-2 h-2 rounded-full mr-2 ${todo.analysis?.difficulty?.toLowerCase?.()?.includes('easy')
+                                                ? 'bg-green-500'
+                                                : todo.analysis?.difficulty?.toLowerCase?.()?.includes('medium')
+                                                    ? 'bg-amber-500'
+                                                    : 'bg-red-500'
+                                                }`}></div>
+                                            <span className={`font-medium ${todo.analysis?.difficulty?.toLowerCase?.()?.includes('easy')
+                                                ? 'text-green-700 dark:text-green-300'
+                                                : todo.analysis?.difficulty?.toLowerCase?.()?.includes('medium')
+                                                    ? 'text-amber-700 dark:text-amber-300'
+                                                    : 'text-red-700 dark:text-red-300'
+                                                }`}>
+                                                {todo.analysis?.difficulty ? extractDifficultyLevel(todo.analysis.difficulty) : 'Medium'}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-700 dark:text-gray-300 text-xs pl-4">
+                                            {todo.analysis?.difficulty ? extractDifficultyExplanation(todo.analysis.difficulty) : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Resources */}
+                                <div className="flex flex-col gap-1.5">
+                                    <h4 className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Resources</h4>
+                                    <div className="p-2 bg-blue-100/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 rounded-md text-sm">
+                                        <ul className="list-disc pl-5 text-blue-700 dark:text-blue-300 space-y-1">
+                                            {todo.analysis?.resources ?
+                                                todo.analysis.resources.split(',').map((resource, i) => (
+                                                    <li key={i} className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">{resource.trim()}</li>
+                                                ))
+                                                : <li className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">No specific resources needed</li>
+                                            }
+                                        </ul>
+                                    </div>
+
+                                    {/* Resource Links */}
+                                    {todo.analysis?.resourceLinks && todo.analysis.resourceLinks.length > 0 && (
+                                        <div className="mt-2">
+                                            <h5 className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1.5">Helpful Links:</h5>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {todo.analysis.resourceLinks.map((link, i) => {
+                                                    // Validate URL
+                                                    let isValidUrl = true;
+                                                    try {
+                                                        new URL(link.url);
+                                                    } catch {
+                                                        isValidUrl = false;
+                                                    }
+
+                                                    if (!isValidUrl) return null;
+
+                                                    // Determine which icon to use based on link type
+                                                    let LinkIcon = ExternalLink;
+                                                    const linkType = (link.type || '').toLowerCase();
+
+                                                    if (linkType.includes('location') || linkType.includes('map')) {
+                                                        LinkIcon = MapPin;
+                                                    } else if (linkType.includes('learning') || linkType.includes('course') || linkType.includes('tutorial')) {
+                                                        LinkIcon = Book;
+                                                    } else if (linkType.includes('tool') || linkType.includes('software') || linkType.includes('app')) {
+                                                        LinkIcon = Wrench;
+                                                    } else if (linkType.includes('article') || linkType.includes('guide') || linkType.includes('reference')) {
+                                                        LinkIcon = FileText;
+                                                    }
+
+                                                    // Get display domain
+                                                    let displayDomain = "";
+                                                    try {
+                                                        const urlObj = new URL(link.url);
+                                                        displayDomain = urlObj.hostname.replace('www.', '');
+                                                    } catch {
+                                                        // Invalid URL, already checked above
+                                                    }
+
+                                                    return (
+                                                        <a
+                                                            key={i}
+                                                            href={link.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 p-1.5 rounded-md hover:bg-blue-200/50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 transition-colors duration-200 group"
+                                                        >
+                                                            <div className="bg-blue-200 dark:bg-blue-800 p-1.5 rounded-md group-hover:bg-blue-300 dark:group-hover:bg-blue-700 transition-colors duration-200">
+                                                                <LinkIcon className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <div className="flex flex-col flex-1 min-w-0">
+                                                                <span className="text-xs font-medium line-clamp-1">{link.name || displayDomain}</span>
+                                                                <span className="text-xs opacity-80 line-clamp-1">{displayDomain}</span>
+                                                            </div>
+                                                        </a>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Potential Blockers */}
+                                <div className="flex flex-col gap-1.5">
+                                    <h4 className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Potential Blockers</h4>
+                                    <div className="p-2 bg-rose-100/70 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/30 rounded-md text-sm">
+                                        <ul className="list-disc pl-5 text-rose-700 dark:text-rose-300 space-y-1">
+                                            {todo.analysis?.potentialBlockers ?
+                                                todo.analysis.potentialBlockers.split(',').map((blocker, i) => (
+                                                    <li key={i} className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">{blocker.trim()}</li>
+                                                ))
+                                                : <li className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">No common blockers identified</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Next Steps */}
+                                <div className="flex flex-col gap-1.5">
+                                    <h4 className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Next Steps</h4>
+                                    <div className="p-2 bg-emerald-100/70 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 rounded-md text-sm">
+                                        <div className="flex items-start gap-2">
+                                            <div className="min-w-4 mt-0.5">→</div>
+                                            <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">
+                                                {todo.analysis?.nextSteps || 'Continue with related tasks'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -502,6 +659,49 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
         </motion.div>
     );
 });
+
+const extractDifficultyLevel = (difficultyText: string): string => {
+    // Check for dash separator
+    if (difficultyText.includes('-')) {
+        return difficultyText.split('-')[0].trim();
+    }
+    // Check for period separator (first sentence ending with a period)
+    else if (difficultyText.includes('.')) {
+        const firstSentence = difficultyText.split('.')[0].trim();
+        // Only return the first part if it's a known difficulty level
+        if (['easy', 'medium', 'hard'].includes(firstSentence.toLowerCase())) {
+            return firstSentence;
+        }
+    }
+
+    // If none of the above patterns match, try to extract just the difficulty keyword
+    if (difficultyText.toLowerCase().includes('easy')) return 'Easy';
+    if (difficultyText.toLowerCase().includes('medium')) return 'Medium';
+    if (difficultyText.toLowerCase().includes('hard')) return 'Hard';
+
+    // Fallback to returning the first word only
+    return difficultyText.split(' ')[0];
+};
+
+const extractDifficultyExplanation = (difficultyText: string): string => {
+    // Check for dash separator
+    if (difficultyText.includes('-')) {
+        return difficultyText.split('-').slice(1).join('-').trim();
+    }
+    // Check for period separator
+    else if (difficultyText.includes('.')) {
+        const parts = difficultyText.split('.');
+        const firstPart = parts[0].trim().toLowerCase();
+
+        // If first part is a recognized difficulty level, return the rest
+        if (['easy', 'medium', 'hard'].includes(firstPart)) {
+            return parts.slice(1).join('.').trim();
+        }
+    }
+
+    // If we can't clearly separate level from explanation, return empty string
+    return '';
+};
 
 const TodoList: React.FC = () => {
     const todos = useTodoStore((state) => state.todos);
@@ -536,31 +736,31 @@ const TodoList: React.FC = () => {
     }, []);
 
     return (
-        <div className="flex flex-col h-full min-h-[calc(100vh-320px)]">
+        <div className="flex flex-col h-full min-h-[calc(100vh-240px)]">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="p-2 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-sm mb-4 sticky top-0 z-10 border border-gray-100 dark:border-gray-700"
+                className="p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 sticky top-0 z-10 border border-gray-200 dark:border-gray-600"
             >
                 {todos?.length !== 0 ? (
-                    <div className="flex flex-col sm:flex-row justify-between mb-1 bg-white/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
+                    <div className="flex flex-col sm:flex-row justify-between mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
                         <div className="relative w-full sm:w-3/5 mb-2 sm:mb-0">
                             <Input
                                 type="text"
                                 value={searchQuery}
                                 onChange={handleSearchTasks}
                                 placeholder="Search tasks..."
-                                className="w-full p-2 pl-10 border rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
+                                className="w-full p-2 pl-10 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
                             />
-                            <Search className="absolute top-2.5 left-3 w-5 h-5 text-gray-400" />
+                            <Search className="absolute top-2.5 left-3 w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </div>
                         <div className="flex justify-start sm:justify-end">
                             <Select
                                 value={sortCriteria}
                                 onValueChange={(e) => setSortCriteria(e as "date" | "priority")}
                             >
-                                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
                                     <SelectValue placeholder="Sort By" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -576,22 +776,26 @@ const TodoList: React.FC = () => {
                     </div>
                 )}
             </motion.div>
-            <AnimatePresence>
-                <div className="todo-list-scroll flex-grow overflow-y-auto space-y-4 pr-2 pb-40 pl-1 max-h-[calc(100vh-200px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                    {filteredTodos.length > 0 ? (
-                        filteredTodos.map((todo) => (
-                            <TodoItem key={todo.id} todo={todo} />
-                        ))
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                            <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
-                            <p className="text-gray-500 dark:text-gray-400">
-                                {searchQuery ? "Try a different search term" : "Create a task to get started"}
-                            </p>
+            <div className="flex-grow relative overflow-hidden">
+                <div className="absolute inset-0 overflow-y-auto pr-2 pb-4 pl-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <AnimatePresence>
+                        <div className="todo-list-scroll space-y-4 mb-4">
+                            {filteredTodos.length > 0 ? (
+                                filteredTodos.map((todo) => (
+                                    <TodoItem key={todo.id} todo={todo} />
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                                    <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
+                                    <p className="text-gray-500 dark:text-gray-400">
+                                        {searchQuery ? "Try a different search term" : "Create a task to get started"}
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </AnimatePresence>
                 </div>
-            </AnimatePresence>
+            </div>
         </div>
     );
 };

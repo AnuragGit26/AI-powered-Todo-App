@@ -31,6 +31,10 @@
         --chart-5: 27 87% 67%;
         --scrollbar-track-bg: #e5e7eb;
         --scrollbar-thumb-bg: #9ca3af;
+        --primary-color: #53c9d9;
+        --secondary-color: #5f4ae8;
+        --animation-duration: 0.3s;
+        --animation-timing: ease-in-out;
     }
 
     @layer base {
@@ -63,6 +67,47 @@
         }
     }
 
+    /* Animation Toggle */
+    .disable-animations * {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+    }
+
+    /* Theme custom colors */
+    .theme-accent-bg {
+        background-color: var(--primary-color);
+    }
+
+    .theme-accent-text {
+        color: var(--primary-color);
+    }
+
+    .theme-secondary-bg {
+        background-color: var(--secondary-color);
+    }
+
+    .theme-secondary-text {
+        color: var(--secondary-color);
+    }
+
+    /* Font size customization */
+    html.text-sm {
+        font-size: 14px;
+    }
+
+    html.text-base {
+        font-size: 16px;
+    }
+
+    html.text-lg {
+        font-size: 18px;
+    }
+
+    html.text-xl {
+        font-size: 20px;
+    }
+
     .todo-list-scroll {
         max-height: calc(48vh);
         overflow-y: auto;
@@ -74,6 +119,7 @@
         opacity: 0;
         transition: opacity 0.5s;
     }
+
     .todo-list-scroll:hover::-webkit-scrollbar {
         opacity: 1;
     }
@@ -91,6 +137,7 @@
         background: var(--scrollbar-thumb-bg);
         border-radius: 3px;
     }
+
     .todo-list-scroll:hover {
         scrollbar-width: thin;
         scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
@@ -102,6 +149,7 @@
     * {
         @apply border-border;
     }
+
     body {
         @apply font-sans antialiased bg-background text-foreground;
     }
@@ -110,11 +158,12 @@
 
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+
+    body {
+        @apply bg-background text-foreground;
     }
 }
 
@@ -122,12 +171,15 @@
     .responsive-container {
         @apply w-full px-4 sm:px-6 md:px-8 max-w-7xl mx-auto;
     }
+
     .responsive-text {
         @apply text-base sm:text-lg md:text-xl;
     }
+
     .responsive-heading {
         @apply text-2xl sm:text-3xl md:text-4xl font-bold;
     }
+
     .responsive-padding {
         @apply p-2 sm:p-4 md:p-6;
     }

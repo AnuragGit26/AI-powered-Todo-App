@@ -1,10 +1,21 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'Not Started' | 'In progress' | 'Completed';
 
+export interface ResourceLink {
+  name: string;
+  url: string;
+  type: string;
+}
+
 export interface TodoAnalysis {
-    category: string;
-    howTo: string;
-    estimatedTime: string;
+  category: string;
+  howTo: string;
+  estimatedTime: string;
+  difficulty: string;
+  resources: string;
+  potentialBlockers: string;
+  nextSteps: string;
+  resourceLinks?: ResourceLink[];
 }
 
 export interface Todo {
@@ -24,17 +35,17 @@ export interface Todo {
 }
 
 export interface SubTodo {
-    id: string;
-    title: string;
-    completed: boolean;
-    createdAt: Date;
-    dueDate: Date | string | null;
-    priority: Priority;
-    analysis?: TodoAnalysis;
-    parentId?: string;
-    status: Status;
-    estimatedTime?: string | null;
-    completedAt?: Date | null;
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+  dueDate: Date | string | null;
+  priority: Priority;
+  analysis?: TodoAnalysis;
+  parentId?: string;
+  status: Status;
+  estimatedTime?: string | null;
+  completedAt?: Date | null;
 }
 
 export interface ThemeConfig {
@@ -62,11 +73,11 @@ export interface TodoStore {
 
 }
 
-export interface userData{
-    username?:string;
-    userId:string;
-    profilePicture?:string;
-    email?:string;
-    phoneNumber?:string;
+export interface userData {
+  username?: string;
+  userId: string;
+  profilePicture?: string;
+  email?: string;
+  phoneNumber?: string;
 
 }

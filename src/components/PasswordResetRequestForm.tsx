@@ -122,7 +122,7 @@ export function PasswordResetRequestForm({
                         )}
 
                         {formSuccess && (
-                            <Alert variant="success" className="mb-4 animate-in fade-in-50 slide-in-from-top-5">
+                            <Alert className="mb-4 animate-in fade-in-50 slide-in-from-top-5 bg-green-50 text-green-800 border-green-200">
                                 <AlertTitle>Success</AlertTitle>
                                 <AlertDescription>{formSuccess}</AlertDescription>
                             </Alert>

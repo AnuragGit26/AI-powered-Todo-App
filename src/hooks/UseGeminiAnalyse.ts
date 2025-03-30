@@ -10,10 +10,12 @@ interface AnalyzeParams {
     };
 }
 
-export const UseGeminiAnalyse=({ title, context = { type: 'task' } }: AnalyzeParams) =>{
+export const UseGeminiAnalyse = ({ title, context = { type: 'task' } }: AnalyzeParams) => {
     return useQuery({
         queryKey: ['analyzeTodo', title, context],
         queryFn: () => analyzeTodo(title, context),
         enabled: !!title,
+        staleTime: 1000 * 60 * 60, // Cache results for 1 hour
+        retry: 1, // Only retry once on failure
     });
 }

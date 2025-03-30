@@ -51,13 +51,13 @@ const ProductivityTrends: React.FC = () => {
         Math.round((trend / weeks[weeks.length - 2].count) * 100) : 0;
 
     return (
-        <Card className="shadow-md backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-all hover:shadow-lg mt-4">
+        <Card className="shadow-md backdrop-blur-sm bg-white/95 dark:bg-gray-800/95 border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden transition-all hover:shadow-lg mt-4">
             <CardHeader className="items-center pb-1 pt-4 px-6 space-y-1">
-                <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Weekly Productivity Trends</CardTitle>
-                <CardDescription className="text-sm text-gray-500 dark:text-gray-400">Tasks completed in past 2 weeks</CardDescription>
+                <CardTitle className="text-xl font-bold text-blue-600 dark:text-blue-400">Weekly Productivity Trends</CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-300">Tasks completed in past 2 weeks</CardDescription>
             </CardHeader>
             <CardContent className="pt-2 pb-4 px-6">
-                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-inner p-2">
+                <div className="bg-white dark:bg-gray-800/75 rounded-lg shadow-inner p-2 border border-gray-100 dark:border-gray-700">
                     <ResponsiveContainer width="100%" height={190}>
                         <AreaChart data={weeks} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                             <defs>
@@ -67,11 +67,11 @@ const ProductivityTrends: React.FC = () => {
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                            <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 12 }} />
+                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 12 }} />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '8px',
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                                     border: '1px solid #e5e7eb'
@@ -80,24 +80,28 @@ const ProductivityTrends: React.FC = () => {
                             <Area
                                 type="monotone"
                                 dataKey="count"
-                                stroke="#3b82f6"
+                                stroke="#2563eb"
                                 strokeWidth={3}
                                 fill="url(#colorCount)"
-                                activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                                activeDot={{ r: 6, fill: '#2563eb', stroke: '#fff', strokeWidth: 2 }}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-t border-gray-100 dark:border-gray-700">
+            <CardFooter className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
                 <div className="flex items-center gap-2">
-                    <CalendarRange className="h-5 w-5 text-blue-500" />
+                    <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                        <CalendarRange className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {weeks.reduce((sum, week) => sum + week.count, 0)} Tasks this month
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <ArrowUpRight className={`h-5 w-5 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                    <div className={`p-1.5 ${trend >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} rounded-full`}>
+                        <ArrowUpRight className={`h-4 w-4 ${trend >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                    </div>
                     <span className={`text-sm font-medium ${trend >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {trend >= 0 ? '+' : ''}{trend} ({trendPercentage}%)
                     </span>
