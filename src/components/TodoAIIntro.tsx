@@ -16,10 +16,10 @@ const FeatureItem = ({ title, description, icon }: FeatureItemProps) => (
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
     >
-        <div className="mt-1 text-primary">{icon}</div>
+        <div className="mt-1 text-primary dark:text-primary">{icon}</div>
         <div>
-            <h3 className="font-medium text-sm">{title}</h3>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <h3 className="font-medium text-sm text-gray-900 dark:text-gray-200">{title}</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">{description}</p>
         </div>
     </motion.div>
 );
@@ -27,7 +27,7 @@ const FeatureItem = ({ title, description, icon }: FeatureItemProps) => (
 // Mockup component to display a stylized task app screen
 const AppMockup = () => (
     <motion.div
-        className="relative mb-6 p-3 bg-black/5 rounded-lg shadow-inner overflow-hidden"
+        className="relative mb-6 p-3 bg-black/5 dark:bg-white/5 rounded-lg shadow-inner overflow-hidden"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, delay: 0.3 }}
@@ -38,41 +38,55 @@ const AppMockup = () => (
                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
-            <div className="text-[10px] text-muted-foreground">TodoAI</div>
+            <div className="text-[10px] text-muted-foreground dark:text-gray-400">TodoAI</div>
         </div>
 
         <div className="space-y-2">
             <motion.div
-                className="flex items-center bg-white/70 p-2 rounded-md"
+                className="flex items-center bg-white/70 dark:bg-gray-800/70 p-2 rounded-md"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
             >
                 <div className="h-3 w-3 bg-blue-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
                 <div className="ml-2 h-3 w-3 text-xs">✓</div>
             </motion.div>
 
             <motion.div
-                className="flex items-center bg-white/70 p-2 rounded-md"
+                className="flex items-center bg-white/70 dark:bg-gray-800/70 p-2 rounded-md"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
             >
                 <div className="h-3 w-3 bg-green-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
                 <div className="ml-2 h-3 w-3 text-xs">📊</div>
             </motion.div>
 
             <motion.div
-                className="flex items-center bg-white/70 p-2 rounded-md"
+                className="flex items-center bg-white/70 dark:bg-gray-800/70 p-2 rounded-md"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
             >
                 <div className="h-3 w-3 bg-purple-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
                 <div className="ml-2 h-3 w-3 text-xs">📝</div>
+            </motion.div>
+
+            {/* Pomodoro Timer Mockup */}
+            <motion.div
+                className="flex items-center bg-white/70 dark:bg-gray-800/70 p-2 rounded-md"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+            >
+                <div className="h-3 w-3 bg-red-400 rounded-full mr-2"></div>
+                <div className="flex-1 flex justify-center">
+                    <div className="text-xs font-mono dark:text-gray-200">25:00</div>
+                </div>
+                <div className="ml-2 h-3 w-3 text-xs">⏱️</div>
             </motion.div>
 
             <motion.div
@@ -97,14 +111,14 @@ const AnimatedStat = ({ value, label }: { value: string; label: string }) => (
         transition={{ duration: 0.5, delay: 1 }}
     >
         <motion.p
-            className="text-lg font-bold text-primary"
+            className="text-lg font-bold text-primary dark:text-primary"
             initial={{ scale: 0.5 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 1.2 }}
         >
             {value}
         </motion.p>
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400">{label}</p>
     </motion.div>
 );
 
@@ -116,11 +130,11 @@ export function TodoAIIntro() {
             transition={{ duration: 1 }}
             className="h-full"
         >
-            <Card className="max-w-md shadow-lg border-0 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden h-full">
+            <Card className="max-w-md shadow-lg border-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md rounded-lg overflow-hidden h-full border border-white/20 dark:border-gray-800/50">
                 <CardHeader className="pb-2 flex items-center justify-between">
                     <DecryptedText
                         text="Welcome to TodoAI"
-                        className="text-xl font-bold text-center"
+                        className="text-xl font-bold text-center text-gray-900 dark:text-white"
                         speed={40}
                         sequential={true}
                         animateOn="view"
@@ -128,7 +142,7 @@ export function TodoAIIntro() {
                     />
                     <DecryptedText
                         text="The smarter task management app"
-                        className="text-sm text-muted-foreground text-center"
+                        className="text-sm text-muted-foreground text-center text-gray-600 dark:text-gray-400"
                         speed={35}
                         sequential={true}
                         animateOn="view"
@@ -149,6 +163,11 @@ export function TodoAIIntro() {
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 17v.01"></path><path d="M12 13.5a1.5 1.5 0 0 1 1-1.5 2.6 2.6 0 1 0-3-2.6"></path></svg>}
                                 title="Task Analysis"
                                 description="Get insights on task difficulty and estimated completion time"
+                            />
+                            <FeatureItem
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6v6l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg>}
+                                title="Pomodoro Timer"
+                                description="Boost productivity with customizable work/break intervals and session tracking"
                             />
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>}
@@ -174,7 +193,7 @@ export function TodoAIIntro() {
 
                         {/* Stats section */}
                         <motion.div
-                            className="py-3 grid grid-cols-3 gap-2 border-t border-b border-border"
+                            className="py-3 grid grid-cols-3 gap-2 border-t border-b border-gray-200 dark:border-gray-700"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.8 }}
@@ -185,7 +204,7 @@ export function TodoAIIntro() {
                         </motion.div>
 
                         <div className="pt-2">
-                            <p className="text-xs text-center text-muted-foreground">
+                            <p className="text-xs text-center text-muted-foreground dark:text-gray-400">
                                 Join thousands of professionals enjoying our AI-powered task management revolution
                             </p>
 
@@ -199,7 +218,7 @@ export function TodoAIIntro() {
                                     {[1, 2, 3, 4, 5].map((i) => (
                                         <div
                                             key={i}
-                                            className={`w-6 h-6 rounded-full bg-gradient-to-r from-indigo-${300 + i * 100} to-purple-${400 + i * 100} border border-white`}
+                                            className={`w-6 h-6 rounded-full bg-gradient-to-r from-indigo-${300 + i * 100} to-purple-${400 + i * 100} border border-white dark:border-gray-800`}
                                         />
                                     ))}
                                 </div>

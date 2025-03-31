@@ -16,7 +16,7 @@ import { logActivity, updateUsageMetrics } from "../services/activityMetrics.ts"
 import { getUserIP } from "../services/ipService.ts";
 import Aurora from "./ui/AuroraBG.tsx";
 import { TodoAIIntro } from "./TodoAIIntro";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { recordSession } from '../lib/sessionUtils';
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader } from "lucide-react";
@@ -28,7 +28,6 @@ import {
     ArrowRight,
     Info
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -221,11 +220,11 @@ export function LoginForm({
     };
 
     return (
-        <div className="min-h-screen flex flex-col relative overflow-hidden">
+        <div className="min-h-screen flex flex-col relative overflow-hidden bg-white dark:bg-gray-950">
             <Aurora
                 colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-                blend={0.5}
-                amplitude={1.0}
+                blend={0.8}
+                amplitude={2.5}
                 speed={0.7}
             />
 
@@ -240,11 +239,11 @@ export function LoginForm({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Card className="backdrop-blur-sm border border-white/20 shadow-xl overflow-hidden">
+                            <Card className="backdrop-blur-md border border-white/20 dark:border-gray-800/50 shadow-xl overflow-hidden bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white">
                                 <CardHeader className="text-center pb-3">
                                     <SplitText
                                         text="Hello!! Welcome back to TaskMind AI"
-                                        className="text-2xl font-semibold text-center"
+                                        className="text-2xl font-semibold text-center text-gray-900 dark:text-white"
                                         delay={70}
                                         animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
                                         animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
@@ -253,245 +252,133 @@ export function LoginForm({
                                         rootMargin="-50px"
                                         onLetterAnimationComplete={handleAnimationComplete}
                                     />
-                                    <CardDescription className="mt-2 text-muted-foreground">
+                                    <CardDescription className="text-gray-600 dark:text-gray-400">
                                         Continue your productivity journey
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="pb-4">
-                                    <AnimatePresence mode="wait">
-                                        {errorMessage && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.2 }}
-                                            >
-                                                <Alert variant="destructive" className="mb-4">
-                                                    <AlertTitle className="flex items-center">
-                                                        <Info className="h-4 w-4 mr-2" />
-                                                        Sign in failed
-                                                    </AlertTitle>
-                                                    <AlertDescription>{errorMessage}</AlertDescription>
-                                                </Alert>
-                                            </motion.div>
-                                        )}
+                                <CardContent className="space-y-4">
+                                    {errorMessage && (
+                                        <Alert variant="destructive" className="text-red-500 border-red-500 bg-red-100 dark:bg-red-900/40 dark:text-red-300">
+                                            <Info className="h-4 w-4" />
+                                            <AlertTitle>Error</AlertTitle>
+                                            <AlertDescription>{errorMessage}</AlertDescription>
+                                        </Alert>
+                                    )}
+                                    {successMessage && (
+                                        <Alert className="text-green-500 border-green-500 bg-green-100 dark:bg-green-900/40 dark:text-green-300">
+                                            <Check className="h-4 w-4" />
+                                            <AlertTitle>Success</AlertTitle>
+                                            <AlertDescription>{successMessage}</AlertDescription>
+                                        </Alert>
+                                    )}
+                                    <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={handleGithubSignIn}
+                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                                        >
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+                                                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor" />
+                                            </svg>
+                                            Continue with GitHub
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => console.log("Google sign in")}
+                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                                                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                                            </svg>
+                                            Continue with Google
+                                        </Button>
 
-                                        {successMessage && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.2 }}
-                                            >
-                                                <Alert variant="success" className="mb-4 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
-                                                    <AlertTitle className="flex items-center">
-                                                        <Check className="h-4 w-4 mr-2 text-green-500" />
-                                                        Success
-                                                    </AlertTitle>
-                                                    <AlertDescription>{successMessage}</AlertDescription>
-                                                </Alert>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    <form onSubmit={handleSignIn}>
-                                        <div className="grid gap-5">
-                                            <div className="flex flex-col gap-3">
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full relative group overflow-hidden transition-all duration-300"
-                                                    onClick={handleGithubSignIn}
-                                                    disabled={loading}
-                                                >
-                                                    <motion.span
-                                                        className="absolute inset-0 bg-black/5 dark:bg-white/5 w-0 group-hover:w-full transition-all duration-300"
-                                                        initial={false}
-                                                        animate={{ width: loading ? "100%" : "0%" }}
-                                                    />
-                                                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                                                    </svg>
-                                                    <span>Continue with GitHub</span>
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full relative group overflow-hidden transition-all duration-300"
-                                                >
-                                                    <motion.span
-                                                        className="absolute inset-0 bg-black/5 dark:bg-white/5 w-0 group-hover:w-full transition-all duration-300"
-                                                    />
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
-                                                        <path
-                                                            d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                                                            fill="currentColor"
-                                                        />
-                                                    </svg>
-                                                    <span>Continue with Google</span>
-                                                </Button>
-                                            </div>
-                                            <div
-                                                className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-neutral-200 dark:after:border-neutral-800">
-                                                <span className="relative z-10 bg-white px-2 text-neutral-500 dark:bg-neutral-950 dark:text-neutral-400">
-                                                    Or continue with email
-                                                </span>
-                                            </div>
-                                            <div className="grid gap-5">
-                                                <div className="grid gap-2">
-                                                    <Label
-                                                        htmlFor="email"
-                                                        className="text-sm font-medium flex items-center mb-1"
-                                                    >
-                                                        <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                                                        Email address
-                                                    </Label>
-                                                    <div className="relative">
-                                                        <Input
-                                                            id="email"
-                                                            type="email"
-                                                            placeholder="you@example.com"
-                                                            value={email}
-                                                            onChange={handleEmailChange}
-                                                            className={`pl-3 pr-3 py-2 h-10 ${emailError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
-                                                            required
-                                                        />
-                                                        {/* Status indicator */}
-                                                        <AnimatePresence>
-                                                            {email && !emailError && (
-                                                                <motion.div
-                                                                    initial={{ opacity: 0, scale: 0.5 }}
-                                                                    animate={{ opacity: 1, scale: 1 }}
-                                                                    exit={{ opacity: 0, scale: 0.5 }}
-                                                                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                                                                >
-                                                                    <Check className="h-4 w-4 text-green-500" />
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
-                                                    <AnimatePresence>
-                                                        {emailError && (
-                                                            <motion.p
-                                                                className="text-sm text-red-500 mt-1"
-                                                                initial={{ opacity: 0, height: 0 }}
-                                                                animate={{ opacity: 1, height: 'auto' }}
-                                                                exit={{ opacity: 0, height: 0 }}
-                                                            >
-                                                                {emailError}
-                                                            </motion.p>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <Label htmlFor="password" className="text-sm font-medium flex items-center">
-                                                            <Lock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                                                            Password
-                                                        </Label>
-                                                        <a
-                                                            href="/password-reset-request"
-                                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                                                        >
-                                                            Forgot password?
-                                                        </a>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <Input
-                                                            id="password"
-                                                            type={showPassword ? "text" : "password"}
-                                                            value={password}
-                                                            onChange={handlePasswordChange}
-                                                            className={`pl-3 pr-10 py-2 h-10 ${passwordError ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-blue-500"}`}
-                                                            required
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                                            onClick={() => setShowPassword(!showPassword)}
-                                                        >
-                                                            {showPassword ? (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                                                </svg>
-                                                            ) : (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                </svg>
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                    <AnimatePresence>
-                                                        {passwordError && (
-                                                            <motion.p
-                                                                className="text-sm text-red-500 mt-1"
-                                                                initial={{ opacity: 0, height: 0 }}
-                                                                animate={{ opacity: 1, height: 'auto' }}
-                                                                exit={{ opacity: 0, height: 0 }}
-                                                            >
-                                                                {passwordError}
-                                                            </motion.p>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                                <Button
-                                                    type="submit"
-                                                    className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md active:scale-95 transition-transform duration-75"
-                                                    disabled={loading}
-                                                >
-                                                    {loading ? (
-                                                        <div className="flex items-center justify-center">
-                                                            <Loader className="h-5 w-5 mr-2 animate-spin" />
-                                                            <span>Signing in...</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center">
-                                                            <span className="mr-1">Sign In</span>
-                                                            <ArrowRight className="h-4 w-4 ml-1" />
-                                                        </div>
-                                                    )}
-                                                </Button>
-                                            </div>
-                                            <div className="text-center text-sm mt-2">
-                                                <span className="text-muted-foreground">Don&apos;t have an account?</span>{" "}
-                                                <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors">
-                                                    Create one
-                                                </a>
-                                            </div>
+                                        <div className="relative flex items-center">
+                                            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                                            <span className="flex-shrink mx-4 text-sm text-gray-600 dark:text-gray-400">Or continue with email</span>
+                                            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
                                         </div>
+
+                                        <div className="grid gap-1">
+                                            <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Email address
+                                            </Label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Input
+                                                    id="email"
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={handleEmailChange}
+                                                    placeholder="you@example.com"
+                                                    className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${emailError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                />
+                                            </div>
+                                            {emailError && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{emailError}</p>}
+                                        </div>
+
+                                        <div className="grid gap-1">
+                                            <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Password
+                                            </Label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Input
+                                                    id="password"
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={password}
+                                                    onChange={handlePasswordChange}
+                                                    placeholder="••••••••"
+                                                    className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${passwordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                >
+                                                    {showPassword ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            {passwordError && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{passwordError}</p>}
+                                        </div>
+
+                                        <div className="text-right">
+                                            <a href="/password-reset-request" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                                Forgot password?
+                                            </a>
+                                        </div>
+
+                                        <Button
+                                            disabled={loading}
+                                            type="submit"
+                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader className="h-4 w-4 animate-spin" />
+                                                    Signing in...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Sign In
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </>
+                                            )}
+                                        </Button>
                                     </form>
                                 </CardContent>
-                                <CardFooter className="bg-gray-50 dark:bg-gray-800/50 pt-5 pb-5 px-6 border-t border-gray-100 dark:border-gray-800">
-                                    <div className="text-center justify-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary w-full">
-                                        <TooltipProvider>
-                                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-                                                By signing in, you agree to our{" "}
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <a href="#" className="hover:text-primary transition-colors">
-                                                            Terms of Service
-                                                        </a>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p className="w-60 text-xs">
-                                                            Our terms of service outline the rules and guidelines for using TaskMind AI.
-                                                        </p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                {" and "}
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <a href="#" className="hover:text-primary transition-colors">
-                                                            Privacy Policy
-                                                        </a>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p className="w-60 text-xs">
-                                                            Our privacy policy explains how we collect, use, and protect your personal information.
-                                                        </p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        </TooltipProvider>
+                                <CardFooter className="flex flex-col space-y-4 pb-6">
+                                    <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                                        Don't have an account?{" "}
+                                        <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
+                                            Create one
+                                        </a>
                                     </div>
                                 </CardFooter>
                             </Card>
