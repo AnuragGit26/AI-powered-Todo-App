@@ -27,12 +27,24 @@ const FONT_SIZES = [
     { name: 'Extra Large', value: 'text-xl' }
 ];
 
+// Define preset type interface to fix 'any' type issues
+interface ThemePreset {
+    name: string;
+    theme: {
+        mode: 'light' | 'dark';
+        primaryColor: string;
+        secondaryColor: string;
+        fontSize?: string;
+        enableAnimations?: boolean;
+    };
+}
+
 const ThemeCustomizer: React.FC = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState<'general' | 'colors' | 'typography' | 'presets'>('general');
     const [customPrimary, setCustomPrimary] = useState('');
     const [customSecondary, setCustomSecondary] = useState('');
-    const [userPresets, setUserPresets] = useState<Array<{ name: string, theme: any }>>([]);
+    const [userPresets, setUserPresets] = useState<Array<ThemePreset>>([]);
     const [newPresetName, setNewPresetName] = useState('');
     const [presetError, setPresetError] = useState('');
     const [fontSize, setFontSize] = useState('text-base');
@@ -129,7 +141,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
         setPresetError('');
     }, [newPresetName, userPresets, theme, fontSize, enableAnimations]);
 
-    const applyPreset = useCallback((preset: any) => {
+    const applyPreset = useCallback((preset: ThemePreset) => {
         // Apply theme settings
         setTheme({
             mode: preset.theme.mode,
@@ -219,11 +231,11 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                             initial={{ opacity: 0, scale: 0.95, x: 20 }}
                             animate={{ opacity: 1, scale: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                            className="absolute right-0 mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-96 max-h-[90vh] overflow-y-auto z-50"
+                            className="fixed right-0 left-0 mx-auto md:absolute md:right-0 md:left-auto mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[95%] md:w-96 max-h-[90vh] overflow-y-auto z-50"
                         >
                             <div className="flex flex-col mb-4">
                                 <div className="flex justify-between items-center w-full">
-                                    <h3 className="text-2xl font-semibold dark:text-white">Welcome {username}!</h3>
+                                    <h3 className="text-2xl font-semibold dark:text-white truncate pr-2">Welcome {username}!</h3>
                                     <button
                                         onClick={() => setIsOpen(false)}
                                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
@@ -240,14 +252,14 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                 {username?.charAt(0).toUpperCase()}
                                             </div>}
                                         <div className="flex flex-col">
-                                            <span className="font-medium cursor-pointer dark:text-white" onClick={() => navigate('/profile')}>{username}</span>
+                                            <span className="font-medium cursor-pointer dark:text-white truncate" onClick={() => navigate('/profile')}>{username}</span>
                                             <span className="text-sm text-gray-500 dark:text-gray-400">User Profile</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Tabs for different settings categories */}
-                                <div className="flex gap-2 mb-4 overflow-x-auto py-1">
+                                {/* Tabs for different settings categories - updated for responsiveness */}
+                                <div className="flex flex-wrap gap-2 mb-4 overflow-x-auto py-1">
                                     <TabButton id="general" label="General" icon={<Settings className="w-4 h-4" />} />
                                     <TabButton id="colors" label="Colors" icon={<Palette className="w-4 h-4" />} />
                                     <TabButton id="typography" label="Typography" icon={<Type className="w-4 h-4" />} />
@@ -331,7 +343,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <label className="block text-m font-medium dark:text-gray-200">Color Schemes</label>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {COLOR_SCHEMES.map((scheme) => (
                                                     <button
                                                         key={scheme.name}
@@ -366,7 +378,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
 
                                         <div className="space-y-2">
                                             <label className="block text-m font-medium dark:text-gray-200">Custom Colors</label>
-                                            <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="text-sm text-gray-600 dark:text-gray-400">Primary</label>
                                                     <div className="flex mt-1">
@@ -417,7 +429,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <label className="block text-m font-medium dark:text-gray-200">Font Size</label>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {FONT_SIZES.map((size) => (
                                                     <button
                                                         key={size.value}
