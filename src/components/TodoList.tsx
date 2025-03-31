@@ -228,7 +228,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`p-3 sm:p-4 backdrop-blur-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
+            className={`task-item p-3 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
                 } ${todo.completed ? "border-l-4 border-l-emerald-500" : "hover:border-l-4 hover:border-l-blue-500"}`}
         >
             {/* Row 1: Checkbox and Title */}
@@ -264,7 +264,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
 
                 {/* Edit and Delete buttons in right corner */}
                 {!isEditing && (
-                    <div className="flex ml-auto gap-2">
+                    <div className="flex ml-auto gap-2 task-actions">
                         <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(219 234 254)" }}
                             whileTap={{ scale: 0.95 }}
@@ -324,7 +324,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         </div>
 
                         <div className="flex-1 flex items-center justify-center">
-                            <span onClick={toggleStatus} className={`${getStatusClasses(todo.status)} w-26 inline-block overflow-hidden whitespace-nowrap`}>
+                            <span onClick={toggleStatus} className={`task-status ${getStatusClasses(todo.status)} w-26 inline-block overflow-hidden whitespace-nowrap`}>
                                 {todo.status}
                             </span>
                         </div>

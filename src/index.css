@@ -39,31 +39,33 @@
 
     @layer base {
         .dark {
-            --background: 0 0% 0%;
-            --foreground: 0 0% 98%;
-            --card: 0 0% 0%;
-            --card-foreground: 0 0% 98%;
-            --popover: 0 0% 0%;
-            --popover-foreground: 0 0% 98%;
-            --primary: 0 72.2% 50.6%;
-            --primary-foreground: 0 85.7% 97.3%;
-            --secondary: 0 0% 0%;
-            --secondary-foreground: 0 0% 98%;
-            --muted: 0 0% 0%;
-            --muted-foreground: 0 0% 63.9%;
-            --accent: 0 0% 0%;
-            --accent-foreground: 0 0% 98%;
+            --background: 222 47% 11%;
+            --foreground: 213 31% 91%;
+            --card: 222 47% 13%;
+            --card-foreground: 213 31% 91%;
+            --popover: 222 47% 11%;
+            --popover-foreground: 213 31% 91%;
+            --primary: 199 89% 48%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 217 33% 17%;
+            --secondary-foreground: 213 31% 91%;
+            --muted: 223 47% 14%;
+            --muted-foreground: 215 20% 65%;
+            --accent: 217 33% 18%;
+            --accent-foreground: 210 40% 98%;
             --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 0 0% 98%;
-            --border: 0 0% 0%;
-            --input: 0 0% 0%;
-            --ring: 0 72.2% 50.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 216 34% 17%;
+            --input: 216 34% 17%;
+            --ring: 224 76% 48%;
             --chart-1: 220 70% 50%;
             --chart-2: 160 60% 45%;
             --chart-3: 30 80% 55%;
             --chart-4: 280 65% 60%;
-            --scrollbar-track-bg: #374151;
-            --scrollbar-thumb-bg: #6b7280;
+            --scrollbar-track-bg: #1e293b;
+            --scrollbar-thumb-bg: #475569;
+            --task-hover-bg: 221 39% 16%;
+            --task-hover-border: 224 76% 48%;
         }
     }
 
@@ -141,6 +143,59 @@
     .todo-list-scroll:hover {
         scrollbar-width: thin;
         scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+    }
+
+    /* Task hover effects */
+    .dark .task-item {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .dark .task-item:hover {
+        background-color: hsl(var(--task-hover-bg));
+        border-color: hsl(var(--task-hover-border));
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .dark .task-item:hover .task-status {
+        box-shadow: 0 2px 6px rgba(45, 55, 72, 0.3);
+    }
+
+    .dark .task-item:hover .task-actions button {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .dark .task-actions button {
+        opacity: 0.85;
+        transform: translateX(5px);
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Modern component backgrounds for dark mode */
+    .dark .bg-card-modern {
+        background: linear-gradient(to bottom right, hsl(222 47% 14%), hsl(222 47% 11%));
+        border: 1px solid hsl(223 47% 16%);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .dark .bg-input-modern {
+        background-color: hsl(223 47% 10%);
+        border-color: hsl(223 47% 18%);
+    }
+
+    .dark .bg-popover-modern {
+        background: linear-gradient(to bottom, hsl(222 47% 14%), hsl(222 47% 11%));
+        border: 1px solid hsl(223 47% 16%);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Subtle glass morphism for cards */
+    .dark .glass-card {
+        background: linear-gradient(135deg, hsla(222, 47%, 14%, 0.8), hsla(222, 47%, 11%, 0.9));
+        backdrop-filter: blur(8px);
+        border: 1px solid hsla(223, 47%, 20%, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 }
 

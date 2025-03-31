@@ -12,9 +12,6 @@ const Logo: React.FC<LogoProps> = ({ size = 40, className = "", showText = false
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     useEffect(() => {
-        // Force light mode on first render
-        document.documentElement.classList.remove('dark');
-
         // Set up observer for theme changes
         const darkModeObserver = new MutationObserver(() => {
             setIsDarkMode(document.documentElement.classList.contains('dark'));
@@ -34,13 +31,16 @@ const Logo: React.FC<LogoProps> = ({ size = 40, className = "", showText = false
 
         mediaQuery.addEventListener('change', handleChange);
 
+        // Set initial dark mode value based on current document class
+        setIsDarkMode(document.documentElement.classList.contains('dark'));
+
         return () => {
             darkModeObserver.disconnect();
             mediaQuery.removeEventListener('change', handleChange);
         };
     }, []);
 
-    // Force light mode 
+    // Logo path
     const logoPath = "/assets/logo.png";
 
     return (

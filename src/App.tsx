@@ -28,6 +28,7 @@ import ShinyText from "./components/ui/ShinyText.tsx";
 import Logo from "./components/Logo.tsx";
 import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
+import { PomodoroTimer } from "./components/PomodoroTimer";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -42,21 +43,43 @@ const App: React.FC = () => {
 
     // Initialize theme on first load and whenever theme changes
     useEffect(() => {
-        // If no theme preference has been set in localStorage
-        if (!localStorage.getItem('todo-storage')) {
-            // Set light mode default theme
-            const defaultTheme = {
-                mode: 'light' as 'light' | 'dark',
-                primaryColor: '#53c9d9',
-                secondaryColor: '#5f4ae8',
-            };
-
-            // Update the store
-            setTheme(defaultTheme);
-        }
-
-        // Initialize theme with current settings
+        // Initialize theme with current settings from store
         initializeTheme(theme);
+
+        // Add dark class to ensure UI components reflect the current theme
+        document.documentElement.classList.toggle('dark', theme.mode === 'dark');
+    }, [theme, setTheme]);
+
+    // Add listener for system color scheme changes
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        // Only apply system preference if user hasn't manually set a theme
+        const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+            // If we have a stored preference, don't automatically change
+            if (localStorage.getItem('todo-storage')) {
+                const storedData = JSON.parse(localStorage.getItem('todo-storage') || '{}');
+                // Only apply system change if user hasn't explicitly chosen a theme
+                if (!storedData.state?.theme?.mode) {
+                    setTheme({
+                        ...theme,
+                        mode: e.matches ? 'dark' : 'light',
+                    });
+                }
+            } else {
+                // No stored preference, follow system
+                setTheme({
+                    ...theme,
+                    mode: e.matches ? 'dark' : 'light',
+                });
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+        return () => {
+            mediaQuery.removeEventListener('change', handleSystemThemeChange);
+        };
     }, [theme, setTheme]);
 
     // Listen for analytics toggle event from NavBar
@@ -251,9 +274,9 @@ const App: React.FC = () => {
         >
             <Aurora
                 colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
-                blend={0.5}
-                amplitude={3.0}
-                speed={0.7}
+                blend={0.7}
+                amplitude={2.5}
+                speed={0.9}
             />
 
             <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8">
@@ -374,9 +397,9 @@ const App: React.FC = () => {
                             >
                                 <Aurora
                                     colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
-                                    blend={0.5}
-                                    amplitude={1.0}
-                                    speed={0.7}
+                                    blend={0.7}
+                                    amplitude={2.5}
+                                    speed={0.9}
                                 />
                                 <UserProfile />
                                 <Footer />
@@ -398,6 +421,34 @@ const App: React.FC = () => {
                         <RunDatabaseMigration />
                     </ProtectedRoute>
                 } />
+                <Route
+                    path="/pomodoro"
+                    element={
+                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                            <div
+                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                                style={{
+                                    "--primary-color": theme.primaryColor,
+                                    "--secondary-color": theme.secondaryColor,
+                                } as React.CSSProperties}
+                            >
+                                <Aurora
+                                    colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
+                                    blend={0.7}
+                                    amplitude={2.5}
+                                    speed={0.9}
+                                />
+                                <div className="container mx-auto px-4 py-8">
+                                    <div className="max-w-2xl mx-auto">
+                                        <PomodoroTimer />
+                                    </div>
+                                </div>
+                                <Footer />
+                                <Toaster />
+                            </div>
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="*" element={<><NotFound /><Toaster /></>} />
             </Routes>
         </>

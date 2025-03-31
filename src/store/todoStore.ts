@@ -6,12 +6,29 @@ import { TodoStore, Todo, SubTodo, userData } from '../types';
 const ensureLightMode = () => {
     // Check if this is the first load (no localStorage entry for the theme yet)
     if (!localStorage.getItem('todo-storage')) {
-        // Set the HTML document to light mode
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
+        // Check if user prefers dark mode
+        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Set the HTML document class based on system preference
+        if (prefersDarkMode) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+
+            return {
+                mode: 'dark',
+                primaryColor: '#3db9e5',  // Use dark mode colors
+                secondaryColor: '#7c5bf2',
+            };
+        } else {
+            // Default to light mode
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+        }
     }
+
+    // Default to light mode values if no preference detected
     return {
-        mode: 'light',
+        mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
         primaryColor: '#53c9d9',
         secondaryColor: '#5f4ae8',
     };

@@ -167,6 +167,30 @@ export async function recordSession(): Promise<void> {
         // Check if a session already exists for this device
         const existingSessionId = await getExistingDeviceSession(userId);
 
+        // If a session exists for this device, update it instead of creating a new one
+        if (existingSessionId) {
+            // Update the existing session
+            const { error: updateError } = await supabase
+                .from('user_sessions')
+                .update({
+                    last_seen_at: new Date().toISOString(),
+                    user_agent: userAgent,
+                    device_type: deviceType,
+                    ...(ipAddress && { ip: ipAddress }),
+                    ...(locationData && { location: locationData })
+                })
+                .eq('id', existingSessionId);
+
+            if (updateError) {
+                console.error('Error updating existing session:', updateError);
+                throw updateError;
+            }
+
+            // Store session ID in localStorage
+            localStorage.setItem('current_session_id', existingSessionId);
+            return;
+        }
+
         // Get location and IP data with timeout and error handling
         let locationData = '';
         let ipAddress = '';
@@ -176,26 +200,33 @@ export async function recordSession(): Promise<void> {
                 setTimeout(() => reject(new Error('Timeout getting user data')), ms)
             );
 
-            // Get IP with a timeout
-            const ipPromise = Promise.race([
-                getUserIP(),
-                timeout(3000)
-            ]).catch(err => {
+            // Get IP with a timeout and fallback
+            let ip = '';
+            try {
+                const ipPromise = Promise.race([
+                    getUserIP(),
+                    timeout(3000)
+                ]);
+                ip = await ipPromise;
+            } catch (err) {
                 console.warn('Could not get IP:', err);
-                return '';
-            });
+                // Continue with empty IP
+            }
 
-            // Get location with a timeout
-            const regionPromise = Promise.race([
-                getUserRegion(),
-                timeout(3000)
-            ]).catch(err => {
+            // Get location with a timeout and fallback
+            let region = { location: '', region: '' };
+            try {
+                const regionPromise = Promise.race([
+                    getUserRegion(),
+                    timeout(3000)
+                ]);
+                region = await regionPromise;
+            } catch (err) {
                 console.warn('Could not get region:', err);
-                return { location: '', region: '' };
-            });
+                // Continue with empty region
+            }
 
-            // Wait for both but don't block if they fail
-            const [ip, region] = await Promise.all([ipPromise, regionPromise]);
+            // Safely extract values
             ipAddress = typeof ip === 'string' ? ip : '';
             locationData = region && typeof region === 'object' && 'location' in region ?
                 String(region.location || '') : '';
@@ -204,30 +235,6 @@ export async function recordSession(): Promise<void> {
             // Continue with empty values
         }
 
-        if (existingSessionId) {
-            // Update the existing session instead of creating a new one
-            const { error } = await supabase
-                .from('user_sessions')
-                .update({
-                    last_seen_at: new Date().toISOString(),
-                    user_agent: userAgent,
-                    device_type: deviceType,
-                    ...(locationData && { location: locationData }),
-                    ...(ipAddress && { ip: ipAddress })
-                })
-                .eq('id', existingSessionId);
-
-            if (error) {
-                console.error('Error updating existing session:', error);
-                // If update fails, try to create a new session as fallback
-            } else {
-                // Store session ID in localStorage
-                localStorage.setItem('current_session_id', existingSessionId);
-                return; // Exit early as we've updated the existing session
-            }
-        }
-
-        // If no existing session or update failed, create a new one
         // Generate a UUID for the session
         let sessionId: string;
         try {
@@ -238,8 +245,8 @@ export async function recordSession(): Promise<void> {
             console.warn('Using fallback session ID generation:', error);
         }
 
-        // Insert using regular client
-        const { error } = await supabase.from('user_sessions').upsert({
+        // Insert the new session
+        const { error } = await supabase.from('user_sessions').insert({
             id: sessionId,
             user_id: userId,
             ...(ipAddress && { ip: ipAddress }),
@@ -251,18 +258,13 @@ export async function recordSession(): Promise<void> {
             device_fingerprint: deviceFingerprint
         });
 
-        // Log any error for debugging
         if (error) {
-            console.error('Session recording error:', error);
-            return;
+            console.error('Error inserting new session:', error);
+            throw error;
         }
 
-        // Store the session ID in localStorage for reference
-        try {
-            localStorage.setItem('current_session_id', sessionId);
-        } catch (error) {
-            console.error('Error storing session ID in localStorage:', error);
-        }
+        // Store session ID in localStorage
+        localStorage.setItem('current_session_id', sessionId);
     } catch (error) {
         console.error('Error recording session:', error);
     }

@@ -64,12 +64,13 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     }, [theme]);
 
     const toggleTheme = useCallback(() => {
+        const newMode = theme.mode === 'light' ? 'dark' : 'light';
         setTheme({
             ...theme,
-            mode: theme.mode === 'light' ? 'dark' : 'light',
+            mode: newMode,
         });
-        // Force document class update
-        document.documentElement.classList.toggle('dark', theme.mode === 'light');
+        // Force document class update - fixed to use the new mode value directly
+        document.documentElement.classList.toggle('dark', newMode === 'dark');
     }, [theme, setTheme]);
 
     const handleApplyColorScheme = useCallback((primary: string, secondary: string) => {

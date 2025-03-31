@@ -6,20 +6,27 @@ import { ThemeConfig } from '../types';
 export const initializeTheme = (theme: ThemeConfig) => {
   // Apply theme mode (light/dark)
   document.documentElement.classList.toggle('dark', theme.mode === 'dark');
-  
+
   // Apply custom colors as CSS variables
-  document.documentElement.style.setProperty('--primary-color', theme.primaryColor || '#53c9d9');
-  document.documentElement.style.setProperty('--secondary-color', theme.secondaryColor || '#5f4ae8');
-  
+  const isDarkMode = theme.mode === 'dark';
+  const darkModeColors = getDarkModeColors();
+
+  // Use different colors for dark mode
+  const primaryColor = isDarkMode ? darkModeColors.primary : (theme.primaryColor || '#53c9d9');
+  const secondaryColor = isDarkMode ? darkModeColors.secondary : (theme.secondaryColor || '#5f4ae8');
+
+  document.documentElement.style.setProperty('--primary-color', primaryColor);
+  document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+
   // Load and apply font size preference
   const savedFontSize = localStorage.getItem('fontSize') || 'text-base';
-  
+
   // Remove all possible font size classes first
   document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-  
+
   // Add the selected font size class
   document.documentElement.classList.add(savedFontSize);
-  
+
   // Apply animations preference
   const enableAnimations = localStorage.getItem('enableAnimations') !== 'false';
   if (!enableAnimations) {
@@ -43,7 +50,7 @@ export const applyColorScheme = (primary: string, secondary: string) => {
 export const changeFontSize = (size: string) => {
   // Remove all font size classes
   document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-  
+
   // Add selected font size class
   document.documentElement.classList.add(size);
   localStorage.setItem('fontSize', size);
@@ -71,16 +78,33 @@ export const resetToDefaultTheme = () => {
     primaryColor: '#53c9d9',
     secondaryColor: '#5f4ae8',
   };
-  
+
   // Apply default theme
   document.documentElement.classList.remove('dark');
   applyColorScheme(defaultTheme.primaryColor, defaultTheme.secondaryColor);
-  
+
   // Reset font size to default
   changeFontSize('text-base');
-  
+
   // Enable animations
   toggleAnimations(true);
-  
+
   return defaultTheme;
+};
+
+/**
+ * Get recommended dark mode colors that match well with dark backgrounds
+ */
+export const getDarkModeColors = () => {
+  return {
+    primary: '#3db9e5',     // Bright cyan blue
+    secondary: '#7c5bf2',   // Vibrant purple
+    accent: '#f06595',      // Rich pink
+    success: '#34d399',     // Emerald green
+    warning: '#fbbf24',     // Amber yellow
+    error: '#ef4444',       // Red
+    info: '#38bdf8',        // Sky blue
+    surface: '#1e293b',     // Slate 800
+    muted: '#475569',       // Slate 600
+  };
 }; 

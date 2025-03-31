@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BarChart3, User, X, Menu } from "lucide-react";
+import { Home, BarChart3, User, X, Menu, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { useTodoStore } from "../store/todoStore";
@@ -43,6 +43,14 @@ export const NavBar: React.FC = () => {
 
                 {/* Right section with actions */}
                 <div className="flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                        onClick={() => navigate("/pomodoro")}
+                    >
+                        <Timer className="h-5 w-5" />
+                    </Button>
+
                     <Button
                         variant="ghost"
                         className="p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
@@ -112,6 +120,18 @@ export const NavBar: React.FC = () => {
                         >
                             <Home className="h-5 w-5 mr-2" />
                             <span>Home</span>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
+                            onClick={() => {
+                                navigate("/pomodoro");
+                                setShowMobileMenu(false);
+                            }}
+                        >
+                            <Timer className="h-5 w-5 mr-2" />
+                            <span>Pomodoro Timer</span>
                         </Button>
 
                         <Button
