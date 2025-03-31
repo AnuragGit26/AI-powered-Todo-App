@@ -203,24 +203,28 @@ export function TodoAIIntro() {
                             <AnimatedStat value="4.7" label="Rating" />
                         </motion.div>
 
-                        <div className="pt-2">
-                            <p className="text-xs text-center text-muted-foreground dark:text-gray-400">
+                        <div className="pt-4 pb-2">
+                            <motion.p
+                                className="text-xs text-center text-gray-600 dark:text-gray-400 mb-4"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.2 }}
+                            >
                                 Join thousands of professionals enjoying our AI-powered task management revolution
-                            </p>
+                            </motion.p>
 
                             <motion.div
-                                className="flex justify-center mt-3"
+                                className="flex justify-center"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 1.3 }}
                             >
-                                <div className="flex -space-x-2">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <div
-                                            key={i}
-                                            className={`w-6 h-6 rounded-full bg-gradient-to-r from-indigo-${300 + i * 100} to-purple-${400 + i * 100} border border-white dark:border-gray-800`}
-                                        />
-                                    ))}
+                                <div className="flex -space-x-3 shadow-sm">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 border-2 border-white dark:border-gray-800 z-10"></div>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 border-2 border-white dark:border-gray-800 z-20"></div>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 border-2 border-white dark:border-gray-800 z-30"></div>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-600 border-2 border-white dark:border-gray-800 z-40"></div>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-600 border-2 border-white dark:border-gray-800 z-50"></div>
                                 </div>
                             </motion.div>
                         </div>

@@ -43,7 +43,9 @@ const ModernFooter = () => {
                 <div className="flex flex-col md:flex-row justify-between items-center">
                     {/* Logo and tagline */}
                     <div className="mb-6 md:mb-0">
-                        <Logo size={32} showText={true} className="text-white" />
+                        <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary/90 to-purple-400 bg-clip-text text-transparent tracking-tight">
+                            TaskMind AI
+                        </h2>
                         <p className="text-xs text-muted-foreground mt-2 max-w-xs">
                             Revolutionizing task management with AI-powered organization and insights.
                         </p>
