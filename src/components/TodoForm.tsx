@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Repeat } from 'lucide-react';
 import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
-import type { Priority, Status, SubTodo, Todo } from '../types';
+import type { Priority, Status, SubTodo, Todo, RecurrenceFrequency, RecurrenceConfig } from '../types';
 import { createSubtask, createTask, getTaskById } from '../services/taskService';
 import { Input } from "./ui/input.tsx";
 import { format } from "date-fns";
@@ -26,7 +26,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select.tsx";
+import { Switch } from "./ui/switch.tsx";
+import { Label } from "./ui/label.tsx";
+import { Checkbox } from "./ui/checkbox.tsx";
 
+const DAYS_OF_WEEK = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+];
 
 const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
     const [title, setTitle] = useState('');
@@ -34,6 +46,13 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
     const [priority, setPriority] = useState<Priority>('medium');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [status, setStatus] = useState<Status>('Not Started');
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>(null);
+    const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+    const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
+    const [selectedDays, setSelectedDays] = useState<number[]>([]);
+    const [dayOfMonth, setDayOfMonth] = useState<number>(1);
+    const [monthOfYear, setMonthOfYear] = useState<number>(1);
     const { addTodo } = useTodoStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +72,15 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
         }
         setIsAnalyzing(false);
 
+        const recurrence: RecurrenceConfig | undefined = isRecurring ? {
+            frequency: recurrenceFrequency,
+            interval: recurrenceInterval,
+            endDate: recurrenceEndDate,
+            daysOfWeek: recurrenceFrequency === 'weekly' ? selectedDays : undefined,
+            dayOfMonth: recurrenceFrequency === 'monthly' ? dayOfMonth : undefined,
+            monthOfYear: recurrenceFrequency === 'yearly' ? monthOfYear : undefined,
+        } : undefined;
+
         const newTodo: Todo = {
             id: crypto.randomUUID(),
             title: title.trim(),
@@ -64,21 +92,15 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             estimatedTime: analysis.estimatedTime,
             createdAt: new Date(),
             userId: localStorage.getItem('userId') || '1',
+            recurrence,
+            lastRecurrenceDate: null,
         };
 
         if (parentId) {
-            const parentTask = getTaskById(parentId); // Assuming you have a function to get a task by ID
+            const parentTask = getTaskById(parentId);
             if (parentTask && parentTask.id === parentId) {
                 const newSubtask: SubTodo = {
-                    id: crypto.randomUUID(),
-                    title: title.trim(),
-                    completed: false,
-                    dueDate,
-                    status,
-                    priority,
-                    analysis,
-                    estimatedTime: analysis.estimatedTime,
-                    createdAt: new Date(),
+                    ...newTodo,
                     parentId,
                 };
                 useTodoStore.getState().createSubtaskStore(parentId, newSubtask);
@@ -91,12 +113,18 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
             await createTask(newTodo);
         }
 
+        // Reset form
         setTitle('');
         setDueDate(null);
         setPriority('medium');
         setStatus('Not Started');
-
-
+        setIsRecurring(false);
+        setRecurrenceFrequency(null);
+        setRecurrenceInterval(1);
+        setRecurrenceEndDate(null);
+        setSelectedDays([]);
+        setDayOfMonth(1);
+        setMonthOfYear(1);
     };
 
     return (

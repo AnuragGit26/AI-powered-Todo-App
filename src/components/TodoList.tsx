@@ -14,7 +14,8 @@ import {
     FileText,
     ExternalLink,
     Book,
-    Wrench
+    Wrench,
+    Repeat
 } from "lucide-react"
 import {
     Select,
@@ -41,6 +42,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip.tsx";
+import { cn } from "../lib/utils";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -223,6 +225,59 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
         prevCompletedRef.current = todo.completed;
     }, [todo.completed]);
 
+    const renderRecurrenceInfo = () => {
+        if (!todo.recurrence) return null;
+
+        const frequency = todo.recurrence.frequency;
+        const interval = todo.recurrence.interval;
+        let text = '';
+
+        switch (frequency) {
+            case 'daily':
+                text = `Every ${interval} day${interval > 1 ? 's' : ''}`;
+                break;
+            case 'weekly':
+                if (todo.recurrence.daysOfWeek && todo.recurrence.daysOfWeek.length > 0) {
+                    const days = todo.recurrence.daysOfWeek
+                        .map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day])
+                        .join(', ');
+                    text = `Every ${interval} week${interval > 1 ? 's' : ''} on ${days}`;
+                } else {
+                    text = `Every ${interval} week${interval > 1 ? 's' : ''}`;
+                }
+                break;
+            case 'monthly':
+                if (todo.recurrence.dayOfMonth) {
+                    text = `Every ${interval} month${interval > 1 ? 's' : ''} on day ${todo.recurrence.dayOfMonth}`;
+                } else {
+                    text = `Every ${interval} month${interval > 1 ? 's' : ''}`;
+                }
+                break;
+            case 'yearly':
+                if (todo.recurrence.monthOfYear) {
+                    const month = new Date(2000, todo.recurrence.monthOfYear - 1).toLocaleString('default', { month: 'long' });
+                    text = `Every ${interval} year${interval > 1 ? 's' : ''} in ${month}`;
+                    if (todo.recurrence.dayOfMonth) {
+                        text += ` on day ${todo.recurrence.dayOfMonth}`;
+                    }
+                } else {
+                    text = `Every ${interval} year${interval > 1 ? 's' : ''}`;
+                }
+                break;
+        }
+
+        if (todo.recurrence.endDate) {
+            text += ` until ${new Date(todo.recurrence.endDate).toLocaleDateString()}`;
+        }
+
+        return (
+            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <Repeat className="h-4 w-4 mr-1" />
+                <span>{text}</span>
+            </div>
+        );
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -330,7 +385,14 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         </div>
                     </div>
 
-                    {/* Row 3: Insights, Subtask, Time buttons */}
+                    {/* Row 3: Recurrence Info */}
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2">
+                        <div className="flex-1 flex items-center justify-center">
+                            {renderRecurrenceInfo()}
+                        </div>
+                    </div>
+
+                    {/* Row 4: Insights, Subtask, Time buttons */}
                     <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2">
                         <div className="flex-1 flex items-center justify-center">
                             {todo.analysis && (

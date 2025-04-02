@@ -4,12 +4,24 @@ import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import Waves from './ui/Waves';
 import { TimerAlert } from './ui/TimerAlert';
+import { Input } from './ui/input';
+import { Switch } from './ui/switch';
+import { History, Tag } from 'lucide-react';
+import useSound from 'use-sound';
+import notifySound from '../assets/notify.wav';
 
 interface PomodoroSettings {
     workTime: number;
     shortBreak: number;
     longBreak: number;
     longBreakInterval: number;
+}
+
+interface SessionHistory {
+    type: 'work' | 'shortBreak' | 'longBreak';
+    duration: number;
+    completedAt: Date;
+    label?: string;
 }
 
 const defaultSettings: PomodoroSettings = {
@@ -31,6 +43,28 @@ export const PomodoroTimer: React.FC = () => {
         message: '',
         type: 'work' as 'work' | 'shortBreak' | 'longBreak',
     });
+
+    // New state variables for added features
+    const [sessionHistory, setSessionHistory] = useState<SessionHistory[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [currentLabel, setCurrentLabel] = useState('');
+    const [autoStartNext, setAutoStartNext] = useState(false);
+    const [notificationEnabled, setNotificationEnabled] = useState(true);
+    const [notificationVolume, setNotificationVolume] = useState(0.5);
+
+    // Initialize sound with useSound hook
+    const [playSound] = useSound(notifySound, {
+        volume: notificationVolume,
+        soundEnabled: notificationEnabled,
+    });
+
+    // Calculate progress percentage
+    const calculateProgress = () => {
+        const totalSeconds = isWorkTime
+            ? settings.workTime * 60
+            : (completedSessions % settings.longBreakInterval === 0 ? settings.longBreak : settings.shortBreak) * 60;
+        return ((totalSeconds - timeLeft) / totalSeconds) * 100;
+    };
 
     // Update timer when settings change (only when timer is not active)
     useEffect(() => {
@@ -59,14 +93,29 @@ export const PomodoroTimer: React.FC = () => {
     }, [isActive, timeLeft]);
 
     const handleTimerComplete = () => {
-        const audio = new Audio('/notification.mp3');
-        audio.play();
+        // Play notification sound using useSound hook
+        if (notificationEnabled) {
+            try {
+                playSound();
+            } catch (error) {
+                console.error("Error playing notification sound:", error);
+                setNotificationEnabled(false);
+            }
+        }
+
+        // Add to session history
+        const newSession: SessionHistory = {
+            type: isWorkTime ? 'work' : (completedSessions % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak'),
+            duration: isWorkTime ? settings.workTime : (completedSessions % settings.longBreakInterval === 0 ? settings.longBreak : settings.shortBreak),
+            completedAt: new Date(),
+            label: currentLabel
+        };
+        setSessionHistory(prev => [newSession, ...prev].slice(0, 10)); // Keep last 10 sessions
 
         if (isWorkTime) {
             const isLongBreak = completedSessions % settings.longBreakInterval === 0;
             setCompletedSessions((prev) => prev + 1);
 
-            // Show soft UI alert for work completion
             setAlertConfig({
                 title: 'Work Session Complete!',
                 message: `Time for a ${isLongBreak ? 'long' : 'short'} break.`,
@@ -74,11 +123,9 @@ export const PomodoroTimer: React.FC = () => {
             });
             setAlertVisible(true);
 
-            // Update the timer state
             setTimeLeft(isLongBreak ? settings.longBreak * 60 : settings.shortBreak * 60);
             setIsWorkTime(false);
         } else {
-            // Show soft UI alert for break completion
             setAlertConfig({
                 title: 'Break Complete!',
                 message: 'Time to get back to work.',
@@ -86,11 +133,15 @@ export const PomodoroTimer: React.FC = () => {
             });
             setAlertVisible(true);
 
-            // Update the timer state
             setTimeLeft(settings.workTime * 60);
             setIsWorkTime(true);
         }
-        setIsActive(false);
+
+        if (autoStartNext) {
+            setIsActive(true);
+        } else {
+            setIsActive(false);
+        }
     };
 
     const closeAlert = () => {
@@ -122,10 +173,10 @@ export const PomodoroTimer: React.FC = () => {
 
     return (
         <>
-            <Card className="relative overflow-hidden p-6 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-black border-2 border-opacity-20 border-primary shadow-lg"
+            <Card className="relative overflow-hidden p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-900 dark:to-black border-2 border-opacity-20 border-primary shadow-lg"
                 style={{ borderColor: 'var(--primary-color)' }}>
                 <Waves
-                    className="absolute inset-0 opacity-30"
+                    className="absolute inset-0 opacity-20 dark:opacity-30"
                     lineColor="var(--primary-color)"
                     waveAmpX={50}
                     waveAmpY={30}
@@ -134,27 +185,52 @@ export const PomodoroTimer: React.FC = () => {
                     friction={0.95}
                     tension={0.02}
                 />
-                <div className="relative z-10 space-y-6">
+
+                {/* Progress Ring */}
+                <div className="relative z-10">
+                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6 overflow-hidden">
+                        <div
+                            className="h-full bg-primary transition-all duration-300 ease-linear rounded-full"
+                            style={{ width: `${calculateProgress()}%` }}
+                        />
+                    </div>
+
                     <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-2">{isWorkTime ? 'Work Time' : 'Break Time'}</h2>
-                        <div className="text-6xl font-mono font-bold mb-4">{formatTime(timeLeft)}</div>
+                        <h2 className="text-3xl font-bold mb-2 text-gray-950 dark:text-gray-100">{isWorkTime ? 'Work Time' : 'Break Time'}</h2>
+                        <div className="text-6xl font-mono font-bold mb-4 text-gray-950 dark:text-gray-100">{formatTime(timeLeft)}</div>
+
+                        {/* Session Label Input */}
+                        <div className="mb-4 flex items-center justify-center gap-2">
+                            <Tag className="w-5 h-5 text-gray-700" />
+                            <Input
+                                type="text"
+                                placeholder="What are you working on?"
+                                value={currentLabel}
+                                onChange={(e) => setCurrentLabel(e.target.value)}
+                                className="max-w-xs text-center placeholder:text-gray-500"
+                                disabled={isActive}
+                            />
+                        </div>
+
                         <div className="flex justify-center gap-4">
                             <Button
                                 onClick={toggleTimer}
                                 variant={isActive ? "destructive" : "default"}
                                 size="lg"
+                                className={isActive ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary/90"}
                             >
                                 {isActive ? 'Pause' : 'Start'}
                             </Button>
-                            <Button onClick={resetTimer} variant="outline" size="lg">
+                            <Button onClick={resetTimer} variant="outline" size="lg" className="border-2">
                                 Reset
                             </Button>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 mt-6">
+                        {/* Timer Settings */}
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Work Duration</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Work Duration</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[settings.workTime]}
@@ -165,12 +241,12 @@ export const PomodoroTimer: React.FC = () => {
                                     className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     disabled={isActive}
                                 />
-                                <span className="text-sm font-medium">{settings.workTime} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.workTime} min</span>
                             </div>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Short Break</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Short Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[settings.shortBreak]}
@@ -181,12 +257,12 @@ export const PomodoroTimer: React.FC = () => {
                                     className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     disabled={isActive}
                                 />
-                                <span className="text-sm font-medium">{settings.shortBreak} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.shortBreak} min</span>
                             </div>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Long Break</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Long Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[settings.longBreak]}
@@ -197,12 +273,75 @@ export const PomodoroTimer: React.FC = () => {
                                     className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     disabled={isActive}
                                 />
-                                <span className="text-sm font-medium">{settings.longBreak} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.longBreak} min</span>
                             </div>
                         </div>
+
+                        {/* Additional Settings */}
+                        <div className="flex items-center justify-between pt-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Auto-start next session</span>
+                            <Switch
+                                checked={autoStartNext}
+                                onCheckedChange={setAutoStartNext}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Enable Notifications</span>
+                            <Switch
+                                checked={notificationEnabled}
+                                onCheckedChange={setNotificationEnabled}
+                            />
+                        </div>
+
+                        {notificationEnabled && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Notification Volume</span>
+                                <Slider
+                                    value={[notificationVolume * 100]}
+                                    onValueChange={(value) => setNotificationVolume(value[0] / 100)}
+                                    min={0}
+                                    max={100}
+                                    step={1}
+                                    className="w-32"
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="text-center text-sm text-muted-foreground">
+                    {/* Session History */}
+                    <div className="mt-6">
+                        <Button
+                            variant="ghost"
+                            className="w-full flex items-center justify-center gap-2"
+                            onClick={() => setShowHistory(!showHistory)}
+                        >
+                            <History className="w-4 h-4" />
+                            {showHistory ? 'Hide History' : 'Show History'}
+                        </Button>
+
+                        {showHistory && (
+                            <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                                {sessionHistory.map((session, index) => (
+                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {session.type === 'work' ? '🎯 Work' : session.type === 'shortBreak' ? '☕️ Short Break' : '🌙 Long Break'}
+                                            </span>
+                                            {session.label && (
+                                                <p className="text-xs text-gray-700 dark:text-gray-400">{session.label}</p>
+                                            )}
+                                        </div>
+                                        <div className="text-sm text-gray-700 dark:text-gray-500">
+                                            {session.duration}min - {new Date(session.completedAt).toLocaleTimeString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="text-center text-sm font-medium text-gray-700 dark:text-gray-400 mt-4">
                         Completed Sessions: {completedSessions}
                     </div>
                 </div>

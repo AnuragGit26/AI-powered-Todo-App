@@ -1,6 +1,17 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'Not Started' | 'In progress' | 'Completed';
 
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+
+export interface RecurrenceConfig {
+  frequency: RecurrenceFrequency;
+  interval: number;
+  endDate?: Date | null;
+  daysOfWeek?: number[]; // 0-6 for Sunday-Saturday
+  dayOfMonth?: number; // 1-31
+  monthOfYear?: number; // 1-12
+}
+
 export interface ResourceLink {
   name: string;
   url: string;
@@ -32,6 +43,8 @@ export interface Todo {
   userId?: string;
   estimatedTime?: string | null;
   completedAt?: Date | null;
+  recurrence?: RecurrenceConfig;
+  lastRecurrenceDate?: Date | null;
 }
 
 export interface SubTodo {

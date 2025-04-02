@@ -1,4 +1,4 @@
-import type { SubTodo, Todo } from '../types';
+import type { SubTodo, Todo, RecurrenceConfig } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { useTodoStore } from "../store/todoStore.ts";
 import { logActivity } from "./activityMetrics.ts";
@@ -54,6 +54,78 @@ export const createTask = async (task: Todo) => {
     }
 };
 
+const calculateNextDueDate = (currentDueDate: Date, recurrence: RecurrenceConfig): Date => {
+    const nextDate = new Date(currentDueDate);
+
+    switch (recurrence.frequency) {
+        case 'daily':
+            nextDate.setDate(nextDate.getDate() + recurrence.interval);
+            break;
+        case 'weekly':
+            if (recurrence.daysOfWeek && recurrence.daysOfWeek.length > 0) {
+                // Find the next selected day
+                const currentDay = nextDate.getDay();
+                const nextDay = recurrence.daysOfWeek
+                    .sort((a, b) => a - b)
+                    .find(day => day > currentDay) || recurrence.daysOfWeek[0];
+
+                const daysUntilNext = (nextDay - currentDay + 7) % 7;
+                nextDate.setDate(nextDate.getDate() + daysUntilNext + (recurrence.interval - 1) * 7);
+            } else {
+                nextDate.setDate(nextDate.getDate() + recurrence.interval * 7);
+            }
+            break;
+        case 'monthly':
+            if (recurrence.dayOfMonth) {
+                nextDate.setMonth(nextDate.getMonth() + recurrence.interval);
+                nextDate.setDate(recurrence.dayOfMonth);
+            } else {
+                nextDate.setMonth(nextDate.getMonth() + recurrence.interval);
+            }
+            break;
+        case 'yearly':
+            if (recurrence.monthOfYear) {
+                nextDate.setFullYear(nextDate.getFullYear() + recurrence.interval);
+                nextDate.setMonth(recurrence.monthOfYear - 1);
+                if (recurrence.dayOfMonth) {
+                    nextDate.setDate(recurrence.dayOfMonth);
+                }
+            } else {
+                nextDate.setFullYear(nextDate.getFullYear() + recurrence.interval);
+            }
+            break;
+    }
+
+    return nextDate;
+};
+
+export const createNextRecurrence = async (task: Todo): Promise<void> => {
+    if (!task.recurrence || !task.dueDate) return;
+
+    const currentDueDate = new Date(task.dueDate);
+    const nextDueDate = calculateNextDueDate(currentDueDate, task.recurrence);
+
+    // Check if we've reached the end date
+    if (task.recurrence.endDate && nextDueDate > new Date(task.recurrence.endDate)) {
+        return;
+    }
+
+    const nextTask: Todo = {
+        ...task,
+        id: crypto.randomUUID(),
+        completed: false,
+        dueDate: nextDueDate,
+        createdAt: new Date(),
+        lastRecurrenceDate: currentDueDate,
+        status: 'Not Started',
+    };
+
+    // Remove the recurrence config from the next task to prevent infinite recursion
+    delete nextTask.recurrence;
+
+    await createTask(nextTask);
+};
+
 export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
     const userId = localStorage.getItem('userId');
     if (!userId) {
@@ -72,6 +144,14 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
         console.log('Task updated:', taskId);
         const changedFields = Object.keys(updates).join(', ');
         await logActivity(userId, `Task Updated: ${taskId} (Changed: ${changedFields})`);
+
+        // If the task is completed and has recurrence, create the next occurrence
+        if (updates.completed === true) {
+            const task = await getTaskById(taskId);
+            if (task?.recurrence) {
+                await createNextRecurrence(task);
+            }
+        }
     }
 };
 
