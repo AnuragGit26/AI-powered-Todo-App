@@ -11,12 +11,32 @@ export const initializeTheme = (theme: ThemeConfig) => {
   const isDarkMode = theme.mode === 'dark';
   const darkModeColors = getDarkModeColors();
 
-  // Use different colors for dark mode
-  const primaryColor = isDarkMode ? darkModeColors.primary : (theme.primaryColor || '#53c9d9');
-  const secondaryColor = isDarkMode ? darkModeColors.secondary : (theme.secondaryColor || '#5f4ae8');
+  // Use different colors for dark mode with better contrast
+  const primaryColor = isDarkMode 
+    ? getOptimizedDarkModeColor(theme.primaryColor, darkModeColors) 
+    : theme.primaryColor || '#53c9d9';
+    
+  const secondaryColor = isDarkMode 
+    ? getOptimizedDarkModeColor(theme.secondaryColor, darkModeColors) 
+    : theme.secondaryColor || '#5f4ae8';
 
   document.documentElement.style.setProperty('--primary-color', primaryColor);
   document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+
+  // Set additional theme colors for better UI/UX
+  if (isDarkMode) {
+    document.documentElement.style.setProperty('--hover-bg', 'hsla(222, 47%, 20%, 0.7)');
+    document.documentElement.style.setProperty('--hover-border', primaryColor);
+    document.documentElement.style.setProperty('--card-bg', 'hsl(222, 47%, 14%)');
+    document.documentElement.style.setProperty('--card-border', 'hsl(223, 47%, 22%)');
+    document.documentElement.style.setProperty('--input-bg', 'hsl(222, 47%, 10%)');
+  } else {
+    document.documentElement.style.setProperty('--hover-bg', 'hsla(0, 0%, 96%, 0.7)');
+    document.documentElement.style.setProperty('--hover-border', primaryColor);
+    document.documentElement.style.setProperty('--card-bg', 'hsl(0, 0%, 100%)');
+    document.documentElement.style.setProperty('--card-border', 'hsl(0, 0%, 90%)');
+    document.documentElement.style.setProperty('--input-bg', 'hsl(0, 0%, 98%)');
+  }
 
   // Load and apply font size preference
   const savedFontSize = localStorage.getItem('fontSize') || 'text-base';
@@ -34,6 +54,30 @@ export const initializeTheme = (theme: ThemeConfig) => {
   } else {
     document.documentElement.classList.remove('disable-animations');
   }
+};
+
+/**
+ * Get optimized dark mode color for better contrast
+ */
+export const getOptimizedDarkModeColor = (color: string, darkColors: Record<string, string>): string => {
+  // If color matches one of our light mode theme options, replace with dark mode version
+  if (color === '#10B981') return darkColors.mint;          // Mint
+  if (color === '#6366F1') return darkColors.indigo;        // Indigo
+  if (color === '#F43F5E') return darkColors.rose;          // Rose
+  if (color === '#F59E0B') return darkColors.amber;         // Amber
+  if (color === '#64748B') return darkColors.slate;         // Slate
+  if (color === '#8B5CF6') return darkColors.violet;        // Violet
+  if (color === '#34D399') return darkColors.emerald;       // Emerald
+  if (color === '#D946EF') return darkColors.fuchsia;       // Fuchsia
+  if (color === '#14B8A6') return darkColors.teal;          // Teal
+  if (color === '#2e7d32') return '#4ade80';                // Forest
+  if (color === '#0277bd') return '#38bdf8';                // Ocean
+  if (color === '#ff7043') return '#ffa726';                // Sunset
+  if (color === '#ad1457') return '#f472b6';                // Berry
+  if (color === '#424242') return '#a1a1aa';                // Monochrome
+  
+  // Default case - use dark mode primary or return original
+  return darkColors.primary || color;
 };
 
 /**
@@ -106,5 +150,15 @@ export const getDarkModeColors = () => {
     info: '#38bdf8',        // Sky blue
     surface: '#1e293b',     // Slate 800
     muted: '#475569',       // Slate 600
+    // New color options for dark mode
+    mint: '#34D399',        // Brighter emerald green
+    indigo: '#818CF8',      // Lighter indigo
+    rose: '#FB7185',        // Lighter rose red
+    amber: '#FCD34D',       // Lighter amber
+    slate: '#94A3B8',       // Lighter slate
+    violet: '#A78BFA',      // Lighter violet
+    emerald: '#6EE7B7',     // Lighter emerald
+    fuchsia: '#E879F9',     // Lighter fuchsia
+    teal: '#5EEAD4',        // Lighter teal
   };
 }; 

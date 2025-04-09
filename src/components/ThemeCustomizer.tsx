@@ -5,7 +5,7 @@ import { useTodoStore } from '../store/todoStore';
 import { createClient } from '@supabase/supabase-js';
 import { useNavigate } from "react-router-dom";
 import { useMetrics } from "../hooks/useMetrics.ts";
-import { applyColorScheme, changeFontSize, toggleAnimations, resetToDefaultTheme } from "../lib/themeUtils";
+import { applyColorScheme, changeFontSize, toggleAnimations, resetToDefaultTheme, getOptimizedDarkModeColor, getDarkModeColors } from "../lib/themeUtils";
 
 const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -17,6 +17,16 @@ const COLOR_SCHEMES = [
     { name: 'Sunset', primary: '#ff7043', secondary: '#ffca28' },
     { name: 'Berry', primary: '#ad1457', secondary: '#f48fb1' },
     { name: 'Monochrome', primary: '#424242', secondary: '#9e9e9e' },
+    // New modern theme options
+    { name: 'Mint', primary: '#10B981', secondary: '#059669' },
+    { name: 'Indigo', primary: '#6366F1', secondary: '#4F46E5' },
+    { name: 'Rose', primary: '#F43F5E', secondary: '#E11D48' },
+    { name: 'Amber', primary: '#F59E0B', secondary: '#D97706' },
+    { name: 'Slate', primary: '#64748B', secondary: '#475569' },
+    { name: 'Violet', primary: '#8B5CF6', secondary: '#7C3AED' },
+    { name: 'Emerald', primary: '#34D399', secondary: '#10B981' },
+    { name: 'Fuchsia', primary: '#D946EF', secondary: '#C026D3' },
+    { name: 'Teal', primary: '#14B8A6', secondary: '#0D9488' },
 ];
 
 // Font size options
@@ -342,81 +352,115 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                 {selectedTab === 'colors' && (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="block text-m font-medium dark:text-gray-200">Color Schemes</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <label className="block text-md font-medium dark:text-gray-200">Color Schemes</label>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                                 {COLOR_SCHEMES.map((scheme) => (
                                                     <button
                                                         key={scheme.name}
                                                         onClick={() => handleApplyColorScheme(scheme.primary, scheme.secondary)}
-                                                        className={`p-3 rounded-lg border-2 transition-all ${theme.primaryColor === scheme.primary && theme.secondaryColor === scheme.secondary
-                                                            ? 'border-blue-500 dark:border-blue-400'
-                                                            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                                                            }`}
+                                                        className="relative p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group overflow-hidden"
                                                     >
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{scheme.name}</span>
-                                                            {theme.primaryColor === scheme.primary && theme.secondaryColor === scheme.secondary && (
-                                                                <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                                                                    <Check className="w-3 h-3 text-white" />
-                                                                </span>
-                                                            )}
+                                                        <div className="flex flex-col items-center space-y-1">
+                                                            <div className="flex space-x-1 mb-1">
+                                                                <div
+                                                                    className="w-6 h-6 rounded-full"
+                                                                    style={{ backgroundColor: scheme.primary }}
+                                                                ></div>
+                                                                <div
+                                                                    className="w-6 h-6 rounded-full"
+                                                                    style={{ backgroundColor: scheme.secondary }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="text-sm font-medium dark:text-gray-300">{scheme.name}</span>
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            <div
-                                                                className="w-full h-6 rounded-md"
-                                                                style={{ backgroundColor: scheme.primary }}
-                                                            ></div>
-                                                            <div
-                                                                className="w-full h-6 rounded-md"
-                                                                style={{ backgroundColor: scheme.secondary }}
-                                                            ></div>
+
+                                                        {/* Theme preview on hover */}
+                                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
+                                                            <div className="flex space-x-2 justify-center">
+                                                                {/* Light mode preview */}
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className="rounded-md bg-white p-1 mb-1 shadow-sm w-12 h-12 flex flex-col">
+                                                                        <div className="w-full h-2 rounded-sm mb-1" style={{ backgroundColor: scheme.primary }}></div>
+                                                                        <div className="w-3/4 h-2 rounded-sm mb-1" style={{ backgroundColor: scheme.secondary }}></div>
+                                                                        <div className="w-full h-2 rounded-sm bg-gray-200"></div>
+                                                                    </div>
+                                                                    <span className="text-xs text-gray-600 dark:text-gray-400">Light</span>
+                                                                </div>
+
+                                                                {/* Dark mode preview */}
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className="rounded-md bg-gray-800 p-1 mb-1 shadow-sm w-12 h-12 flex flex-col">
+                                                                        <div
+                                                                            className="w-full h-2 rounded-sm mb-1"
+                                                                            style={{ backgroundColor: getOptimizedDarkModeColor(scheme.primary, getDarkModeColors()) }}
+                                                                        ></div>
+                                                                        <div
+                                                                            className="w-3/4 h-2 rounded-sm mb-1"
+                                                                            style={{ backgroundColor: getOptimizedDarkModeColor(scheme.secondary, getDarkModeColors()) }}
+                                                                        ></div>
+                                                                        <div className="w-full h-2 rounded-sm bg-gray-600"></div>
+                                                                    </div>
+                                                                    <span className="text-xs text-gray-600 dark:text-gray-400">Dark</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="block text-m font-medium dark:text-gray-200">Custom Colors</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="space-y-2 mt-6">
+                                            <label className="block text-md font-medium dark:text-gray-200">Custom Colors</label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-sm text-gray-600 dark:text-gray-400">Primary</label>
-                                                    <div className="flex mt-1">
-                                                        <input
-                                                            type="color"
-                                                            value={customPrimary}
-                                                            onChange={(e) => setCustomPrimary(e.target.value)}
-                                                            className="w-10 h-10 rounded border-0 cursor-pointer"
-                                                        />
+                                                    <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Primary Color</label>
+                                                    <div className="flex items-center">
+                                                        <div
+                                                            className="w-8 h-8 rounded-full mr-2 border border-gray-300 dark:border-gray-600 shadow-inner"
+                                                            style={{ backgroundColor: customPrimary }}
+                                                        ></div>
                                                         <input
                                                             type="text"
+                                                            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md text-sm dark:text-white"
+                                                            placeholder="#hex code"
                                                             value={customPrimary}
                                                             onChange={(e) => setCustomPrimary(e.target.value)}
-                                                            className="flex-1 p-2 ml-2 border rounded-md dark:bg-gray-700 text-sm"
                                                         />
                                                     </div>
+                                                    <input
+                                                        type="color"
+                                                        className="w-full h-8 mt-2 rounded cursor-pointer"
+                                                        value={customPrimary}
+                                                        onChange={(e) => setCustomPrimary(e.target.value)}
+                                                    />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm text-gray-600 dark:text-gray-400">Secondary</label>
-                                                    <div className="flex mt-1">
-                                                        <input
-                                                            type="color"
-                                                            value={customSecondary}
-                                                            onChange={(e) => setCustomSecondary(e.target.value)}
-                                                            className="w-10 h-10 rounded border-0 cursor-pointer"
-                                                        />
+                                                    <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Secondary Color</label>
+                                                    <div className="flex items-center">
+                                                        <div
+                                                            className="w-8 h-8 rounded-full mr-2 border border-gray-300 dark:border-gray-600 shadow-inner"
+                                                            style={{ backgroundColor: customSecondary }}
+                                                        ></div>
                                                         <input
                                                             type="text"
+                                                            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md text-sm dark:text-white"
+                                                            placeholder="#hex code"
                                                             value={customSecondary}
                                                             onChange={(e) => setCustomSecondary(e.target.value)}
-                                                            className="flex-1 p-2 ml-2 border rounded-md dark:bg-gray-700 text-sm"
                                                         />
                                                     </div>
+                                                    <input
+                                                        type="color"
+                                                        className="w-full h-8 mt-2 rounded cursor-pointer"
+                                                        value={customSecondary}
+                                                        onChange={(e) => setCustomSecondary(e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => handleApplyColorScheme(customPrimary, customSecondary)}
-                                                className="w-full mt-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                                className="w-full mt-4 py-2 px-4 bg-primary-500 dark:bg-primary-600 text-white rounded-md hover:bg-primary-600 dark:hover:bg-primary-700 transition-colors"
+                                                style={{ backgroundColor: customPrimary }}
                                             >
                                                 Apply Custom Colors
                                             </button>

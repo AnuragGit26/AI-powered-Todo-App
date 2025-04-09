@@ -223,6 +223,118 @@
         border: 1px solid hsla(223, 47%, 20%, 0.3);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
+
+    /* New modern UI styles */
+    .card-elevated {
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        border-radius: 0.75rem;
+    }
+
+    .card-elevated:hover {
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .dark .card-elevated {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .dark .card-elevated:hover {
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Modern inputs with theme colors */
+    .input-themed {
+        background-color: var(--input-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s ease;
+    }
+
+    .input-themed:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 83, 201, 217), 0.2);
+    }
+
+    /* Enhanced buttons with theme colors */
+    .btn-themed {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-themed:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-themed-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-themed-secondary:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    /* Quick theme indicators */
+    .theme-indicator {
+        display: inline-block;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Theme color pills */
+    .theme-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .theme-pill-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .theme-pill-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
 }
 
 
