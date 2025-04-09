@@ -765,7 +765,7 @@ const extractDifficultyExplanation = (difficultyText: string): string => {
     return '';
 };
 
-const TodoList: React.FC = () => {
+const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     const todos = useTodoStore((state) => state.todos);
     const [sortCriteria, setSortCriteria] = useState<"date" | "priority">("date");
     const [searchQuery, setSearchQuery] = useState("");
@@ -841,20 +841,29 @@ const TodoList: React.FC = () => {
             <div className="flex-grow relative overflow-hidden">
                 <div className="absolute inset-0 overflow-y-auto pr-2 pb-4 pl-1" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <AnimatePresence>
-                        <div className="todo-list-scroll space-y-4 mb-4">
-                            {filteredTodos.length > 0 ? (
-                                filteredTodos.map((todo) => (
-                                    <TodoItem key={todo.id} todo={todo} />
-                                ))
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                                    <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        {searchQuery ? "Try a different search term" : "Create a task to get started"}
-                                    </p>
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+                                    <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className="todo-list-scroll space-y-4 mb-4">
+                                {filteredTodos.length > 0 ? (
+                                    filteredTodos.map((todo) => (
+                                        <TodoItem key={todo.id} todo={todo} />
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                                        <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
+                                        <p className="text-gray-500 dark:text-gray-400">
+                                            {searchQuery ? "Try a different search term" : "Create a task to get started"}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </AnimatePresence>
                 </div>
             </div>

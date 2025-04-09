@@ -8,7 +8,7 @@ import { useTodoStore } from "./store/todoStore";
 import { createClient, Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { PasswordResetRequestForm } from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
@@ -37,7 +37,7 @@ const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const { setTodos, setUserToken, setTheme } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    const [userData, setUserData] = useState<{ userId?: string, username?: string, profilePicture?: string }>({});
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
 
@@ -95,105 +95,113 @@ const App: React.FC = () => {
         };
     }, []);
 
+    // Auth state listener - separated from data loading for performance
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
+
             if (session) {
+                // Store token immediately
                 sessionStorage.setItem("token", session.access_token || "");
                 setUserToken(session.access_token || "");
-                setIsDataLoaded(false);
 
-                // Start session operations in the background without waiting or blocking app loading
-                (async () => {
+                // Start session operations in the background
+                Promise.resolve().then(async () => {
                     try {
-                        // Longer timeout (10 seconds) that won't block the app
-                        const timeoutPromise = new Promise((_, reject) =>
-                            setTimeout(() => reject(new Error('Session initialization timed out')), 10000)
-                        );
-
-                        // Race between normal initialization and timeout
-                        await Promise.race([
-                            (async () => {
-                                // Check for existing session or create a new one
-                                await checkExistingSession();
-
-                                // Clean up any duplicate sessions for this user on this device
-                                if (session.user?.id) {
-                                    await cleanupDuplicateSessions(session.user.id);
-                                }
-                            })(),
-                            timeoutPromise
-                        ]);
+                        await checkExistingSession();
+                        if (session.user?.id) {
+                            await cleanupDuplicateSessions(session.user.id);
+                        }
                     } catch (error) {
-                        // Log but don't block the app
                         console.warn('Session initialization background task:', error);
                     }
-                })();
-
-                // Continue loading the app immediately without waiting for session operations
-                // Tasks will still load based on the loadData function result
-            } else {
-                setIsDataLoaded(true);
+                });
             }
+
+            // Mark auth check as complete
+            setIsAuthChecking(false);
         });
+
+        // Initial auth check
+        supabase.auth.getSession().then(({ data }) => {
+            setSession(data.session);
+            setIsAuthChecking(false);
+        });
+
         return () => subscription.unsubscribe();
     }, [setUserToken]);
 
+    // User data loading - separate from auth for performance
     useEffect(() => {
+        if (!session) return;
+
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 localStorage.setItem("username", user.user_metadata.username);
                 localStorage.setItem("userId", user.id);
-                setUserData({ userId: user.id, username: user.user_metadata.username });
             }
         };
-        fetchUser();
+
         const fetchProfileImage = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             const userId = user?.id;
             if (!userId) return;
 
             const bucketName = "MultiMedia Bucket";
-
-            // Try lowercase first (the standard we're using when uploading)
             const filePath = `${userId}/profile.jpg`;
             const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
 
-            // Store the URL in localStorage - the browser will handle if the image 
-            // doesn't exist (will show the fallback avatar in the UI)
             localStorage.setItem("profilePicture", data.publicUrl);
-            setUserData(prev => ({ ...prev, userId, profilePicture: data.publicUrl }));
         };
-        fetchProfileImage();
-    }, [setUserData]);
 
+        // Run these concurrently
+        Promise.all([fetchUser(), fetchProfileImage()])
+            .catch(error => console.error("Error fetching user data:", error));
+
+    }, [session]);
+
+    // Data loading - separate effect to avoid blocking UI
     useEffect(() => {
-        if (!session) return;
+        if (!session) {
+            setIsDataLoaded(true);
+            return;
+        }
+
         const loadData = async () => {
             try {
-                // Get current userId to ensure it's available at fetch time
-                const userId = localStorage.getItem('userId');
+                // Get current userId 
+                const userId = localStorage.getItem('userId') || (await supabase.auth.getUser()).data.user?.id;
 
                 if (!userId) {
-                    // If userId is not available yet, try to get it from session
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) {
-                        localStorage.setItem("userId", user.id);
-                    } else {
-                        console.error("User ID not available");
-                        setIsDataLoaded(true);
-                        return;
+                    console.error("User ID not available");
+                    setIsDataLoaded(true);
+                    return;
+                }
+
+                // Fetch tasks and subtasks concurrently
+                const tasks = await fetchTasks();
+
+                // Process in batches to avoid UI freezing
+                const tasksWithSubtasks = [];
+                const batchSize = 5;
+
+                for (let i = 0; i < (tasks || []).length; i += batchSize) {
+                    const batch = (tasks || []).slice(i, i + batchSize);
+                    const batchResults = await Promise.all(
+                        batch.map(async (task) => {
+                            const subtasks = await fetchSubtasks(task.id);
+                            return { ...task, subtasks: subtasks || [] };
+                        })
+                    );
+                    tasksWithSubtasks.push(...batchResults);
+
+                    // Allow UI to breathe between batches
+                    if (i + batchSize < (tasks || []).length) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
                     }
                 }
 
-                const tasks = await fetchTasks();
-                const tasksWithSubtasks = await Promise.all(
-                    (tasks || []).map(async (task) => {
-                        const subtasks = await fetchSubtasks(task.id);
-                        return { ...task, subtasks: subtasks || [] };
-                    })
-                );
                 setTodos(tasksWithSubtasks);
             } catch (error) {
                 console.error("Error fetching tasks/subtasks:", error);
@@ -201,8 +209,9 @@ const App: React.FC = () => {
                 setIsDataLoaded(true);
             }
         };
+
         loadData();
-    }, [session, setTodos, userData.userId]);
+    }, [session, setTodos]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
@@ -243,12 +252,14 @@ const App: React.FC = () => {
     // Record user sessions when logged in
     useSessionRecording();
 
-    if (!isDataLoaded) {
+    // Show a more streamlined loading state
+    if (isAuthChecking) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-                <div className="text-xl text-gray-700 dark:text-gray-300">
+                <div className="text-xl text-center text-gray-700 dark:text-gray-300">
+                    <Logo size={80} className="mx-auto mb-4" />
                     <SplitText
-                        text="Getting things ready for you....!"
+                        text="Setting up things for you"
                         className="text-2xl font-semibold text-center"
                         delay={70}
                         animationFrom={{ opacity: 0, transform: "translate3d(0,50px,0)" }}
@@ -262,6 +273,8 @@ const App: React.FC = () => {
             </div>
         );
     }
+
+    // Don't show the loading screen for data loading, let the UI render and show loading indicators in components
 
     // Home route component
     const HomeContent = (
@@ -320,7 +333,7 @@ const App: React.FC = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <TodoList />
+                    <TodoList isLoading={!isDataLoaded} />
                     <Toaster />
                 </div>
             </div>
@@ -381,13 +394,28 @@ const App: React.FC = () => {
         <>
             <NavBar />
             <Routes>
-                <Route path="/login" element={<><LoginForm /><Toaster /></>} />
-                <Route path="/signup" element={<><SignUpForm /><Toaster /></>} />
-                <Route path="/password-reset-request" element={<><PasswordResetRequestForm /><Toaster /></>} />
+                <Route
+                    path="/login"
+                    element={
+                        session ? <Navigate to="/" replace /> : <><LoginForm /><Toaster /></>
+                    }
+                />
+                <Route
+                    path="/signup"
+                    element={
+                        session ? <Navigate to="/" replace /> : <><SignUpForm /><Toaster /></>
+                    }
+                />
+                <Route
+                    path="/password-reset-request"
+                    element={
+                        session ? <Navigate to="/" replace /> : <><PasswordResetRequestForm /><Toaster /></>
+                    }
+                />
                 <Route
                     path="/profile"
                     element={
-                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                        <ProtectedRoute isAuthenticated={!!session}>
                             <div
                                 className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
                                 style={{
@@ -411,20 +439,20 @@ const App: React.FC = () => {
                 <Route
                     path="/"
                     element={
-                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                        <ProtectedRoute isAuthenticated={!!session}>
                             {HomeContent}
                         </ProtectedRoute>
                     }
                 />
                 <Route path="/admin/migration" element={
-                    <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                    <ProtectedRoute isAuthenticated={!!session}>
                         <RunDatabaseMigration />
                     </ProtectedRoute>
                 } />
                 <Route
                     path="/pomodoro"
                     element={
-                        <ProtectedRoute isAuthenticated={sessionStorage.getItem("token") != null}>
+                        <ProtectedRoute isAuthenticated={!!session}>
                             <div
                                 className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
                                 style={{
