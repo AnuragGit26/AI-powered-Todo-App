@@ -1,4 +1,4 @@
-import { useSprings, animated } from '@react-spring/web';
+import { useSprings, animated, SpringConfig } from '@react-spring/web';
 import { useEffect, useRef, useState } from 'react';
 
 interface SplitTextProps {
@@ -20,7 +20,7 @@ const SplitText: React.FC<SplitTextProps> = ({
     delay = 100,
     animationFrom = { opacity: 0, transform: 'translate3d(0,40px,0)' },
     animationTo = { opacity: 1, transform: 'translate3d(0,0,0)' },
-    easing = 'easeOutCubic',
+    easing = 'ease-out',
     threshold = 0.1,
     rootMargin = '-100px',
     textAlign = 'center',
@@ -52,6 +52,25 @@ const SplitText: React.FC<SplitTextProps> = ({
         return () => observer.disconnect();
     }, [threshold, rootMargin]);
 
+    // Convert string easing to spring config
+    const getSpringConfig = (easingType: string): SpringConfig => {
+        // Use spring configs instead of cubic-bezier strings
+        switch (easingType) {
+            case 'ease-out':
+                return { tension: 170, friction: 26 };
+            case 'ease-in':
+                return { tension: 300, friction: 40 };
+            case 'ease-in-out':
+                return { tension: 210, friction: 20 };
+            case 'easeOutCubic':
+                return { tension: 200, friction: 20 };
+            default:
+                return { tension: 170, friction: 26 }; // default to ease-out
+        }
+    };
+
+    const springConfig = getSpringConfig(easing);
+
     const springs = useSprings(
         letters.length,
         letters.map((_, i) => ({
@@ -66,7 +85,7 @@ const SplitText: React.FC<SplitTextProps> = ({
                 }
                 : animationFrom,
             delay: i * delay,
-            config: { easing },
+            config: springConfig,
         }))
     );
 
