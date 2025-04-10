@@ -1,50 +1,45 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { TodoStore, Todo, SubTodo, userData } from '../types';
+import { TodoStore, Todo, SubTodo, userData, ThemeConfig } from '../types';
 
-// Helper function to force light mode on first app load
-const ensureLightMode = () => {
-    // Check if this is the first load (no localStorage entry for the theme yet)
-    if (!localStorage.getItem('todo-storage')) {
-        // Check if user prefers dark mode
-        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        // Set the HTML document class based on system preference
-        if (prefersDarkMode) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.classList.remove('light');
-
-            return {
-                mode: 'dark',
-                primaryColor: '#3db9e5',  // Use dark mode colors
-                secondaryColor: '#7c5bf2',
-            };
-        } else {
-            // Default to light mode
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-        }
+// Helper function to determine initial theme based on system preference
+const getInitialTheme = (): ThemeConfig => {
+    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Set appropriate document class
+    if (prefersDarkMode) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        return {
+            mode: 'dark',
+            primaryColor: '#3db9e5',
+            secondaryColor: '#7c5bf2',
+        };
+    } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        return {
+            mode: 'light',
+            primaryColor: '#53c9d9',
+            secondaryColor: '#5f4ae8',
+        };
     }
-
-    // Default to light mode values if no preference detected
-    return {
-        mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-        primaryColor: '#53c9d9',
-        secondaryColor: '#5f4ae8',
-    };
 };
 
+// Create the store
 export const useTodoStore = create<TodoStore>()(
     devtools(
         persist(
             (set) => ({
                 todos: [],
-                theme: ensureLightMode(),
+                theme: getInitialTheme(),
                 userToken: null,
                 userData: null,
+                
                 setUserToken: (token: string) => set({ userToken: token }),
                 setUserData: (data: userData) => set({ userData: data }),
-                addTodo: (todo: Partial<Todo>) =>
+                
+                addTodo: (todo: Partial<Todo>) => 
                     set((state) => ({
                         todos: [
                             ...state.todos,
@@ -53,10 +48,14 @@ export const useTodoStore = create<TodoStore>()(
                                 id: crypto.randomUUID(),
                                 createdAt: new Date(),
                                 subtasks: [],
-                                title: todo.title || '', // Ensure title is not undefined
+                                title: todo.title || '',
+                                status: todo.status || 'Not Started',
+                                completed: todo.completed || false,
+                                priority: todo.priority || 'medium',
                             } as Todo,
                         ],
                     })),
+                
                 addSubtask: (parentId: string, subtask: Partial<SubTodo>) =>
                     set((state) => ({
                         todos: state.todos.map((todo) => {
@@ -64,14 +63,16 @@ export const useTodoStore = create<TodoStore>()(
                                 return {
                                     ...todo,
                                     subtasks: [
-                                        ...todo.subtasks || [], // Ensure subtasks is not undefined
+                                        ...(todo.subtasks || []),
                                         {
                                             ...subtask,
                                             id: crypto.randomUUID(),
                                             createdAt: new Date(),
                                             parentId,
-                                            subtasks: [],
-                                            title: subtask.title || '', // Ensure title is not undefined
+                                            title: subtask.title || '',
+                                            status: subtask.status || 'Not Started',
+                                            completed: subtask.completed || false,
+                                            priority: subtask.priority || 'medium',
                                         } as SubTodo,
                                     ],
                                 };
@@ -79,6 +80,7 @@ export const useTodoStore = create<TodoStore>()(
                             return todo;
                         }),
                     })),
+                
                 removeTodo: (id: string) =>
                     set((state) => ({
                         todos: state.todos
@@ -88,6 +90,7 @@ export const useTodoStore = create<TodoStore>()(
                             }))
                             .filter(todo => todo.id !== id),
                     })),
+                
                 updateTodo: (id: string, updatedTodo: Partial<Todo>) =>
                     set((state) => ({
                         todos: state.todos.map((todo) => {
@@ -97,6 +100,7 @@ export const useTodoStore = create<TodoStore>()(
                             return todo;
                         }),
                     })),
+                
                 createSubtaskStore: (parentId: string, subtask: SubTodo) =>
                     set((state) => ({
                         todos: state.todos.map((todo) => {
@@ -109,6 +113,7 @@ export const useTodoStore = create<TodoStore>()(
                             return todo;
                         }),
                     })),
+                
                 updateSubtaskStore: (parentId: string, subtaskId: string, updates: Partial<SubTodo>) =>
                     set((state) => ({
                         todos: state.todos.map((todo) => {
@@ -120,10 +125,10 @@ export const useTodoStore = create<TodoStore>()(
                                     ),
                                 };
                             }
-                            console.log('subtask store update:', todo);
                             return todo;
                         }),
                     })),
+                
                 deleteSubtaskStore: (parentId: string, subtaskId: string) =>
                     set((state) => ({
                         todos: state.todos.map((todo) => {
@@ -136,11 +141,12 @@ export const useTodoStore = create<TodoStore>()(
                             return todo;
                         }),
                     })),
-                setTheme: (theme) => set({ theme }),
+                
+                setTheme: (theme: ThemeConfig) => set({ theme }),
                 setTodos: (todos: Todo[]) => set({ todos }),
             }),
             {
-                name: 'todo-storage', // unique name
+                name: 'todo-storage',
             }
         )
     )

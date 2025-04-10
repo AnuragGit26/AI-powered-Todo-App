@@ -1,6 +1,6 @@
 {
   "name": "todo-ai-app",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": "true",
   "description": "A Todo AI App built with React, TailwindCSS, and Vite.",
   "type": "module",
@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "sh scripts/start.sh"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

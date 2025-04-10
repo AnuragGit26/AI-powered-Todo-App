@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -10,11 +9,9 @@ import Aurora from "./ui/AuroraBG.tsx";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader, Mail, Lock, Check, Info, ArrowRight, UserCheck } from "lucide-react";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const supabase = getSupabaseClient();
 
 export function SignUpForm() {
     const [email, setEmail] = useState("");

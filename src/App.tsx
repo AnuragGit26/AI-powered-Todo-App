@@ -1,11 +1,10 @@
-// In src/App.tsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 import { useTodoStore } from "./store/todoStore";
-import { createClient, Session } from "@supabase/supabase-js";
+import { Session } from "@supabase/supabase-js";
 import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -29,13 +28,17 @@ import Logo from "./components/Logo.tsx";
 import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
 import { PomodoroTimer } from "./components/PomodoroTimer";
+import { getSupabaseClient } from "./lib/supabaseClient";
 
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+// Use the singleton supabase client
+const supabase = getSupabaseClient();
 
 const App: React.FC = () => {
-    const theme = useTodoStore((state) => state.theme);
+    const theme = useTodoStore(state => state.theme);
+    const setTodos = useTodoStore(state => state.setTodos);
+    const setUserToken = useTodoStore(state => state.setUserToken);
+    const setTheme = useTodoStore(state => state.setTheme);
     const [session, setSession] = useState<Session | null>(null);
-    const { setTodos, setUserToken, setTheme } = useTodoStore();
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);

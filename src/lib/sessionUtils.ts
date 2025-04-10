@@ -1,11 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
 import { getUserRegion } from '../hooks/getUserRegion';
 import { getUserIP } from '../services/ipService';
+import { getSupabaseClient } from './supabaseClient';
 
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Use singleton supabase client
+const supabase = getSupabaseClient();
 
 export interface UserSession {
     id: string;
@@ -167,33 +165,10 @@ export async function recordSession(): Promise<void> {
         // Check if a session already exists for this device
         const existingSessionId = await getExistingDeviceSession(userId);
 
-        // If a session exists for this device, update it instead of creating a new one
-        if (existingSessionId) {
-            // Update the existing session
-            const { error: updateError } = await supabase
-                .from('user_sessions')
-                .update({
-                    last_seen_at: new Date().toISOString(),
-                    user_agent: userAgent,
-                    device_type: deviceType,
-                    ...(ipAddress && { ip: ipAddress }),
-                    ...(locationData && { location: locationData })
-                })
-                .eq('id', existingSessionId);
-
-            if (updateError) {
-                console.error('Error updating existing session:', updateError);
-                throw updateError;
-            }
-
-            // Store session ID in localStorage
-            localStorage.setItem('current_session_id', existingSessionId);
-            return;
-        }
-
         // Get location and IP data with timeout and error handling
         let locationData = '';
         let ipAddress = '';
+        
         try {
             // Timeout for IP and location fetching - don't block the session creation
             const timeout = (ms: number) => new Promise((_, reject) =>
@@ -233,6 +208,30 @@ export async function recordSession(): Promise<void> {
         } catch (error) {
             console.warn('Error getting user location/IP:', error);
             // Continue with empty values
+        }
+
+        // If a session exists for this device, update it instead of creating a new one
+        if (existingSessionId) {
+            // Update the existing session
+            const { error: updateError } = await supabase
+                .from('user_sessions')
+                .update({
+                    last_seen_at: new Date().toISOString(),
+                    user_agent: userAgent,
+                    device_type: deviceType,
+                    ...(ipAddress && { ip: ipAddress }),
+                    ...(locationData && { location: locationData })
+                })
+                .eq('id', existingSessionId);
+
+            if (updateError) {
+                console.error('Error updating existing session:', updateError);
+                throw updateError;
+            }
+
+            // Store session ID in localStorage
+            localStorage.setItem('current_session_id', existingSessionId);
+            return;
         }
 
         // Generate a UUID for the session

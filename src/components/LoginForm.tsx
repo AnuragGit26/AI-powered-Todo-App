@@ -10,7 +10,6 @@ import {
 import { Input } from "./ui/input.tsx";
 import { Label } from "./ui/label.tsx";
 import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { logActivity, updateUsageMetrics } from "../services/activityMetrics.ts";
 import { getUserIP } from "../services/ipService.ts";
@@ -28,8 +27,9 @@ import {
     ArrowRight,
     Info
 } from "lucide-react";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+const supabase = getSupabaseClient();
 
 const ModernFooter = () => {
     return (

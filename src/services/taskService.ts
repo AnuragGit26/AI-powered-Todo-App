@@ -1,10 +1,9 @@
 import type { SubTodo, Todo, RecurrenceConfig } from '../types';
-import { createClient } from '@supabase/supabase-js';
 import { useTodoStore } from "../store/todoStore.ts";
 import { logActivity } from "./activityMetrics.ts";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
-
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+const supabase = getSupabaseClient();
 
 export const getTaskById = (id: string): Todo | undefined => {
     const todos = useTodoStore.getState().todos;
