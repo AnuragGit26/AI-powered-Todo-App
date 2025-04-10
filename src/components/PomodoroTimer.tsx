@@ -43,11 +43,8 @@ const hexToRgb = (hex: string) => {
 
 export const PomodoroTimer: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
-    const [timeLeft, setTimeLeft] = useState(defaultSettings.workTime * 60);
-    const [isActive, setIsActive] = useState(false);
-    const [isWorkTime, setIsWorkTime] = useState(true);
-    const [completedSessions, setCompletedSessions] = useState(0);
-    const [settings, setSettings] = useState<PomodoroSettings>(defaultSettings);
+    const { pomodoro, updatePomodoroState, togglePomodoroTimer, resetPomodoroTimer } = useTodoStore();
+
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
         title: '',
@@ -55,119 +52,62 @@ export const PomodoroTimer: React.FC = () => {
         type: 'work' as 'work' | 'shortBreak' | 'longBreak',
     });
 
-    // New state variables for added features
-    const [sessionHistory, setSessionHistory] = useState<SessionHistory[]>([]);
     const [showHistory, setShowHistory] = useState(false);
-    const [currentLabel, setCurrentLabel] = useState('');
-    const [autoStartNext, setAutoStartNext] = useState(false);
-    const [notificationEnabled, setNotificationEnabled] = useState(true);
-    const [notificationVolume, setNotificationVolume] = useState(0.5);
 
     // Initialize sound with useSound hook
     const [playSound] = useSound(notifySound, {
-        volume: notificationVolume,
-        soundEnabled: notificationEnabled,
+        volume: pomodoro.notificationVolume,
+        soundEnabled: pomodoro.notificationEnabled,
     });
 
     // Calculate progress percentage
     const calculateProgress = () => {
-        const totalSeconds = isWorkTime
-            ? settings.workTime * 60
-            : (completedSessions % settings.longBreakInterval === 0 ? settings.longBreak : settings.shortBreak) * 60;
-        return ((totalSeconds - timeLeft) / totalSeconds) * 100;
+        const totalSeconds = pomodoro.isWorkTime
+            ? pomodoro.settings.workTime * 60
+            : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ? pomodoro.settings.longBreak : pomodoro.settings.shortBreak) * 60;
+        return ((totalSeconds - pomodoro.timeLeft) / totalSeconds) * 100;
     };
 
     // Update timer when settings change (only when timer is not active)
     useEffect(() => {
-        if (!isActive) {
-            if (isWorkTime) {
-                setTimeLeft(settings.workTime * 60);
-            } else {
-                const isLongBreak = completedSessions % settings.longBreakInterval === 0;
-                setTimeLeft(isLongBreak ? settings.longBreak * 60 : settings.shortBreak * 60);
-            }
-        }
-    }, [settings, isActive, isWorkTime, completedSessions]);
+        if (!pomodoro.isActive) {
+            const newTimeLeft = pomodoro.isWorkTime
+                ? pomodoro.settings.workTime * 60
+                : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0
+                    ? pomodoro.settings.longBreak * 60
+                    : pomodoro.settings.shortBreak * 60);
 
+            updatePomodoroState({ timeLeft: newTimeLeft });
+        }
+    }, [pomodoro.settings, pomodoro.isActive, pomodoro.isWorkTime, pomodoro.completedSessions]);
+
+    // Timer management is now handled by MiniPomodoro component and store
+
+    // Show alert when timer completes
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        if (pomodoro.timeLeft === 0) {
+            const isLongBreak = pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0;
 
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((time) => time - 1);
-            }, 1000);
-        } else if (timeLeft === 0) {
-            handleTimerComplete();
-        }
-
-        return () => clearInterval(interval);
-    }, [isActive, timeLeft]);
-
-    const handleTimerComplete = () => {
-        // Play notification sound using useSound hook
-        if (notificationEnabled) {
-            try {
-                playSound();
-            } catch (error) {
-                console.error("Error playing notification sound:", error);
-                setNotificationEnabled(false);
+            if (pomodoro.isWorkTime) {
+                setAlertConfig({
+                    title: 'Work Session Complete!',
+                    message: `Time for a ${isLongBreak ? 'long' : 'short'} break.`,
+                    type: isLongBreak ? 'longBreak' : 'shortBreak',
+                });
+            } else {
+                setAlertConfig({
+                    title: 'Break Complete!',
+                    message: 'Time to get back to work.',
+                    type: 'work',
+                });
             }
-        }
 
-        // Add to session history
-        const newSession: SessionHistory = {
-            type: isWorkTime ? 'work' : (completedSessions % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak'),
-            duration: isWorkTime ? settings.workTime : (completedSessions % settings.longBreakInterval === 0 ? settings.longBreak : settings.shortBreak),
-            completedAt: new Date(),
-            label: currentLabel
-        };
-        setSessionHistory(prev => [newSession, ...prev].slice(0, 10)); // Keep last 10 sessions
-
-        if (isWorkTime) {
-            const isLongBreak = completedSessions % settings.longBreakInterval === 0;
-            setCompletedSessions((prev) => prev + 1);
-
-            setAlertConfig({
-                title: 'Work Session Complete!',
-                message: `Time for a ${isLongBreak ? 'long' : 'short'} break.`,
-                type: isLongBreak ? 'longBreak' : 'shortBreak',
-            });
             setAlertVisible(true);
-
-            setTimeLeft(isLongBreak ? settings.longBreak * 60 : settings.shortBreak * 60);
-            setIsWorkTime(false);
-        } else {
-            setAlertConfig({
-                title: 'Break Complete!',
-                message: 'Time to get back to work.',
-                type: 'work',
-            });
-            setAlertVisible(true);
-
-            setTimeLeft(settings.workTime * 60);
-            setIsWorkTime(true);
         }
-
-        if (autoStartNext) {
-            setIsActive(true);
-        } else {
-            setIsActive(false);
-        }
-    };
+    }, [pomodoro.timeLeft]);
 
     const closeAlert = () => {
         setAlertVisible(false);
-    };
-
-    const toggleTimer = () => {
-        setIsActive(!isActive);
-    };
-
-    const resetTimer = () => {
-        setIsActive(false);
-        setTimeLeft(settings.workTime * 60);
-        setIsWorkTime(true);
-        setCompletedSessions(0);
     };
 
     const formatTime = (seconds: number): string => {
@@ -176,9 +116,14 @@ export const PomodoroTimer: React.FC = () => {
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
-    const updateSetting = (key: keyof PomodoroSettings, value: number) => {
-        if (!isActive) {
-            setSettings({ ...settings, [key]: value });
+    const updateSetting = (key: keyof typeof pomodoro.settings, value: number) => {
+        if (!pomodoro.isActive) {
+            updatePomodoroState({
+                settings: {
+                    ...pomodoro.settings,
+                    [key]: value
+                }
+            });
         }
     };
 
@@ -190,36 +135,21 @@ export const PomodoroTimer: React.FC = () => {
     }, [theme]);
 
     return (
-        <>
-            <Card
-                className="relative overflow-hidden p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-900 dark:to-black border-2 border-opacity-20 shadow-lg"
-                style={{
-                    borderColor: 'var(--timer-primary-color)',
-                    background: `linear-gradient(135deg, 
-                        ${theme.mode === 'dark' ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)'}, 
-                        ${theme.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'})`
-                }}
-            >
-                <Waves
-                    className="absolute inset-0"
-                    style={{
-                        opacity: theme.mode === 'dark' ? 0.15 : 0.1,
-                        mixBlendMode: theme.mode === 'dark' ? 'lighten' : 'multiply'
-                    }}
-                    lineColor={theme.mode === 'dark' ?
-                        `rgba(${hexToRgb(theme.primaryColor)?.r || 0}, ${hexToRgb(theme.primaryColor)?.g || 0}, ${hexToRgb(theme.primaryColor)?.b || 0}, 0.5)` :
-                        theme.primaryColor}
-                    waveAmpX={50}
-                    waveAmpY={30}
-                    waveSpeedX={0.025}
-                    waveSpeedY={0.015}
-                    friction={0.95}
-                    tension={0.02}
-                />
+        <Card className="relative overflow-hidden border-none bg-gradient-to-br from-white/60 to-white/30 dark:from-gray-900/60 dark:to-gray-900/30 backdrop-blur-sm shadow-2xl">
+            <Waves className="absolute inset-0 w-full h-full" />
 
-                {/* Progress Ring */}
+            {alertVisible && (
+                <TimerAlert
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    onClose={closeAlert}
+                />
+            )}
+
+            <div className="relative z-10 p-6 sm:p-8">
                 <div className="relative z-10">
-                    {(isActive || completedSessions > 0 || timeLeft < settings.workTime * 60) && (
+                    {(pomodoro.isActive || pomodoro.completedSessions > 0 || pomodoro.timeLeft < pomodoro.settings.workTime * 60) && (
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6 overflow-hidden">
                             <div
                                 className="h-full transition-all duration-300 ease-linear rounded-full"
@@ -233,10 +163,10 @@ export const PomodoroTimer: React.FC = () => {
 
                     <div className="text-center">
                         <h2 className="text-3xl font-bold mb-2 text-gray-950 dark:text-gray-100">
-                            {isWorkTime ? 'Work Time' : 'Break Time'}
+                            {pomodoro.isWorkTime ? 'Work Time' : 'Break Time'}
                         </h2>
                         <div className="text-6xl font-mono font-bold mb-4 text-gray-950 dark:text-gray-100">
-                            {formatTime(timeLeft)}
+                            {formatTime(pomodoro.timeLeft)}
                         </div>
 
                         {/* Session Label Input */}
@@ -245,28 +175,28 @@ export const PomodoroTimer: React.FC = () => {
                             <Input
                                 type="text"
                                 placeholder="What are you working on?"
-                                value={currentLabel}
-                                onChange={(e) => setCurrentLabel(e.target.value)}
+                                value={pomodoro.currentLabel}
+                                onChange={(e) => updatePomodoroState({ currentLabel: e.target.value })}
                                 className="max-w-xs text-center placeholder:text-gray-500"
-                                disabled={isActive}
+                                disabled={pomodoro.isActive}
                             />
                         </div>
 
                         <div className="flex justify-center gap-4">
                             <Button
-                                onClick={toggleTimer}
-                                variant={isActive ? "destructive" : "default"}
+                                onClick={togglePomodoroTimer}
+                                variant={pomodoro.isActive ? "destructive" : "default"}
                                 size="lg"
-                                className={isActive ? "bg-red-600 hover:bg-red-700" : ""}
-                                style={!isActive ? {
+                                className={pomodoro.isActive ? "bg-red-600 hover:bg-red-700" : ""}
+                                style={!pomodoro.isActive ? {
                                     backgroundColor: theme.primaryColor,
                                     color: theme.mode === 'dark' ? '#fff' : '#000'
                                 } : undefined}
                             >
-                                {isActive ? 'Pause' : 'Start'}
+                                {pomodoro.isActive ? 'Pause' : 'Start'}
                             </Button>
                             <Button
-                                onClick={resetTimer}
+                                onClick={resetPomodoroTimer}
                                 variant="outline"
                                 size="lg"
                                 className="border-2"
@@ -283,19 +213,19 @@ export const PomodoroTimer: React.FC = () => {
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Work Duration</span>
                             <div className="flex items-center gap-2">
                                 <Slider
-                                    value={[settings.workTime]}
+                                    value={[pomodoro.settings.workTime]}
                                     onValueChange={(value) => updateSetting('workTime', value[0])}
                                     min={1}
                                     max={60}
                                     step={1}
-                                    className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={isActive}
+                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive}
                                     style={{
                                         '--slider-thumb-color': theme.primaryColor,
                                         '--slider-track-color': theme.primaryColor
                                     } as React.CSSProperties}
                                 />
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.workTime} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{pomodoro.settings.workTime} min</span>
                             </div>
                         </div>
 
@@ -303,19 +233,19 @@ export const PomodoroTimer: React.FC = () => {
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Short Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
-                                    value={[settings.shortBreak]}
+                                    value={[pomodoro.settings.shortBreak]}
                                     onValueChange={(value) => updateSetting('shortBreak', value[0])}
                                     min={1}
-                                    max={15}
+                                    max={30}
                                     step={1}
-                                    className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={isActive}
+                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive}
                                     style={{
-                                        '--slider-thumb-color': theme.primaryColor,
-                                        '--slider-track-color': theme.primaryColor
+                                        '--slider-thumb-color': theme.secondaryColor,
+                                        '--slider-track-color': theme.secondaryColor
                                     } as React.CSSProperties}
                                 />
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.shortBreak} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{pomodoro.settings.shortBreak} min</span>
                             </div>
                         </div>
 
@@ -323,65 +253,97 @@ export const PomodoroTimer: React.FC = () => {
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Long Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
-                                    value={[settings.longBreak]}
+                                    value={[pomodoro.settings.longBreak]}
                                     onValueChange={(value) => updateSetting('longBreak', value[0])}
-                                    min={1}
-                                    max={30}
+                                    min={5}
+                                    max={60}
                                     step={1}
-                                    className={`w-32 ${isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={isActive}
+                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive}
                                     style={{
-                                        '--slider-thumb-color': theme.primaryColor,
-                                        '--slider-track-color': theme.primaryColor
+                                        '--slider-thumb-color': '#9333ea',
+                                        '--slider-track-color': '#9333ea'
                                     } as React.CSSProperties}
                                 />
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{settings.longBreak} min</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{pomodoro.settings.longBreak} min</span>
                             </div>
-                        </div>
-
-                        {/* Additional Settings */}
-                        <div className="flex items-center justify-between pt-2">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Auto-start next session</span>
-                            <Switch
-                                checked={autoStartNext}
-                                onCheckedChange={setAutoStartNext}
-                                style={{
-                                    '--switch-color': theme.primaryColor
-                                } as React.CSSProperties}
-                            />
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Enable Notifications</span>
-                            <Switch
-                                checked={notificationEnabled}
-                                onCheckedChange={setNotificationEnabled}
-                                style={{
-                                    '--switch-color': theme.primaryColor
-                                } as React.CSSProperties}
-                            />
-                        </div>
-
-                        {notificationEnabled && (
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Notification Volume</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Long Break After</span>
+                            <div className="flex items-center gap-2">
                                 <Slider
-                                    value={[notificationVolume * 100]}
-                                    onValueChange={(value) => setNotificationVolume(value[0] / 100)}
-                                    min={0}
-                                    max={100}
+                                    value={[pomodoro.settings.longBreakInterval]}
+                                    onValueChange={(value) => updateSetting('longBreakInterval', value[0])}
+                                    min={1}
+                                    max={10}
                                     step={1}
-                                    className="w-32"
+                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive}
                                     style={{
                                         '--slider-thumb-color': theme.primaryColor,
                                         '--slider-track-color': theme.primaryColor
                                     } as React.CSSProperties}
                                 />
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{pomodoro.settings.longBreakInterval} sessions</span>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Additional Timer Settings */}
+                        <div className="mt-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="auto-start" className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                                    Auto-start Next Session
+                                </label>
+                                <Switch
+                                    id="auto-start"
+                                    checked={pomodoro.autoStartNext}
+                                    onCheckedChange={(checked) => updatePomodoroState({ autoStartNext: checked })}
+                                    style={{
+                                        '--switch-thumb-color': theme.primaryColor,
+                                        '--switch-track-color': theme.primaryColor
+                                    } as React.CSSProperties}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="notification" className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                                    Sound Notification
+                                </label>
+                                <Switch
+                                    id="notification"
+                                    checked={pomodoro.notificationEnabled}
+                                    onCheckedChange={(checked) => updatePomodoroState({ notificationEnabled: checked })}
+                                    style={{
+                                        '--switch-thumb-color': theme.primaryColor,
+                                        '--switch-track-color': theme.primaryColor
+                                    } as React.CSSProperties}
+                                />
+                            </div>
+
+                            {pomodoro.notificationEnabled && (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Volume</span>
+                                    <div className="flex items-center gap-2">
+                                        <Slider
+                                            value={[pomodoro.notificationVolume * 100]}
+                                            onValueChange={(value) => updatePomodoroState({ notificationVolume: value[0] / 100 })}
+                                            min={0}
+                                            max={100}
+                                            step={1}
+                                            className="w-32"
+                                            style={{
+                                                '--slider-thumb-color': theme.secondaryColor,
+                                                '--slider-track-color': theme.secondaryColor
+                                            } as React.CSSProperties}
+                                        />
+                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{Math.round(pomodoro.notificationVolume * 100)}%</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Session History */}
                     <div className="mt-6">
                         <Button
                             variant="ghost"
@@ -395,7 +357,7 @@ export const PomodoroTimer: React.FC = () => {
 
                         {showHistory && (
                             <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                                {sessionHistory.map((session, index) => (
+                                {pomodoro.sessionHistory.map((session, index) => (
                                     <div
                                         key={index}
                                         className="flex items-center justify-between p-2 rounded-lg"
@@ -410,35 +372,26 @@ export const PomodoroTimer: React.FC = () => {
                                         }}
                                     >
                                         <div>
-                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                {session.type === 'work' ? '🎯 Work' : session.type === 'shortBreak' ? '☕️ Short Break' : '🌙 Long Break'}
+                                            <span className="text-sm font-medium block">
+                                                {session.type === 'work' ? 'Work Session' : session.type === 'shortBreak' ? 'Short Break' : 'Long Break'}
                                             </span>
                                             {session.label && (
-                                                <p className="text-xs text-gray-700 dark:text-gray-400">{session.label}</p>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">{session.label}</span>
                                             )}
                                         </div>
-                                        <div className="text-sm text-gray-700 dark:text-gray-500">
-                                            {session.duration}min - {new Date(session.completedAt).toLocaleTimeString()}
+                                        <div className="text-right">
+                                            <span className="text-sm block">{session.duration} min</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                                                {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-
-                    <div className="text-center text-sm font-medium text-gray-700 dark:text-gray-400 mt-4">
-                        Completed Sessions: {completedSessions}
-                    </div>
                 </div>
-            </Card>
-
-            <TimerAlert
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-                onClose={closeAlert}
-                visible={alertVisible}
-            />
-        </>
+            </div>
+        </Card>
     );
 }; 

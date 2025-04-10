@@ -6,11 +6,13 @@ import { Button } from "./ui/button";
 import { useTodoStore } from "../store/todoStore";
 import ThemeCustomizer from "./ThemeCustomizer";
 import ShinyText from "./ui/ShinyText";
+import { MiniPomodoro } from "./MiniPomodoro";
 
 export const NavBar: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTodoStore((state) => state.theme);
+    const pomodoro = useTodoStore((state) => state.pomodoro);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     // Display analytics button only on main page
@@ -40,6 +42,13 @@ export const NavBar: React.FC = () => {
                     <Home className="h-5 w-5 mr-1" />
                     <ShinyText text="Home" disabled={false} speed={2} className="font-medium theme-accent-text dark:text-white" />
                 </Button>
+
+                {/* Center section with mini pomodoro - only show if timer is active or completed sessions > 0 */}
+                {(pomodoro.isActive || pomodoro.completedSessions > 0) && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2">
+                        <MiniPomodoro />
+                    </div>
+                )}
 
                 {/* Right section with actions */}
                 <div className="flex items-center gap-3">
@@ -86,6 +95,13 @@ export const NavBar: React.FC = () => {
                 >
                     <Home className="h-5 w-5" />
                 </Button>
+
+                {/* Center mini pomodoro for mobile */}
+                {(pomodoro.isActive || pomodoro.completedSessions > 0) && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2">
+                        <MiniPomodoro />
+                    </div>
+                )}
 
                 <div className="flex items-center gap-2">
                     <ThemeCustomizer />

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { TodoStore, Todo, SubTodo, userData, ThemeConfig } from '../types';
+import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, PomodoroState } from '../types';
 
 // Helper function to determine initial theme based on system preference
 const getInitialTheme = (): ThemeConfig => {
@@ -26,15 +26,41 @@ const getInitialTheme = (): ThemeConfig => {
     }
 };
 
+// Default pomodoro settings
+const defaultPomodoroSettings: PomodoroSettings = {
+    workTime: 25,
+    shortBreak: 5,
+    longBreak: 15,
+    longBreakInterval: 4,
+};
+
+// Default pomodoro state
+const defaultPomodoroState: PomodoroState = {
+    isActive: false,
+    isWorkTime: true,
+    timeLeft: defaultPomodoroSettings.workTime * 60,
+    completedSessions: 0,
+    settings: defaultPomodoroSettings,
+    sessionHistory: [],
+    currentLabel: '',
+    autoStartNext: false,
+    notificationEnabled: true,
+    notificationVolume: 0.5,
+    lastUpdatedAt: Date.now(),
+};
+
 // Create the store
 export const useTodoStore = create<TodoStore>()(
     devtools(
         persist(
-            (set) => ({
+            (set, get) => ({
                 todos: [],
                 theme: getInitialTheme(),
                 userToken: null,
                 userData: null,
+                
+                // Pomodoro state
+                pomodoro: defaultPomodoroState,
                 
                 setUserToken: (token: string) => set({ userToken: token }),
                 setUserData: (data: userData) => set({ userData: data }),
@@ -144,6 +170,42 @@ export const useTodoStore = create<TodoStore>()(
                 
                 setTheme: (theme: ThemeConfig) => set({ theme }),
                 setTodos: (todos: Todo[]) => set({ todos }),
+                
+                // Pomodoro functions
+                updatePomodoroState: (newState: Partial<PomodoroState>) => {
+                    set((state) => ({
+                        pomodoro: {
+                            ...state.pomodoro,
+                            ...newState,
+                            lastUpdatedAt: Date.now(),
+                        }
+                    }));
+                },
+                
+                resetPomodoroTimer: () => {
+                    const { pomodoro } = get();
+                    set({
+                        pomodoro: {
+                            ...pomodoro,
+                            isActive: false,
+                            isWorkTime: true,
+                            timeLeft: pomodoro.settings.workTime * 60,
+                            completedSessions: 0,
+                            lastUpdatedAt: Date.now(),
+                        }
+                    });
+                },
+                
+                togglePomodoroTimer: () => {
+                    const { pomodoro } = get();
+                    set({
+                        pomodoro: {
+                            ...pomodoro,
+                            isActive: !pomodoro.isActive,
+                            lastUpdatedAt: Date.now(),
+                        }
+                    });
+                },
             }),
             {
                 name: 'todo-storage',

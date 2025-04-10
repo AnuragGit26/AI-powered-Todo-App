@@ -67,6 +67,34 @@ export interface ThemeConfig {
   secondaryColor: string;
 }
 
+export interface PomodoroSettings {
+    workTime: number;
+    shortBreak: number;
+    longBreak: number;
+    longBreakInterval: number;
+}
+
+export interface SessionHistory {
+    type: 'work' | 'shortBreak' | 'longBreak';
+    duration: number;
+    completedAt: Date;
+    label: string;
+}
+
+export interface PomodoroState {
+    isActive: boolean;
+    isWorkTime: boolean;
+    timeLeft: number;
+    completedSessions: number;
+    settings: PomodoroSettings;
+    sessionHistory: SessionHistory[];
+    currentLabel: string;
+    autoStartNext: boolean;
+    notificationEnabled: boolean;
+    notificationVolume: number;
+    lastUpdatedAt: number;
+}
+
 export interface TodoStore {
   todos: Todo[];
   theme: ThemeConfig;
@@ -83,7 +111,12 @@ export interface TodoStore {
   createSubtaskStore: (parentId: string, subtask: SubTodo) => void;
   updateSubtaskStore: (parentId: string, subtaskId: string, subtask: Partial<SubTodo>) => void;
   deleteSubtaskStore: (parentId: string, subtaskId: string) => void;
-
+  
+  // Pomodoro Timer state
+  pomodoro: PomodoroState;
+  updatePomodoroState: (state: Partial<PomodoroState>) => void;
+  resetPomodoroTimer: () => void;
+  togglePomodoroTimer: () => void;
 }
 
 export interface userData {
