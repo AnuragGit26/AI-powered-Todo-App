@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Repeat } from 'lucide-react';
+import { Plus, Loader2, Repeat, ChevronDown, CalendarIcon } from 'lucide-react';
 import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
 import type { Priority, Status, SubTodo, Todo, RecurrenceFrequency, RecurrenceConfig } from '../types';
 import { createSubtask, createTask, getTaskById } from '../services/taskService';
 import { Input } from "./ui/input.tsx";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { Button } from "./ui/button.tsx";
 import { Calendar } from "./ui/calendar.tsx";
 import {
@@ -136,12 +135,17 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
         >
             <div className="flex flex-col gap-2 bg-white/80 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-600 backdrop-blur rounded-lg p-3 sm:p-4 transition-all duration-300 animate-fadeIn">
                 <div className="relative flex-auto">
-                    <Input
-                        type="text"
+                    <textarea
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder={parentId ? "Add a subtask..." : "Add a new task..."}
-                        className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg"
+                        className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg min-h-[60px] resize-y"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && title.trim()) {
+                                e.preventDefault();
+                                handleSubmit(e as any);
+                            }
+                        }}
                     />
                     <AnimatePresence>
                         {isAnalyzing && (
@@ -220,6 +224,195 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
                     >
                         <Plus className="w-5 h-5" />
                     </motion.button>
+                </div>
+
+                {/* Recurrence Section */}
+                <div className="w-full border rounded-lg p-2 transition-all">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="recurrence-toggle"
+                                checked={isRecurring}
+                                onCheckedChange={setIsRecurring}
+                            />
+                            <Label htmlFor="recurrence-toggle" className="cursor-pointer">
+                                {isRecurring ? "Recurring Task" : "Make recurring?"}
+                            </Label>
+                        </div>
+                        {isRecurring && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsRecurring(!isRecurring)}
+                                className="px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <ChevronDown className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+
+                    {isRecurring && (
+                        <div className="mt-3 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <Label htmlFor="recurrence-frequency">Repeat</Label>
+                                    <Select
+                                        value={recurrenceFrequency || undefined}
+                                        onValueChange={(value) => setRecurrenceFrequency(value as RecurrenceFrequency)}>
+                                        <SelectTrigger id="recurrence-frequency" className="w-full mt-1">
+                                            <SelectValue placeholder="Select frequency" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="daily">Daily</SelectItem>
+                                            <SelectItem value="weekly">Weekly</SelectItem>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                            <SelectItem value="yearly">Yearly</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="recurrence-interval">Every</Label>
+                                    <div className="flex items-center mt-1">
+                                        <Input
+                                            id="recurrence-interval"
+                                            type="number"
+                                            min="1"
+                                            value={recurrenceInterval}
+                                            onChange={(e) => setRecurrenceInterval(parseInt(e.target.value) || 1)}
+                                            className="w-20"
+                                        />
+                                        <span className="ml-2">
+                                            {recurrenceFrequency === 'daily' && (recurrenceInterval > 1 ? 'days' : 'day')}
+                                            {recurrenceFrequency === 'weekly' && (recurrenceInterval > 1 ? 'weeks' : 'week')}
+                                            {recurrenceFrequency === 'monthly' && (recurrenceInterval > 1 ? 'months' : 'month')}
+                                            {recurrenceFrequency === 'yearly' && (recurrenceInterval > 1 ? 'years' : 'year')}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {recurrenceFrequency === 'weekly' && (
+                                <div>
+                                    <Label className="block mb-2">On these days</Label>
+                                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                                        {DAYS_OF_WEEK.map((day) => (
+                                            <div key={day.value} className="flex items-center space-x-1">
+                                                <Checkbox
+                                                    id={`day-${day.value}`}
+                                                    checked={selectedDays.includes(day.value)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setSelectedDays([...selectedDays, day.value]);
+                                                        } else {
+                                                            setSelectedDays(selectedDays.filter(d => d !== day.value));
+                                                        }
+                                                    }}
+                                                />
+                                                <Label
+                                                    htmlFor={`day-${day.value}`}
+                                                    className="cursor-pointer text-sm"
+                                                >
+                                                    {day.label.substring(0, 3)}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {recurrenceFrequency === 'monthly' && (
+                                <div>
+                                    <Label htmlFor="day-of-month">Day of month</Label>
+                                    <Input
+                                        id="day-of-month"
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        value={dayOfMonth}
+                                        onChange={(e) => setDayOfMonth(parseInt(e.target.value) || 1)}
+                                        className="w-full mt-1"
+                                    />
+                                </div>
+                            )}
+
+                            {recurrenceFrequency === 'yearly' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <Label htmlFor="month-of-year">Month</Label>
+                                        <Select
+                                            value={monthOfYear.toString()}
+                                            onValueChange={(value) => setMonthOfYear(parseInt(value))}>
+                                            <SelectTrigger id="month-of-year" className="w-full mt-1">
+                                                <SelectValue placeholder="Select month" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[...Array(12)].map((_, i) => (
+                                                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                                        {new Date(2000, i).toLocaleString('default', { month: 'long' })}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="yearly-day-of-month">Day</Label>
+                                        <Input
+                                            id="yearly-day-of-month"
+                                            type="number"
+                                            min="1"
+                                            max="31"
+                                            value={dayOfMonth}
+                                            onChange={(e) => setDayOfMonth(parseInt(e.target.value) || 1)}
+                                            className="w-full mt-1"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <Label className="flex items-center space-x-2 mb-2">
+                                    <span>End date</span>
+                                    <span className="text-xs text-gray-500">(optional)</span>
+                                </Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !recurrenceEndDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {recurrenceEndDate ? format(recurrenceEndDate, "PPP") : <span>No end date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <div className="p-2 flex justify-between border-b">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setRecurrenceEndDate(null)}
+                                            >
+                                                Clear
+                                            </Button>
+                                        </div>
+                                        <Calendar
+                                            mode="single"
+                                            selected={recurrenceEndDate || undefined}
+                                            onSelect={(date: Date | undefined) => setRecurrenceEndDate(date || null)}
+                                            initialFocus
+                                            disabled={(date) =>
+                                                date < new Date() || date < new Date("1900-01-01")
+                                            }
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </motion.form>

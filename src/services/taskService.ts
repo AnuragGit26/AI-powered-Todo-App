@@ -2,6 +2,7 @@ import type { SubTodo, Todo, RecurrenceConfig } from '../types';
 import { useTodoStore } from "../store/todoStore.ts";
 import { logActivity } from "./activityMetrics.ts";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import { handleUUID, isValidUUID } from "../lib/utils";
 
 const supabase = getSupabaseClient();
 
@@ -38,18 +39,72 @@ export const fetchTasks = async () => {
 };
 
 export const createTask = async (task: Todo) => {
-    const { error } = await supabase
-        .from('tasks')
-        .insert([task]);
+    // Clone the task to avoid modifying the original object
+    const taskToSave = { ...task };
+    
+    // Validate UUID format
+    if (!isValidUUID(taskToSave.id)) {
+        console.warn(`Invalid UUID format: ${taskToSave.id}, generating a new one.`);
+        taskToSave.id = handleUUID(taskToSave.id);
+    }
+    
+    // Ensure recurrence is properly formatted as JSONB for database
+    if (taskToSave.recurrence) {
+        try {
+            // Ensure dates are serialized properly
+            if (taskToSave.recurrence.endDate) {
+                const endDate = new Date(taskToSave.recurrence.endDate);
+                if (!isNaN(endDate.getTime())) {
+                    taskToSave.recurrence.endDate = endDate;
+                }
+            }
+        } catch (err) {
+            console.warn("Error processing recurrence data:", err);
+        }
+    }
+    
+    // If we're in the process of migrating and the column doesn't exist yet,
+    // temporarily remove lastRecurrenceDate to prevent errors
+    try {
+        const { error } = await supabase
+            .from('tasks')
+            .insert([taskToSave]);
 
-    if (error) {
-        console.error('Error creating task:', error);
-    } else {
+        if (error) {
+            // If the error is related to lastRecurrenceDate or recurrence column not existing
+            if (error.message && (error.message.includes('lastRecurrenceDate') || error.message.includes('recurrence'))) {
+                console.warn(`Column not found: ${error.message}. Attempting without problematic fields.`);
+                
+                // Delete the problematic properties and try again
+                if (error.message.includes('lastRecurrenceDate')) {
+                    delete taskToSave.lastRecurrenceDate;
+                }
+                
+                if (error.message.includes('recurrence')) {
+                    delete taskToSave.recurrence;
+                }
+                
+                const { error: retryError } = await supabase
+                    .from('tasks')
+                    .insert([taskToSave]);
+                    
+                if (retryError) {
+                    console.error('Error creating task (retry):', retryError);
+                    return;
+                }
+            } else {
+                console.error('Error creating task:', error);
+                return;
+            }
+        }
+        
         console.log('Task created:', task.id);
         const userId = localStorage.getItem('userId');
         if (userId) {
             await logActivity(userId, `Task Created ${task.title}`);
         }
+    } catch (err) {
+        console.error('Unexpected error creating task:', err);
     }
 };
 
@@ -132,14 +187,44 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
         return;
     }
 
-    const { error } = await supabase
-        .from('tasks')
-        .update(updates)
-        .eq('id', taskId).eq('userId', userId);
+    try {
+        // Clone the updates to avoid modifying the original object
+        const updatesToApply = { ...updates };
+        
+        const { error } = await supabase
+            .from('tasks')
+            .update(updatesToApply)
+            .eq('id', taskId).eq('userId', userId);
 
-    if (error) {
-        console.error('Error updating task:', error);
-    } else {
+        if (error) {
+            // If the error is related to missing columns
+            if (error.message && (error.message.includes('lastRecurrenceDate') || error.message.includes('recurrence'))) {
+                console.warn(`Column not found: ${error.message}. Attempting without problematic fields.`);
+                
+                // Delete the problematic properties and try again
+                if (error.message.includes('lastRecurrenceDate')) {
+                    delete updatesToApply.lastRecurrenceDate;
+                }
+                
+                if (error.message.includes('recurrence')) {
+                    delete updatesToApply.recurrence;
+                }
+                
+                const { error: retryError } = await supabase
+                    .from('tasks')
+                    .update(updatesToApply)
+                    .eq('id', taskId).eq('userId', userId);
+                    
+                if (retryError) {
+                    console.error('Error updating task (retry):', retryError);
+                    return;
+                }
+            } else {
+                console.error('Error updating task:', error);
+                return;
+            }
+        }
+        
         console.log('Task updated:', taskId);
         const changedFields = Object.keys(updates).join(', ');
         await logActivity(userId, `Task Updated: ${taskId} (Changed: ${changedFields})`);
@@ -151,6 +236,8 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
                 await createNextRecurrence(task);
             }
         }
+    } catch (err) {
+        console.error('Unexpected error updating task:', err);
     }
 };
 

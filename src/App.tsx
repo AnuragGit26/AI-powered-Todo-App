@@ -29,6 +29,9 @@ import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
 import { PomodoroTimer } from "./components/PomodoroTimer";
 import { getSupabaseClient } from "./lib/supabaseClient";
+import { useToast } from "./hooks/use-toast";
+import { Link } from "react-router-dom";
+import type { Todo } from "./types";
 
 // Use the singleton supabase client
 const supabase = getSupabaseClient();
@@ -43,6 +46,8 @@ const App: React.FC = () => {
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
+    const setDbMigrationNeeded = useState(false)[1];
+    const { toast } = useToast();
 
     // Initialize theme on first load and whenever theme changes
     useEffect(() => {
@@ -182,39 +187,79 @@ const App: React.FC = () => {
                     return;
                 }
 
-                // Fetch tasks and subtasks concurrently
-                const tasks = await fetchTasks();
+                try {
+                    // Fetch tasks and subtasks concurrently
+                    const tasks = await fetchTasks();
 
-                // Process in batches to avoid UI freezing
-                const tasksWithSubtasks = [];
-                const batchSize = 5;
+                    // Process in batches to avoid UI freezing
+                    const tasksWithSubtasks = [];
+                    const batchSize = 5;
 
-                for (let i = 0; i < (tasks || []).length; i += batchSize) {
-                    const batch = (tasks || []).slice(i, i + batchSize);
-                    const batchResults = await Promise.all(
-                        batch.map(async (task) => {
-                            const subtasks = await fetchSubtasks(task.id);
-                            return { ...task, subtasks: subtasks || [] };
-                        })
-                    );
-                    tasksWithSubtasks.push(...batchResults);
+                    for (let i = 0; i < (tasks || []).length; i += batchSize) {
+                        const batch = (tasks || []).slice(i, i + batchSize);
+                        const batchResults = await Promise.all(
+                            batch.map(async (task) => {
+                                // Ensure task has an id before trying to fetch subtasks
+                                if (!task || typeof task.id !== 'string') {
+                                    console.error('Invalid task object:', task);
+                                    return { ...task, subtasks: [] };
+                                }
+                                const subtasks = await fetchSubtasks(task.id);
+                                return { ...task, subtasks: subtasks || [] };
+                            })
+                        );
+                        tasksWithSubtasks.push(...batchResults);
 
-                    // Allow UI to breathe between batches
-                    if (i + batchSize < (tasks || []).length) {
-                        await new Promise(resolve => setTimeout(resolve, 0));
+                        // Allow UI to breathe between batches
+                        if (i + batchSize < (tasks || []).length) {
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+
+                    // Type assertion to handle the subtasks correctly
+                    setTodos(tasksWithSubtasks as unknown as Todo[]);
+                } catch (error: unknown) {
+                    console.error("Error loading data:", error);
+
+                    // Check if it's the lastRecurrenceDate error
+                    const errorObj = error as {
+                        message?: string;
+                        details?: string;
+                        code?: string
+                    };
+
+                    const errorMessage = String(errorObj?.message || '');
+                    const errorDetails = String(errorObj?.details || '');
+
+                    if (errorMessage.includes('lastRecurrenceDate') ||
+                        errorDetails.includes('lastRecurrenceDate') ||
+                        (errorObj?.code === 'PGRST204' && errorMessage.includes('column'))) {
+
+                        setDbMigrationNeeded(true);
+
+                        toast({
+                            title: "Database Update Required",
+                            description: "Your database needs to be updated. Please go to the Database Migration page.",
+                            variant: "destructive",
+                            duration: 10000,
+                            action: (
+                                <Link to="/db-migration">
+                                    <Button variant="outline">Update Now</Button>
+                                </Link>
+                            ),
+                        });
                     }
                 }
 
-                setTodos(tasksWithSubtasks);
-            } catch (error) {
-                console.error("Error fetching tasks/subtasks:", error);
-            } finally {
+                setIsDataLoaded(true);
+            } catch (err) {
+                console.error("Error in data loading:", err);
                 setIsDataLoaded(true);
             }
         };
 
         loadData();
-    }, [session, setTodos]);
+    }, [session, setTodos, toast]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
@@ -480,6 +525,23 @@ const App: React.FC = () => {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="reset-password"
+                    element={
+                        session ? <Navigate to="/" /> : <PasswordResetRequestForm />
+                    }
+                />
+
+                {/* Database migration route */}
+                <Route
+                    path="db-migration"
+                    element={
+                        <ProtectedRoute isAuthenticated={!!session}>
+                            <RunDatabaseMigration />
+                        </ProtectedRoute>
+                    }
+                />
+
                 <Route path="*" element={<><NotFound /><Toaster /></>} />
             </Routes>
         </>

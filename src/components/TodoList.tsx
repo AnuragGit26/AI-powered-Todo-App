@@ -303,18 +303,30 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                     />
                 </motion.button>
                 {isEditing ? (
-                    <input
-                        type="text"
+                    <textarea
                         value={editedTitle}
                         onChange={(e) => setEditedTitle(e.target.value)}
                         onBlur={handleSave}
-                        onKeyDown={handleKeyDown}
-                        className="w-full p-3 text-lg border rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSave();
+                            }
+                        }}
+                        className="w-full p-3 text-lg border rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none min-h-[80px] resize-y"
+                        placeholder="Enter task description..."
                     />
                 ) : (
-                    <p className={`text-lg sm:text-xl ${todo.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-white"} break-words flex-1 font-medium`}>
-                        {todo.title}
-                    </p>
+                    <div className="relative group">
+                        <p className={`text-lg sm:text-xl ${todo.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-white"} break-words flex-1 font-medium overflow-hidden text-ellipsis ${todo.title.length > 80 ? "line-clamp-2" : ""}`}>
+                            {todo.title}
+                        </p>
+                        {todo.title.length > 80 && (
+                            <div className="absolute z-10 left-0 top-full mt-1 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-full max-w-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+                                <p className="text-gray-800 dark:text-white font-medium">{todo.title}</p>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* Edit and Delete buttons in right corner */}
