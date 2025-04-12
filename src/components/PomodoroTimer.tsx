@@ -135,8 +135,8 @@ export const PomodoroTimer: React.FC = () => {
     }, [theme]);
 
     return (
-        <Card className="relative overflow-hidden border-none bg-gradient-to-br from-white/60 to-white/30 dark:from-gray-900/60 dark:to-gray-900/30 backdrop-blur-sm shadow-2xl">
-            <Waves className="absolute inset-0 w-full h-full" />
+        <Card className="relative overflow-hidden border-none bg-gradient-to-br from-white/30 to-white/10 dark:from-gray-900/30 dark:to-gray-900/10 backdrop-blur-md shadow-2xl">
+            <Waves className="absolute inset-0 w-full h-full opacity-10" />
 
             {alertVisible && (
                 <TimerAlert
@@ -148,7 +148,7 @@ export const PomodoroTimer: React.FC = () => {
             )}
 
             <div className="relative z-10 p-6 sm:p-8">
-                <div className="relative z-10">
+                <div className="relative z-10 bg-white/5 dark:bg-black/5 rounded-xl backdrop-blur-sm p-6">
                     {(pomodoro.isActive || pomodoro.completedSessions > 0 || pomodoro.timeLeft < pomodoro.settings.workTime * 60) && (
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6 overflow-hidden">
                             <div
@@ -162,10 +162,10 @@ export const PomodoroTimer: React.FC = () => {
                     )}
 
                     <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-2 text-gray-950 dark:text-gray-100">
+                        <h2 className="text-3xl font-bold mb-2 text-gray-700 dark:text-gray-100">
                             {pomodoro.isWorkTime ? 'Work Time' : 'Break Time'}
                         </h2>
-                        <div className="text-6xl font-mono font-bold mb-4 text-gray-950 dark:text-gray-100">
+                        <div className="text-6xl font-mono font-bold mb-4 text-gray-800 dark:text-gray-100">
                             {formatTime(pomodoro.timeLeft)}
                         </div>
 
@@ -207,10 +207,10 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-4 mt-6">
+                    <div className="space-y-4 mt-6 bg-white/5 dark:bg-black/5 rounded-xl backdrop-blur-sm p-6">
                         {/* Timer Settings */}
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Work Duration</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Work Duration</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[pomodoro.settings.workTime]}
@@ -230,7 +230,7 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Short Break</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Short Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[pomodoro.settings.shortBreak]}
@@ -250,7 +250,7 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Long Break</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Long Break</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[pomodoro.settings.longBreak]}
@@ -270,7 +270,7 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Long Break After</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Long Break After</span>
                             <div className="flex items-center gap-2">
                                 <Slider
                                     value={[pomodoro.settings.longBreakInterval]}
@@ -290,9 +290,9 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
 
                         {/* Additional Timer Settings */}
-                        <div className="mt-6 space-y-4">
+                        <div className="mt-6 space-y-4 bg-white/5 dark:bg-black/5 rounded-xl backdrop-blur-sm p-6">
                             <div className="flex items-center justify-between">
-                                <label htmlFor="auto-start" className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                                <label htmlFor="auto-start" className="text-sm font-medium text-gray-600 dark:text-gray-300">
                                     Auto-start Next Session
                                 </label>
                                 <Switch
@@ -307,7 +307,7 @@ export const PomodoroTimer: React.FC = () => {
                             </div>
 
                             <div className="flex items-center justify-between">
-                                <label htmlFor="notification" className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                                <label htmlFor="notification" className="text-sm font-medium text-gray-600 dark:text-gray-300">
                                     Sound Notification
                                 </label>
                                 <Switch
@@ -323,7 +323,7 @@ export const PomodoroTimer: React.FC = () => {
 
                             {pomodoro.notificationEnabled && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-300">Volume</span>
+                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Volume</span>
                                     <div className="flex items-center gap-2">
                                         <Slider
                                             value={[pomodoro.notificationVolume * 100]}
@@ -344,7 +344,7 @@ export const PomodoroTimer: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-6 bg-white/5 dark:bg-black/5 rounded-xl backdrop-blur-sm p-6">
                         <Button
                             variant="ghost"
                             className="w-full flex items-center justify-center gap-2"

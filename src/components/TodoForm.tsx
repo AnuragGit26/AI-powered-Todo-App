@@ -39,7 +39,7 @@ const DAYS_OF_WEEK = [
     { value: 6, label: 'Saturday' },
 ];
 
-const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
+const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = ({ parentId, onSubmitSuccess }) => {
     const [title, setTitle] = useState('');
     const [dueDate, setDueDate] = useState<Date | null>(null);
     const [priority, setPriority] = useState<Priority>('medium');
@@ -124,6 +124,11 @@ const TodoForm: React.FC<{ parentId?: string }> = ({ parentId }) => {
         setSelectedDays([]);
         setDayOfMonth(1);
         setMonthOfYear(1);
+
+        // Call the onSubmitSuccess callback if provided
+        if (onSubmitSuccess) {
+            onSubmitSuccess();
+        }
     };
 
     return (

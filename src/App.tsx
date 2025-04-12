@@ -23,7 +23,7 @@ import { useSessionRecording } from './hooks/useSessionRecording';
 import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
-import ShinyText from "./components/ui/ShinyText.tsx";
+import GradientText from "./components/ui/GradientText";
 import Logo from "./components/Logo.tsx";
 import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
@@ -259,7 +259,7 @@ const App: React.FC = () => {
         };
 
         loadData();
-    }, [session, setTodos, toast]);
+    }, [session, setDbMigrationNeeded, setTodos, toast]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
@@ -271,29 +271,20 @@ const App: React.FC = () => {
 
     // Media query for screens larger than 1600px
     const [isLargeScreen, setIsLargeScreen] = useState(false);
-    const [isSmallScreen, setIsSmallScreen] = useState(false);
 
     useEffect(() => {
         const largeMediaQuery = window.matchMedia('(min-width: 1600px)');
-        const smallMediaQuery = window.matchMedia('(max-width: 639px)');
 
         setIsLargeScreen(largeMediaQuery.matches);
-        setIsSmallScreen(smallMediaQuery.matches);
 
         const handleLargeResize = (e: MediaQueryListEvent) => {
             setIsLargeScreen(e.matches);
         };
 
-        const handleSmallResize = (e: MediaQueryListEvent) => {
-            setIsSmallScreen(e.matches);
-        };
-
         largeMediaQuery.addEventListener('change', handleLargeResize);
-        smallMediaQuery.addEventListener('change', handleSmallResize);
 
         return () => {
             largeMediaQuery.removeEventListener('change', handleLargeResize);
-            smallMediaQuery.removeEventListener('change', handleSmallResize);
         };
     }, []);
 
@@ -345,31 +336,32 @@ const App: React.FC = () => {
                     <div className="flex justify-start -mt-28 mb-1">
                         <Logo size={120} />
                     </div>
-                    {/* Create Task Button for Small Screens */}
-                    {isSmallScreen && (
-                        <div className="w-full mb-4">
-                            <Button
-                                onClick={() => setShowTodoForm(!showTodoForm)}
-                                className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
-                            >
-                                {showTodoForm ? (
-                                    <>
-                                        <X className="w-5 h-5" />
-                                        <span>Close</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="w-5 h-5" />
-                                        <ShinyText text="Create a Task" disabled={false} speed={2} className='text-white font-medium' />
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    )}
 
-                    {/* TodoForm - shown by default on large screens, toggled on small screens */}
+                    {/* Create Task Button for All Screens */}
+                    <div className="w-full mb-4">
+                        <Button
+                            onClick={() => setShowTodoForm(!showTodoForm)}
+                            className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
+                        >
+                            {showTodoForm ? (
+                                <>
+                                    <X className="w-5 h-5" />
+                                    <span>Close</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="w-5 h-5" />
+                                    <GradientText colors={["#ffaa40", "#9c40ff", "#ffaa40"]} animationSpeed={8}>
+                                        Create a Task
+                                    </GradientText>
+                                </>
+                            )}
+                        </Button>
+                    </div>
+
+                    {/* TodoForm - hidden initially, shown when button is clicked */}
                     <AnimatePresence>
-                        {(!isSmallScreen || (isSmallScreen && showTodoForm)) && (
+                        {showTodoForm && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
@@ -377,7 +369,7 @@ const App: React.FC = () => {
                                 transition={{ duration: 0.3 }}
                                 className="overflow-hidden"
                             >
-                                <TodoForm />
+                                <TodoForm onSubmitSuccess={() => setShowTodoForm(false)} />
                             </motion.div>
                         )}
                     </AnimatePresence>
