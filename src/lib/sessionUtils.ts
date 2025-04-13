@@ -106,40 +106,16 @@ export async function terminateSession(sessionId: string): Promise<void> {
 }
 
 /**
- * Checks if a session already exists for the current device
- * Returns the session ID if it exists, null otherwise
- */
-async function getExistingDeviceSession(userId: string): Promise<string | null> {
-    try {
-        const deviceFingerprint = generateDeviceFingerprint();
-
-        const { data, error } = await supabase
-            .from('user_sessions')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('device_fingerprint', deviceFingerprint)
-            .order('last_seen_at', { ascending: false })
-            .limit(1);
-
-        if (error || !data || data.length === 0) {
-            return null;
-        }
-
-        return data[0].id;
-    } catch (error) {
-        console.error('Error checking for existing device session:', error);
-        return null;
-    }
-}
-
-/**
  * Records a new session in our custom table or updates an existing one
  * Call this when a user signs in
  */
 export async function recordSession(): Promise<void> {
     try {
         const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData?.session) return;
+        if (!sessionData?.session) {
+            console.log('No active session found');
+            return;
+        }
 
         const userId = sessionData.session.user.id;
         if (!userId) {
@@ -158,57 +134,21 @@ export async function recordSession(): Promise<void> {
 
         // Generate device fingerprint
         const deviceFingerprint = generateDeviceFingerprint();
+        console.log('Generated device fingerprint:', deviceFingerprint);
 
-        // Check if a session already exists for this device
-        const existingSessionId = await getExistingDeviceSession(userId);
+        // First, try to find an existing session with this fingerprint
+        const { data: existingSession, error: findError } = await supabase
+            .from('user_sessions')
+            .select('id')
+            .eq('device_fingerprint', deviceFingerprint)
+            .single();
 
-        // Get location and IP data with timeout and error handling
-        let locationData = '';
-        let ipAddress = '';
-        
-        try {
-            // Timeout for IP and location fetching - don't block the session creation
-            const timeout = (ms: number) => new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Timeout getting user data')), ms)
-            );
-
-            // Get IP with a timeout and fallback
-            let ip = '';
-            try {
-                const ipPromise = Promise.race([
-                    getUserIP(),
-                    timeout(3000)
-                ]);
-                ip = await ipPromise;
-            } catch (err) {
-                console.warn('Could not get IP:', err);
-                // Continue with empty IP
-            }
-
-            // Get location with a timeout and fallback
-            let region = { location: '', region: '' };
-            try {
-                const regionPromise = Promise.race([
-                    getUserRegion(),
-                    timeout(3000)
-                ]);
-                region = await regionPromise;
-            } catch (err) {
-                console.warn('Could not get region:', err);
-                // Continue with empty region
-            }
-
-            // Safely extract values
-            ipAddress = typeof ip === 'string' ? ip : '';
-            locationData = region && typeof region === 'object' && 'location' in region ?
-                String(region.location || '') : '';
-        } catch (error) {
-            console.warn('Error getting user location/IP:', error);
-            // Continue with empty values
+        if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Error finding existing session:', findError);
         }
 
-        // If a session exists for this device, update it instead of creating a new one
-        if (existingSessionId) {
+        if (existingSession) {
+            console.log('Found existing session:', existingSession.id);
             // Update the existing session
             const { error: updateError } = await supabase
                 .from('user_sessions')
@@ -216,10 +156,9 @@ export async function recordSession(): Promise<void> {
                     last_seen_at: new Date().toISOString(),
                     user_agent: userAgent,
                     device_type: deviceType,
-                    ...(ipAddress && { ip: ipAddress }),
-                    ...(locationData && { location: locationData })
+                    user_id: userId // Update user_id in case it changed
                 })
-                .eq('id', existingSessionId);
+                .eq('id', existingSession.id);
 
             if (updateError) {
                 console.error('Error updating existing session:', updateError);
@@ -227,26 +166,18 @@ export async function recordSession(): Promise<void> {
             }
 
             // Store session ID in localStorage
-            localStorage.setItem('current_session_id', existingSessionId);
+            localStorage.setItem('current_session_id', existingSession.id);
             return;
         }
 
-        // Generate a UUID for the session
-        let sessionId: string;
-        try {
-            sessionId = crypto.randomUUID();
-        } catch (error) {
-            // Fallback for environments where crypto.randomUUID is not available
-            sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
-            console.warn('Using fallback session ID generation:', error);
-        }
+        // If no existing session found, create a new one
+        const sessionId = crypto.randomUUID();
+        console.log('Creating new session with ID:', sessionId);
 
         // Insert the new session
         const { error } = await supabase.from('user_sessions').insert({
             id: sessionId,
             user_id: userId,
-            ...(ipAddress && { ip: ipAddress }),
-            ...(locationData && { location: locationData }),
             created_at: new Date().toISOString(),
             last_seen_at: new Date().toISOString(),
             user_agent: userAgent,
@@ -263,6 +194,29 @@ export async function recordSession(): Promise<void> {
         localStorage.setItem('current_session_id', sessionId);
     } catch (error) {
         console.error('Error recording session:', error);
+        // If we get a unique constraint violation, try to find and update the existing session
+        if (error && typeof error === 'object' && 'code' in error && error.code === '23505') { // Unique constraint violation
+            console.log('Handling unique constraint violation');
+            try {
+                const deviceFingerprint = generateDeviceFingerprint();
+                const { data: existingSession, error: findError } = await supabase
+                    .from('user_sessions')
+                    .select('id')
+                    .eq('device_fingerprint', deviceFingerprint)
+                    .single();
+
+                if (findError) {
+                    console.error('Error finding session after constraint violation:', findError);
+                }
+
+                if (existingSession) {
+                    console.log('Found existing session after constraint violation:', existingSession.id);
+                    localStorage.setItem('current_session_id', existingSession.id);
+                }
+            } catch (recoveryError) {
+                console.error('Error recovering from unique constraint violation:', recoveryError);
+            }
+        }
     }
 }
 
