@@ -1,18 +1,17 @@
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Loader, Check, X, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { Code } from '../components/ui/code';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import sessionsMigration from './create_user_sessions_table.sql?raw';
 import profilesMigration from './create_profiles_table.sql?raw';
 import lastRecurrenceDateMigration from './add_lastRecurrenceDate_column.sql?raw';
 import recurrenceMigration from './add_recurrence_column.sql?raw';
-
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 export function RunDatabaseMigration() {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');

@@ -1,9 +1,6 @@
 import { getUserRegion } from '../hooks/getUserRegion';
 import { getUserIP } from '../services/ipService';
-import { getSupabaseClient } from './supabaseClient';
-
-// Use singleton supabase client
-const supabase = getSupabaseClient();
+import { supabase } from './supabaseClient';
 
 export interface UserSession {
     id: string;

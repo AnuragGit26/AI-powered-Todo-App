@@ -1,14 +1,14 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { Image, Upload, X, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabaseClient";
 import { useMetrics } from "../hooks/useMetrics.ts";
-
-
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface UserProfilePictureUploaderProps {
     onUploadSuccess?: () => void;

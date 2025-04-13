@@ -90,8 +90,11 @@ export interface PomodoroState {
     sessionHistory: SessionHistory[];
     currentLabel: string;
     autoStartNext: boolean;
+    autoStartBreaks: boolean;
     notificationEnabled: boolean;
     notificationVolume: number;
+    soundEnabled: boolean;
+    soundVolume: number;
     lastUpdatedAt: number;
 }
 

@@ -27,9 +27,7 @@ import {
     ArrowRight,
     Info
 } from "lucide-react";
-import { getSupabaseClient } from "../lib/supabaseClient";
-
-const supabase = getSupabaseClient();
+import { supabase } from "../lib/supabaseClient";
 
 const ModernFooter = () => {
     return (

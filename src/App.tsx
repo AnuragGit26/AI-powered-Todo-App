@@ -28,25 +28,19 @@ import Logo from "./components/Logo.tsx";
 import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
 import { PomodoroTimer } from "./components/PomodoroTimer";
-import { getSupabaseClient } from "./lib/supabaseClient";
+import { supabase } from "./lib/supabaseClient";
 import { useToast } from "./hooks/use-toast";
 import { Link } from "react-router-dom";
 import type { Todo } from "./types";
 
-// Use the singleton supabase client
-const supabase = getSupabaseClient();
-
 const App: React.FC = () => {
-    const theme = useTodoStore(state => state.theme);
-    const setTodos = useTodoStore(state => state.setTodos);
-    const setUserToken = useTodoStore(state => state.setUserToken);
-    const setTheme = useTodoStore(state => state.setTheme);
+    const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
-    const setDbMigrationNeeded = useState(false)[1];
+    const [dbMigrationNeeded, setDbMigrationNeeded] = useState(false);
     const { toast } = useToast();
 
     // Initialize theme on first load and whenever theme changes
@@ -56,7 +50,7 @@ const App: React.FC = () => {
 
         // Add dark class to ensure UI components reflect the current theme
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
-    }, [theme, setTheme]);
+    }, [theme]);
 
     // Add listener for system color scheme changes
     useEffect(() => {
@@ -469,7 +463,7 @@ const App: React.FC = () => {
                                     amplitude={2.5}
                                     speed={0.9}
                                 />
-                                <UserProfile />
+                                {session?.user && <UserProfile userData={session.user} />}
                                 <Footer />
                                 <Toaster />
                             </div>

@@ -98,7 +98,6 @@ export const useTodoStore = create<TodoStore>()(
                                             title: subtask.title || '',
                                             status: subtask.status || 'Not Started',
                                             completed: subtask.completed || false,
-                                            priority: subtask.priority || 'medium',
                                         } as SubTodo,
                                     ],
                                 };
@@ -168,8 +167,9 @@ export const useTodoStore = create<TodoStore>()(
                         }),
                     })),
                 
-                setTheme: (theme: ThemeConfig) => set({ theme }),
                 setTodos: (todos: Todo[]) => set({ todos }),
+                setTheme: (theme: ThemeConfig) => set({ theme }),
+                setPomodoro: (pomodoro: PomodoroState) => set({ pomodoro }),
                 
                 // Pomodoro functions
                 updatePomodoroState: (newState: Partial<PomodoroState>) => {
@@ -209,6 +209,10 @@ export const useTodoStore = create<TodoStore>()(
             }),
             {
                 name: 'todo-storage',
+                partialize: (state) => ({
+                    theme: state.theme,
+                    pomodoro: state.pomodoro,
+                }),
             }
         )
     )

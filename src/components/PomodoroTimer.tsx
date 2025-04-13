@@ -16,6 +16,11 @@ interface PomodoroSettings {
     shortBreak: number;
     longBreak: number;
     longBreakInterval: number;
+    autoStartBreaks: boolean;
+    autoStartPomodoros: boolean;
+    soundEnabled: boolean;
+    soundVolume: number;
+    label?: string;
 }
 
 interface SessionHistory {
@@ -25,11 +30,23 @@ interface SessionHistory {
     label?: string;
 }
 
+interface TimerAlertProps {
+    title: string;
+    message: string;
+    type: 'work' | 'shortBreak' | 'longBreak';
+    onClose: () => void;
+    visible: boolean;
+}
+
 const defaultSettings: PomodoroSettings = {
     workTime: 25,
     shortBreak: 5,
     longBreak: 15,
     longBreakInterval: 4,
+    autoStartBreaks: true,
+    autoStartPomodoros: true,
+    soundEnabled: true,
+    soundVolume: 0.5,
 };
 
 const hexToRgb = (hex: string) => {
@@ -61,7 +78,7 @@ export const PomodoroTimer: React.FC = () => {
     });
 
     // Calculate progress percentage
-    const calculateProgress = () => {
+    const getProgress = () => {
         const totalSeconds = pomodoro.isWorkTime
             ? pomodoro.settings.workTime * 60
             : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ? pomodoro.settings.longBreak : pomodoro.settings.shortBreak) * 60;
@@ -144,6 +161,7 @@ export const PomodoroTimer: React.FC = () => {
                     message={alertConfig.message}
                     type={alertConfig.type}
                     onClose={closeAlert}
+                    visible={alertVisible}
                 />
             )}
 
@@ -154,7 +172,7 @@ export const PomodoroTimer: React.FC = () => {
                             <div
                                 className="h-full transition-all duration-300 ease-linear rounded-full"
                                 style={{
-                                    width: `${calculateProgress()}%`,
+                                    width: `${getProgress()}%`,
                                     backgroundColor: theme.primaryColor
                                 }}
                             />
@@ -297,8 +315,8 @@ export const PomodoroTimer: React.FC = () => {
                                 </label>
                                 <Switch
                                     id="auto-start"
-                                    checked={pomodoro.autoStartNext}
-                                    onCheckedChange={(checked) => updatePomodoroState({ autoStartNext: checked })}
+                                    checked={pomodoro.autoStartBreaks}
+                                    onCheckedChange={(checked) => updatePomodoroState({ autoStartBreaks: checked })}
                                     style={{
                                         '--switch-thumb-color': theme.primaryColor,
                                         '--switch-track-color': theme.primaryColor
@@ -312,8 +330,8 @@ export const PomodoroTimer: React.FC = () => {
                                 </label>
                                 <Switch
                                     id="notification"
-                                    checked={pomodoro.notificationEnabled}
-                                    onCheckedChange={(checked) => updatePomodoroState({ notificationEnabled: checked })}
+                                    checked={pomodoro.soundEnabled}
+                                    onCheckedChange={(checked) => updatePomodoroState({ soundEnabled: checked })}
                                     style={{
                                         '--switch-thumb-color': theme.primaryColor,
                                         '--switch-track-color': theme.primaryColor
@@ -321,13 +339,13 @@ export const PomodoroTimer: React.FC = () => {
                                 />
                             </div>
 
-                            {pomodoro.notificationEnabled && (
+                            {pomodoro.soundEnabled && (
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Volume</span>
                                     <div className="flex items-center gap-2">
                                         <Slider
-                                            value={[pomodoro.notificationVolume * 100]}
-                                            onValueChange={(value) => updatePomodoroState({ notificationVolume: value[0] / 100 })}
+                                            value={[pomodoro.soundVolume * 100]}
+                                            onValueChange={(value) => updatePomodoroState({ soundVolume: value[0] / 100 })}
                                             min={0}
                                             max={100}
                                             step={1}
@@ -337,7 +355,7 @@ export const PomodoroTimer: React.FC = () => {
                                                 '--slider-track-color': theme.secondaryColor
                                             } as React.CSSProperties}
                                         />
-                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{Math.round(pomodoro.notificationVolume * 100)}%</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{Math.round(pomodoro.soundVolume * 100)}%</span>
                                     </div>
                                 </div>
                             )}

@@ -9,9 +9,7 @@ import Aurora from "./ui/AuroraBG.tsx";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader, Mail, Lock, Check, Info, ArrowRight, UserCheck } from "lucide-react";
-import { getSupabaseClient } from "../lib/supabaseClient";
-
-const supabase = getSupabaseClient();
+import { supabase } from "../lib/supabaseClient";
 
 export function SignUpForm() {
     const [email, setEmail] = useState("");

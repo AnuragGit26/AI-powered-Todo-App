@@ -2,12 +2,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Settings, Moon, Sun, X, Palette, Type, ZoomIn, Save, Trash2, RefreshCw, ToggleLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTodoStore } from '../store/todoStore';
+import { Button } from './ui/button';
+import { ColorPicker } from './ui/color-picker';
 import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from "react-router-dom";
 import { useMetrics } from "../hooks/useMetrics.ts";
 import { applyColorScheme, changeFontSize, toggleAnimations, resetToDefaultTheme, getOptimizedDarkModeColor, getDarkModeColors } from "../lib/themeUtils";
-
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 // Predefined color schemes
 const COLOR_SCHEMES = [

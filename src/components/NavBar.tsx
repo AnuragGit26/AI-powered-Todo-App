@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BarChart3, User, X, Menu, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
-import { useTodoStore } from "../store/todoStore";
+import { useTodoStore } from '../store/todoStore';
 import ThemeCustomizer from "./ThemeCustomizer";
 import ShinyText from "./ui/ShinyText";
 import { MiniPomodoro } from "./MiniPomodoro";

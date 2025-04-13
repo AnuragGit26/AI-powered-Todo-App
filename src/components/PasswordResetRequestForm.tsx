@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Mail, ArrowRight, Check, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { cn } from "../lib/utils";
-import { Button } from "./ui/button.tsx";
 import SplitText from './ui/SplitText.tsx';
 import { useToast } from "../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
-import { Loader, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
-import { motion } from "framer-motion";
-
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardFooter
-} from "./ui/card.tsx";
-import { Input } from "./ui/input.tsx";
-import { Label } from "./ui/label.tsx";
-
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+import { Loader } from "lucide-react";
 
 export function PasswordResetRequestForm({
     className,
