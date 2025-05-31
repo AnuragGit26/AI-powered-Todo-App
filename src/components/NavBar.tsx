@@ -26,21 +26,15 @@ export const NavBar: React.FC = () => {
     return (
         <>
             {/* Desktop Navigation */}
-            <div
-                className="fixed top-0 left-0 right-0 z-30 hidden sm:flex items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm"
-                style={{
-                    "--primary-color": theme.primaryColor,
-                    "--secondary-color": theme.secondaryColor,
-                } as React.CSSProperties}
-            >
+            <nav className="nav-enterprise hidden sm:flex px-responsive py-4">
                 {/* Left section with logo/home */}
                 <Button
                     variant="ghost"
-                    className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                    className="btn-enterprise-ghost flex items-center gap-2"
                     onClick={() => navigate("/")}
                 >
-                    <Home className="h-5 w-5 mr-1" />
-                    <ShinyText text="Home" disabled={false} speed={2} className="font-medium theme-accent-text dark:text-white" />
+                    <Home className="h-5 w-5" />
+                    <ShinyText text="Home" disabled={false} speed={2} className="font-medium text-foreground" />
                 </Button>
 
                 {/* Center section with mini pomodoro - only show if timer is active or completed sessions > 0 */}
@@ -51,10 +45,10 @@ export const NavBar: React.FC = () => {
                 )}
 
                 {/* Right section with actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center space-enterprise-sm">
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                        className="btn-enterprise-ghost p-3"
                         onClick={() => navigate("/pomodoro")}
                     >
                         <Timer className="h-5 w-5" />
@@ -62,7 +56,7 @@ export const NavBar: React.FC = () => {
 
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
+                        className="btn-enterprise-ghost p-3"
                         onClick={() => navigate("/profile")}
                     >
                         <User className="h-5 w-5" />
@@ -71,7 +65,7 @@ export const NavBar: React.FC = () => {
                     {showAnalyticsButton && (
                         <Button
                             variant="ghost"
-                            className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                            className="btn-enterprise-ghost p-3"
                             onClick={() => {
                                 // On desktop, we'll use the analytics panel instead of navigation
                                 const analyticsToggleEvent = new CustomEvent('toggleAnalytics');
@@ -84,13 +78,13 @@ export const NavBar: React.FC = () => {
 
                     <ThemeCustomizer />
                 </div>
-            </div>
+            </nav>
 
             {/* Mobile Navigation */}
-            <div className="fixed top-0 left-0 right-0 z-30 flex sm:hidden items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+            <nav className="nav-enterprise flex sm:hidden px-responsive py-3">
                 <Button
                     variant="ghost"
-                    className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                    className="btn-enterprise-ghost p-3"
                     onClick={() => navigate("/")}
                 >
                     <Home className="h-5 w-5" />
@@ -108,75 +102,83 @@ export const NavBar: React.FC = () => {
 
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
+                        className="btn-enterprise-ghost p-3"
                         onClick={() => setShowMobileMenu(!showMobileMenu)}
                     >
                         {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </Button>
                 </div>
-            </div>
+            </nav>
 
             {/* Mobile Menu */}
             <AnimatePresence>
                 {showMobileMenu && (
                     <motion.div
-                        className="fixed top-12 left-0 right-0 z-20 sm:hidden flex flex-col p-4 backdrop-blur-md bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 shadow-md"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
+                        className="fixed inset-x-0 top-16 z-40 sm:hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                     >
-                        <Button
-                            variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
-                            onClick={() => {
-                                navigate("/");
-                                setShowMobileMenu(false);
-                            }}
+                        <motion.div
+                            className="enterprise-card glass-enterprise mx-4 mt-2 p-4 space-enterprise-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
                         >
-                            <Home className="h-5 w-5 mr-2" />
-                            <span>Home</span>
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
-                            onClick={() => {
-                                navigate("/pomodoro");
-                                setShowMobileMenu(false);
-                            }}
-                        >
-                            <Timer className="h-5 w-5 mr-2" />
-                            <span>Pomodoro Timer</span>
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-lg"
-                            onClick={() => {
-                                navigate("/profile");
-                                setShowMobileMenu(false);
-                            }}
-                        >
-                            <User className="h-5 w-5 mr-2" />
-                            <span>Profile</span>
-                        </Button>
-
-                        {showAnalyticsButton && (
                             <Button
                                 variant="ghost"
-                                className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
+                                className="btn-enterprise-ghost w-full justify-start p-3"
                                 onClick={() => {
-                                    // For mobile, toggle analytics panel
-                                    const analyticsToggleEvent = new CustomEvent('toggleAnalytics');
-                                    window.dispatchEvent(analyticsToggleEvent);
+                                    navigate("/");
                                     setShowMobileMenu(false);
                                 }}
                             >
-                                <BarChart3 className="h-5 w-5 mr-2" />
-                                <span>Analytics</span>
+                                <Home className="h-5 w-5 mr-3" />
+                                <span className="text-responsive-sm">Home</span>
                             </Button>
-                        )}
+
+                            <Button
+                                variant="ghost"
+                                className="btn-enterprise-ghost w-full justify-start p-3"
+                                onClick={() => {
+                                    navigate("/pomodoro");
+                                    setShowMobileMenu(false);
+                                }}
+                            >
+                                <Timer className="h-5 w-5 mr-3" />
+                                <span className="text-responsive-sm">Pomodoro Timer</span>
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                className="btn-enterprise-ghost w-full justify-start p-3"
+                                onClick={() => {
+                                    navigate("/profile");
+                                    setShowMobileMenu(false);
+                                }}
+                            >
+                                <User className="h-5 w-5 mr-3" />
+                                <span className="text-responsive-sm">Profile</span>
+                            </Button>
+
+                            {showAnalyticsButton && (
+                                <Button
+                                    variant="ghost"
+                                    className="btn-enterprise-ghost w-full justify-start p-3"
+                                    onClick={() => {
+                                        // For mobile, toggle analytics panel
+                                        const analyticsToggleEvent = new CustomEvent('toggleAnalytics');
+                                        window.dispatchEvent(analyticsToggleEvent);
+                                        setShowMobileMenu(false);
+                                    }}
+                                >
+                                    <BarChart3 className="h-5 w-5 mr-3" />
+                                    <span className="text-responsive-sm">Analytics</span>
+                                </Button>
+                            )}
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
