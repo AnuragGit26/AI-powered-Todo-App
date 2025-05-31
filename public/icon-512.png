@@ -1,0 +1,5 @@
+<!-- This is a placeholder - should be replaced with actual 512x512 PNG -->
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="256" cy="256" r="224" fill="#3B82F6"/>
+    <path d="M160 256L224 320L352 192" stroke="white" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+</svg> 

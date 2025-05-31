@@ -22,4 +22,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      // Ensure static assets are properly handled
+      external: [],
+      output: {
+        // Ensure proper asset naming
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.') || [];
+          const extType = info[info.length - 1];
+          // Keep favicon files with their original names
+          if (assetInfo.name?.includes('favicon') || assetInfo.name?.includes('icon-')) {
+            return `[name][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        },
+      },
+    },
+  },
 });

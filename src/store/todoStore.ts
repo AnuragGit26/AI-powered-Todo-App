@@ -177,17 +177,26 @@ export const useTodoStore = create<TodoStore>()(
                 
                 // Pomodoro functions
                 updatePomodoroState: (newState: Partial<PomodoroState>) => {
-                    set((state) => ({
-                        pomodoro: {
-                            ...state.pomodoro,
-                            ...newState,
-                            lastUpdatedAt: Date.now(),
-                        }
-                    }));
+                    set((state) => {
+                        // Ensure deviceId is always present
+                        const currentDeviceId = state.pomodoro.deviceId || crypto.randomUUID();
+                        
+                        return {
+                            pomodoro: {
+                                ...state.pomodoro,
+                                ...newState,
+                                deviceId: newState.deviceId || currentDeviceId, // Preserve or generate deviceId
+                                lastUpdatedAt: Date.now(),
+                            }
+                        };
+                    });
                 },
                 
                 resetPomodoroTimer: () => {
                     const { pomodoro } = get();
+                    // Ensure deviceId is preserved during reset
+                    const deviceId = pomodoro.deviceId || crypto.randomUUID();
+                    
                     set({
                         pomodoro: {
                             ...pomodoro,
@@ -196,6 +205,7 @@ export const useTodoStore = create<TodoStore>()(
                             isWorkTime: true,
                             timeLeft: pomodoro.settings.workTime * 60,
                             completedSessions: 0,
+                            deviceId: deviceId, // Preserve deviceId
                             lastUpdatedAt: Date.now(),
                         }
                     });
@@ -203,8 +213,12 @@ export const useTodoStore = create<TodoStore>()(
                 
                 togglePomodoroTimer: () => {
                     const { pomodoro } = get();
+                    // Ensure deviceId is preserved during toggle
+                    const deviceId = pomodoro.deviceId || crypto.randomUUID();
+                    
                     const newState = {
                         ...pomodoro,
+                        deviceId: deviceId, // Preserve deviceId
                         lastUpdatedAt: Date.now(),
                     };
 
@@ -229,7 +243,27 @@ export const useTodoStore = create<TodoStore>()(
                 syncPomodoroState: async (userId: string) => {
                     const { pomodoro } = get();
                     try {
-                        await pomodoroService.syncState(userId, pomodoro);
+                        // Ensure deviceId is present before syncing
+                        if (!pomodoro.deviceId) {
+                            const newDeviceId = crypto.randomUUID();
+                            console.warn('Device ID missing during sync, generating new one:', newDeviceId);
+                            
+                            // Update the state with the new deviceId
+                            set((state) => ({
+                                pomodoro: {
+                                    ...state.pomodoro,
+                                    deviceId: newDeviceId,
+                                }
+                            }));
+                            
+                            // Use updated state for sync
+                            await pomodoroService.syncState(userId, {
+                                ...pomodoro,
+                                deviceId: newDeviceId,
+                            });
+                        } else {
+                            await pomodoroService.syncState(userId, pomodoro);
+                        }
                         
                         // Mark as synced
                         set((state) => ({
@@ -296,6 +330,13 @@ export const useTodoStore = create<TodoStore>()(
                     theme: state.theme,
                     pomodoro: state.pomodoro,
                 }),
+                onRehydrateStorage: () => (state) => {
+                    // Ensure deviceId is present after rehydration
+                    if (state && state.pomodoro && !state.pomodoro.deviceId) {
+                        state.pomodoro.deviceId = crypto.randomUUID();
+                        console.log('Generated deviceId after rehydration:', state.pomodoro.deviceId);
+                    }
+                },
             }
         )
     )

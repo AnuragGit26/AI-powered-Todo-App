@@ -12,13 +12,24 @@ export const pomodoroService = {
     // Sync pomodoro state to server
     async syncState(userId: string, state: PomodoroState): Promise<void> {
         try {
+            // Ensure deviceId is always present
+            const deviceId = state.deviceId || crypto.randomUUID();
+            
+            // If deviceId was missing, we should update the local state too
+            if (!state.deviceId) {
+                console.warn('Device ID was missing, generating new one:', deviceId);
+            }
+
             const { error } = await supabase
                 .from('pomodoro_sessions')
                 .upsert({
                     user_id: userId,
-                    state: state,
+                    state: {
+                        ...state,
+                        deviceId: deviceId // Ensure deviceId is in the state
+                    },
                     updated_at: new Date().toISOString(),
-                    device_id: state.deviceId
+                    device_id: deviceId
                 }, {
                     onConflict: 'user_id'
                 });
@@ -42,7 +53,14 @@ export const pomodoroService = {
             if (error && error.code !== 'PGRST116') throw error;
 
             if (data && data.state) {
-                return data.state as PomodoroState;
+                const loadedState = data.state as PomodoroState;
+                
+                // Ensure deviceId is present in loaded state
+                if (!loadedState.deviceId) {
+                    loadedState.deviceId = data.device_id || crypto.randomUUID();
+                }
+                
+                return loadedState;
             }
 
             return null;
@@ -64,9 +82,16 @@ export const pomodoroService = {
                     table: 'pomodoro_sessions',
                     filter: `user_id=eq.${userId}`
                 },
-                (payload) => {
+                (payload: any) => {
                     if (payload.new && payload.new.state) {
-                        callback(payload.new.state as PomodoroState);
+                        const newState = payload.new.state as PomodoroState;
+                        
+                        // Ensure deviceId is present
+                        if (!newState.deviceId) {
+                            newState.deviceId = payload.new.device_id || crypto.randomUUID();
+                        }
+                        
+                        callback(newState);
                     }
                 }
             )
