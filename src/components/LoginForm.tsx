@@ -239,11 +239,11 @@ export function LoginForm({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Card className="backdrop-blur-md border border-white/20 dark:border-gray-800/50 shadow-xl overflow-hidden bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white">
+                            <Card className="backdrop-blur-md border border-white/20 dark:border-gray-800/50 shadow-2xl overflow-hidden bg-white/95 dark:bg-gray-900/95 text-gray-900 dark:text-white">
                                 <CardHeader className="text-center pb-3">
                                     <SplitText
-                                        text="Hello!! Welcome back to TaskMind AI"
-                                        className="text-2xl font-semibold text-center text-gray-900 dark:text-white"
+                                        text="Welcome back to TaskMind AI"
+                                        className="text-3xl font-bold text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
                                         delay={70}
                                         animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
                                         animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
@@ -252,8 +252,8 @@ export function LoginForm({
                                         rootMargin="-50px"
                                         onLetterAnimationComplete={handleAnimationComplete}
                                     />
-                                    <CardDescription className="text-gray-600 dark:text-gray-400">
-                                        Continue your productivity journey
+                                    <CardDescription className="text-lg text-gray-600 dark:text-gray-300 mt-2">
+                                        Continue your productivity journey with AI-powered task management
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -276,7 +276,7 @@ export function LoginForm({
                                             type="button"
                                             variant="outline"
                                             onClick={handleGithubSignIn}
-                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                                            className="w-full flex items-center gap-2 justify-center bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white border-gray-700 hover:border-gray-600 transition-all duration-200"
                                         >
                                             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
                                                 <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor" />
@@ -287,7 +287,7 @@ export function LoginForm({
                                             type="button"
                                             variant="outline"
                                             onClick={() => console.log("Google sign in")}
-                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                                            className="w-full flex items-center gap-2 justify-center bg-gradient-to-r from-blue-600 to-red-500 hover:from-blue-700 hover:to-red-600 text-white border-transparent transition-all duration-200"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                                                 <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
@@ -357,7 +357,7 @@ export function LoginForm({
                                         <Button
                                             disabled={loading}
                                             type="submit"
-                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200"
+                                            className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white py-2 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 border-0"
                                         >
                                             {loading ? (
                                                 <>

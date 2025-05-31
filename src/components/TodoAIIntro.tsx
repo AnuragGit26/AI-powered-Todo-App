@@ -38,7 +38,7 @@ const AppMockup = () => (
                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
-            <div className="text-[10px] text-muted-foreground dark:text-gray-400">TodoAI</div>
+            <div className="text-[10px] text-muted-foreground dark:text-gray-400">TaskMind AI</div>
         </div>
 
         <div className="space-y-2">
@@ -48,9 +48,9 @@ const AppMockup = () => (
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
             >
-                <div className="h-3 w-3 bg-blue-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
-                <div className="ml-2 h-3 w-3 text-xs">✓</div>
+                <div className="h-3 w-3 bg-green-400 rounded-full mr-2"></div>
+                <div className="flex-1 text-[10px] text-gray-700 dark:text-gray-300">Complete project proposal</div>
+                <div className="ml-2 text-xs text-green-500">✓</div>
             </motion.div>
 
             <motion.div
@@ -59,9 +59,9 @@ const AppMockup = () => (
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
             >
-                <div className="h-3 w-3 bg-green-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
-                <div className="ml-2 h-3 w-3 text-xs">📊</div>
+                <div className="h-3 w-3 bg-blue-400 rounded-full mr-2"></div>
+                <div className="flex-1 text-[10px] text-gray-700 dark:text-gray-300">AI Analysis: 2h estimate</div>
+                <div className="ml-2 text-xs text-blue-500">🤖</div>
             </motion.div>
 
             <motion.div
@@ -71,22 +71,22 @@ const AppMockup = () => (
                 transition={{ delay: 0.7 }}
             >
                 <div className="h-3 w-3 bg-purple-400 rounded-full mr-2"></div>
-                <div className="h-2 flex-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
-                <div className="ml-2 h-3 w-3 text-xs">📝</div>
+                <div className="flex-1 text-[10px] text-gray-700 dark:text-gray-300">Team meeting prep</div>
+                <div className="ml-2 text-xs text-purple-500">📋</div>
             </motion.div>
 
             {/* Pomodoro Timer Mockup */}
             <motion.div
-                className="flex items-center bg-white/70 dark:bg-gray-800/70 p-2 rounded-md"
+                className="flex items-center bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-2 rounded-md border border-red-200 dark:border-red-800"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.8 }}
             >
-                <div className="h-3 w-3 bg-red-400 rounded-full mr-2"></div>
+                <div className="h-3 w-3 bg-red-400 rounded-full mr-2 animate-pulse"></div>
                 <div className="flex-1 flex justify-center">
-                    <div className="text-xs font-mono dark:text-gray-200">25:00</div>
+                    <div className="text-xs font-mono text-red-600 dark:text-red-400">23:45</div>
                 </div>
-                <div className="ml-2 h-3 w-3 text-xs">⏱️</div>
+                <div className="ml-2 text-xs">🍅</div>
             </motion.div>
 
             <motion.div
@@ -96,7 +96,7 @@ const AppMockup = () => (
                 transition={{ delay: 0.9, type: "spring" }}
                 whileHover={{ scale: 1.05 }}
             >
-                <span className="text-white text-lg">+</span>
+                <span className="text-white text-lg">✨</span>
             </motion.div>
         </div>
     </motion.div>
@@ -133,15 +133,15 @@ export function TodoAIIntro() {
             <Card className="max-w-md shadow-lg border-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md rounded-lg overflow-hidden h-full border border-white/20 dark:border-gray-800/50">
                 <CardHeader className="pb-2 flex items-center justify-between">
                     <DecryptedText
-                        text="Welcome to TodoAI"
-                        className="text-xl font-bold text-center text-gray-900 dark:text-white"
+                        text="Welcome to TaskMind AI"
+                        className="text-2xl font-bold text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
                         speed={40}
                         sequential={true}
                         animateOn="view"
                         parentClassName="block mb-2"
                     />
                     <DecryptedText
-                        text="The smarter task management app"
+                        text="AI-powered productivity with smart task management"
                         className="text-sm text-muted-foreground text-center text-gray-600 dark:text-gray-400"
                         speed={35}
                         sequential={true}
@@ -156,38 +156,43 @@ export function TodoAIIntro() {
                         <div className="space-y-3">
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>}
-                                title="Task Management"
-                                description="Organize tasks with priorities, due dates, and completion tracking"
+                                title="Smart Task Management"
+                                description="AI-powered task organization with automatic priority detection and intelligent categorization"
                             />
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 17v.01"></path><path d="M12 13.5a1.5 1.5 0 0 1 1-1.5 2.6 2.6 0 1 0-3-2.6"></path></svg>}
-                                title="Task Analysis"
-                                description="Get insights on task difficulty and estimated completion time"
+                                title="AI Task Analysis"
+                                description="Get intelligent insights on difficulty levels, time estimates, and optimal completion strategies"
                             />
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6v6l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg>}
-                                title="Pomodoro Timer"
-                                description="Boost productivity with customizable work/break intervals and session tracking"
+                                title="Cross-Device Pomodoro"
+                                description="Advanced focus timer with real-time sync across all devices and intelligent session tracking"
                             />
                             <FeatureItem
-                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>}
-                                title="Status Tracking"
-                                description="Track tasks with Not Started, In Progress, and Completed statuses"
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18l18-9z"></path></svg>}
+                                title="Real-time Sync"
+                                description="Seamless synchronization across all your devices with instant updates and offline support"
                             />
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>}
-                                title="Search & Filter"
-                                description="Easily find and filter tasks based on various criteria"
+                                title="Advanced Filtering"
+                                description="Smart search with natural language queries and dynamic filtering by status, priority, and dates"
                             />
                             <FeatureItem
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 17 2 2 4-4" /><path d="m3 7 2 2 4-4" /><path d="M13 6h8" /><path d="M13 12h8" /><path d="M13 18h8" /></svg>}
-                                title="Subtasks & Organization"
-                                description="Break down complex tasks into manageable subtasks"
+                                title="Hierarchical Organization"
+                                description="Break complex projects into subtasks with nested organization and dependency tracking"
                             />
                             <FeatureItem
-                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4" /><path d="M8 8l4-4 4 4" /><path d="M20 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" /></svg>}
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v4a1 1 0 0 0 1 1h3"></path><path d="M7 5.01 9 7l6-6"></path><path d="M13 14H8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h5"></path><path d="M17 10h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-3"></path></svg>}
                                 title="Productivity Analytics"
-                                description="Track your progress with visual charts and completion trends"
+                                description="Comprehensive insights with visual charts, completion trends, and personalized performance metrics"
+                            />
+                            <FeatureItem
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path><path d="m15.5 8.5 4.5-4.5M4 4l4.5 4.5m11 11L15 15M4 20l4.5-4.5"></path></svg>}
+                                title="Custom Themes"
+                                description="Personalize your workspace with custom color themes and dark/light mode preferences"
                             />
                         </div>
 
@@ -198,9 +203,9 @@ export function TodoAIIntro() {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.8 }}
                         >
-                            <AnimatedStat value="25%" label="Time Saved" />
-                            <AnimatedStat value="500+" label="Users" />
-                            <AnimatedStat value="4.7" label="Rating" />
+                            <AnimatedStat value="40%" label="Time Saved" />
+                            <AnimatedStat value="1.2K+" label="Active Users" />
+                            <AnimatedStat value="4.9" label="User Rating" />
                         </motion.div>
 
                         <div className="pt-4 pb-2">
@@ -210,7 +215,7 @@ export function TodoAIIntro() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 1.2 }}
                             >
-                                Join thousands of professionals enjoying our AI-powered task management revolution
+                                Join thousands of professionals who've revolutionized their productivity with AI-powered task management
                             </motion.p>
 
                             <motion.div
