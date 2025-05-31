@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import {
     Mic,
     Brain,
-    Sync,
+    RefreshCw,
     Users,
     BarChart3,
     Crown,
@@ -194,7 +194,7 @@ const PremiumFeaturesShowcase: React.FC = () => {
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-lg border">
                     <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${syncStatus === 'online' ? 'bg-green-500' :
-                                syncStatus === 'offline' ? 'bg-orange-500' : 'bg-blue-500 animate-pulse'
+                            syncStatus === 'offline' ? 'bg-orange-500' : 'bg-blue-500 animate-pulse'
                             }`} />
                         <span className="font-medium capitalize">{syncStatus}</span>
                     </div>
@@ -206,12 +206,12 @@ const PremiumFeaturesShowcase: React.FC = () => {
                     >
                         {syncStatus === 'syncing' ? (
                             <>
-                                <Sync className="h-4 w-4 mr-2 animate-spin" />
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                                 Syncing...
                             </>
                         ) : (
                             <>
-                                <Sync className="h-4 w-4 mr-2" />
+                                <RefreshCw className="h-4 w-4 mr-2" />
                                 {syncStatus === 'online' ? 'Go Offline' : 'Sync Now'}
                             </>
                         )}
@@ -376,7 +376,7 @@ const PremiumFeaturesShowcase: React.FC = () => {
             id: 'offline-sync',
             name: 'Offline Sync',
             description: 'Work offline with full functionality and automatic sync when connected',
-            icon: <Sync className="h-6 w-6" />,
+            icon: <RefreshCw className="h-6 w-6" />,
             category: 'Sync',
             benefits: [
                 'Full offline functionality',

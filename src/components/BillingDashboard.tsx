@@ -17,7 +17,7 @@ import {
     Users,
     Mic,
     Brain,
-    Sync,
+    RefreshCw,
     BarChart3,
     Calendar,
     Shield,

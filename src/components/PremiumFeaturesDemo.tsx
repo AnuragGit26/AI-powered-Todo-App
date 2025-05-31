@@ -8,7 +8,7 @@ import {
     Crown,
     Mic,
     BarChart3,
-    Sync,
+    RefreshCw,
     Users,
     Brain,
     Zap,
@@ -64,7 +64,7 @@ const PremiumFeaturesDemo: React.FC = () => {
             id: 'offline-sync',
             name: 'Offline Sync',
             description: 'Work offline and sync when connected',
-            icon: Sync,
+            icon: RefreshCw,
             color: 'from-green-500 to-emerald-500',
             benefits: [
                 'Full offline functionality',
@@ -187,7 +187,7 @@ const PremiumFeaturesDemo: React.FC = () => {
         <Card className="w-full">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Sync className="h-6 w-6 text-green-500" />
+                    <RefreshCw className="h-6 w-6 text-green-500" />
                     Offline Sync
                 </CardTitle>
                 <CardDescription>
