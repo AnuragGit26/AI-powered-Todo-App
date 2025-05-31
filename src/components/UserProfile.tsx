@@ -20,6 +20,7 @@ import { fetchUserSessions, terminateSession, UserSession } from '../lib/session
 import { invalidateUserData } from '../hooks/useUserData';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
+import BillingDashboard from './BillingDashboard';
 
 interface UserMetadata {
     bio?: string;
@@ -797,28 +798,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                     </TabsContent>
 
                     <TabsContent value="billing">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <CreditCard className="h-5 w-5 text-blue-500" />
-                                    Billing Information
-                                </CardTitle>
-                                <CardDescription>
-                                    Manage your subscription and payment methods
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-center py-6">
-                                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-800/60 mb-4">
-                                        <CreditCard className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                                    </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">No billing information available</p>
-                                    <Button className="mt-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                                        Setup Billing
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <BillingDashboard userId={userData.id} />
                     </TabsContent>
                 </Tabs>
             </div>

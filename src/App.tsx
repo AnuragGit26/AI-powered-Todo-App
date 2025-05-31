@@ -33,9 +33,11 @@ import { useToast } from "./hooks/use-toast";
 import { Link } from "react-router-dom";
 import type { Todo } from "./types";
 import { pomodoroService } from "./services/pomodoroService";
+import { useBillingStore, initializeFreeTierSubscription } from "./store/billingStore";
 
 const App: React.FC = () => {
     const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
+    const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -114,6 +116,9 @@ const App: React.FC = () => {
                         await checkExistingSession();
                         if (session.user?.id) {
                             await cleanupDuplicateSessions(session.user.id);
+                            // Initialize billing subscription for new users
+                            const freeSubscription = initializeFreeTierSubscription(session.user.id);
+                            setSubscription(freeSubscription);
                         }
                     } catch (error) {
                         console.warn('Session initialization background task:', error);
