@@ -7,10 +7,11 @@ import notifySound from '../assets/notify.wav';
 import { useToast } from '../hooks/use-toast';
 
 export const MiniPomodoro: React.FC = () => {
-    const { pomodoro, updatePomodoroState, togglePomodoroTimer, resetPomodoroTimer } = useTodoStore();
+    const { pomodoro, updatePomodoroState, togglePomodoroTimer, resetPomodoroTimer, syncPomodoroState, loadPomodoroState, subscribeToPomodoroSync } = useTodoStore();
     const theme = useTodoStore((state) => state.theme);
     const { toast } = useToast();
     const notificationRef = useRef<HTMLAudioElement | null>(null);
+    const syncSubscriptionRef = useRef<any>(null);
 
     // Initialize sound with useSound hook
     const [playSound] = useSound(notifySound, {
@@ -22,7 +23,7 @@ export const MiniPomodoro: React.FC = () => {
     useEffect(() => {
         // Calculate time difference since last update
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && pomodoro.isActive) {
+            if (document.visibilityState === 'visible' && pomodoro.isActive && !pomodoro.isPaused) {
                 const now = Date.now();
                 const elapsedSeconds = Math.floor((now - pomodoro.lastUpdatedAt) / 1000);
 
@@ -47,7 +48,8 @@ export const MiniPomodoro: React.FC = () => {
 
         let interval: NodeJS.Timeout | null = null;
 
-        if (pomodoro.isActive && pomodoro.timeLeft > 0) {
+        // Only run the interval if timer is active AND not paused
+        if (pomodoro.isActive && !pomodoro.isPaused && pomodoro.timeLeft > 0) {
             interval = setInterval(() => {
                 updatePomodoroState({
                     timeLeft: pomodoro.timeLeft - 1,
@@ -62,7 +64,58 @@ export const MiniPomodoro: React.FC = () => {
             if (interval) clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [pomodoro.isActive, pomodoro.timeLeft, pomodoro.lastUpdatedAt, pomodoro.settings, pomodoro.completedSessions, pomodoro.isWorkTime, pomodoro.autoStartNext, pomodoro.sessionHistory, pomodoro.currentLabel, updatePomodoroState]);
+    }, [pomodoro.isActive, pomodoro.isPaused, pomodoro.timeLeft, pomodoro.lastUpdatedAt]);
+
+    // Load and sync pomodoro state when user changes + set up real-time sync
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            // Load initial state
+            loadPomodoroState(userId);
+
+            // Set up real-time subscription
+            syncSubscriptionRef.current = subscribeToPomodoroSync(userId);
+        }
+
+        // Cleanup subscription on unmount or user change
+        return () => {
+            if (syncSubscriptionRef.current) {
+                syncSubscriptionRef.current.unsubscribe();
+                syncSubscriptionRef.current = null;
+            }
+        };
+    }, [loadPomodoroState, subscribeToPomodoroSync]);
+
+    // Auto-sync every 30 seconds when timer is active
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        let syncInterval: NodeJS.Timeout;
+
+        if (pomodoro.isActive || pomodoro.isPaused) {
+            syncInterval = setInterval(() => {
+                syncPomodoroState(userId);
+            }, 30000); // Sync every 30 seconds
+        }
+
+        return () => {
+            if (syncInterval) clearInterval(syncInterval);
+        };
+    }, [pomodoro.isActive, pomodoro.isPaused, syncPomodoroState]);
+
+    // Sync immediately when timer state changes (start/pause/reset)
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (userId && (pomodoro.lastUpdatedAt > (pomodoro.syncedAt || 0))) {
+            // Debounce the sync to avoid too frequent calls
+            const syncTimeout = setTimeout(() => {
+                syncPomodoroState(userId);
+            }, 1000);
+
+            return () => clearTimeout(syncTimeout);
+        }
+    }, [pomodoro.isActive, pomodoro.isPaused, pomodoro.lastUpdatedAt, syncPomodoroState]);
 
     // Initialize audio element for notifications
     useEffect(() => {
@@ -134,6 +187,7 @@ export const MiniPomodoro: React.FC = () => {
                 timeLeft: isLongBreak ? pomodoro.settings.longBreak * 60 : pomodoro.settings.shortBreak * 60,
                 sessionHistory: [newSession, ...pomodoro.sessionHistory].slice(0, 10),
                 isActive: pomodoro.autoStartNext,
+                isPaused: false,
             };
         } else {
             nextState = {
@@ -141,10 +195,17 @@ export const MiniPomodoro: React.FC = () => {
                 timeLeft: pomodoro.settings.workTime * 60,
                 sessionHistory: [newSession, ...pomodoro.sessionHistory].slice(0, 10),
                 isActive: pomodoro.autoStartNext,
+                isPaused: false,
             };
         }
 
         updatePomodoroState(nextState);
+
+        // Sync the completion to server
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            setTimeout(() => syncPomodoroState(userId), 1000);
+        }
     };
 
     const formatTime = (seconds: number): string => {
@@ -165,11 +226,33 @@ export const MiniPomodoro: React.FC = () => {
         requestNotificationPermission();
     }, []);
 
+    const getTimerStatus = () => {
+        if (pomodoro.isActive && !pomodoro.isPaused) return 'running';
+        if (pomodoro.isPaused) return 'paused';
+        return 'stopped';
+    };
+
+    const getPlayPauseIcon = () => {
+        const status = getTimerStatus();
+        if (status === 'running') return <Pause className="h-3 w-3" />;
+        return <Play className="h-3 w-3" />;
+    };
+
+    const getPlayPauseTitle = () => {
+        const status = getTimerStatus();
+        if (status === 'running') return "Pause Timer";
+        if (status === 'paused') return "Resume Timer";
+        return "Start Timer";
+    };
+
     return (
         <div className="flex items-center gap-2 bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-md px-3 py-1.5 shadow-sm">
             <div className="flex items-center gap-1">
                 <Timer className="w-4 h-4" style={{ color: theme.primaryColor }} />
                 <span className="font-mono font-bold text-sm">{formatTime(pomodoro.timeLeft)}</span>
+                {pomodoro.isPaused && (
+                    <span className="text-xs text-orange-500 ml-1">⏸</span>
+                )}
             </div>
 
             <div className="flex items-center">
@@ -178,9 +261,9 @@ export const MiniPomodoro: React.FC = () => {
                     variant="ghost"
                     className="h-6 w-6"
                     onClick={togglePomodoroTimer}
-                    title={pomodoro.isActive ? "Pause Timer" : "Start Timer"}
+                    title={getPlayPauseTitle()}
                 >
-                    {pomodoro.isActive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                    {getPlayPauseIcon()}
                 </Button>
 
                 <Button

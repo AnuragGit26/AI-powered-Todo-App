@@ -4,10 +4,18 @@ A simple and intuitive Todo List application built with React and TypeScript. Th
 
 ## Features
 
-- **Todo Management**: Add, edit, and delete tasks.
-- **Theme Customization**: Switch between light and dark modes, and customize primary and secondary colors.
-- **Authentication**: Sign in with email/password or GitHub using Supabase.
-- **AI Integration**: Powered by Google's Gemini API for enhanced task management.
+- **Task Management**: Create, edit, and organize your todos with priorities and due dates
+- **AI-Powered Analysis**: Get intelligent insights and suggestions for your tasks
+- **Subtasks**: Break down complex tasks into manageable subtasks
+- **Pomodoro Timer**: Built-in focus timer with cross-device synchronization
+  - Pause/Resume functionality that works across all screens
+  - Real-time sync across multiple devices for the same account
+  - Session history and customizable settings
+  - Visual and audio notifications
+- **Analytics Dashboard**: Track your productivity trends and task completion rates
+- **Theme Customization**: Personalize your experience with custom themes
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Real-time Sync**: All your data syncs across devices in real-time
 
 ## Tech Stack
 
@@ -95,3 +103,27 @@ With GitHub integration, Netlify will automatically:
 - Never commit `.env` files to your repository
 - Use Netlify's environment variables for all sensitive information
 - Consider using Netlify's branch deploy settings to control which branches trigger deployments
+
+## Pomodoro Timer
+
+The integrated Pomodoro timer helps you maintain focus and productivity:
+
+### Key Features:
+- **Cross-Device Sync**: Timer state syncs automatically across all your devices
+- **Proper Pause/Resume**: Timer can be paused and resumed without resetting
+- **Mini Timer**: Compact timer display in the navigation bar when active
+- **Full Timer Page**: Dedicated page with detailed settings and controls
+- **Session Tracking**: Automatic tracking of work sessions and breaks
+- **Customizable Settings**: Adjust work time, break durations, and intervals
+- **Smart Notifications**: Browser notifications and audio alerts
+- **Auto-start Options**: Automatically start next sessions if desired
+
+### Usage:
+1. Navigate to the Pomodoro page or start from the mini timer in the nav bar
+2. Set your work session label (what you're working on)
+3. Click Start to begin a 25-minute work session
+4. Use Pause/Resume to control the timer without losing progress
+5. Timer automatically switches between work and break periods
+6. View your session history and productivity stats
+
+The timer state is automatically synchronized across all your devices, so you can start a session on your computer and continue on your phone seamlessly.

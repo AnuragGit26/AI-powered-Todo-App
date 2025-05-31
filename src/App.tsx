@@ -32,6 +32,7 @@ import { supabase } from "./lib/supabaseClient";
 import { useToast } from "./hooks/use-toast";
 import { Link } from "react-router-dom";
 import type { Todo } from "./types";
+import { pomodoroService } from "./services/pomodoroService";
 
 const App: React.FC = () => {
     const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
@@ -284,6 +285,13 @@ const App: React.FC = () => {
 
     // Record user sessions when logged in
     useSessionRecording();
+
+    // Initialize pomodoro service
+    useEffect(() => {
+        pomodoroService.initializeTable().catch(error => {
+            console.warn('Could not initialize pomodoro table:', error);
+        });
+    }, []);
 
     // Show a more streamlined loading state
     if (isAuthChecking) {

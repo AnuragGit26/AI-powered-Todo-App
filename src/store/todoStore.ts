@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, PomodoroState } from '../types';
+import { pomodoroService } from '../services/pomodoroService';
 
 // Helper function to determine initial theme based on system preference
 const getInitialTheme = (): ThemeConfig => {
@@ -37,6 +38,7 @@ const defaultPomodoroSettings: PomodoroSettings = {
 // Default pomodoro state
 const defaultPomodoroState: PomodoroState = {
     isActive: false,
+    isPaused: false,
     isWorkTime: true,
     timeLeft: defaultPomodoroSettings.workTime * 60,
     completedSessions: 0,
@@ -47,6 +49,8 @@ const defaultPomodoroState: PomodoroState = {
     notificationEnabled: true,
     notificationVolume: 0.5,
     lastUpdatedAt: Date.now(),
+    syncedAt: Date.now(),
+    deviceId: crypto.randomUUID(),
 };
 
 // Create the store
@@ -188,6 +192,7 @@ export const useTodoStore = create<TodoStore>()(
                         pomodoro: {
                             ...pomodoro,
                             isActive: false,
+                            isPaused: false,
                             isWorkTime: true,
                             timeLeft: pomodoro.settings.workTime * 60,
                             completedSessions: 0,
@@ -198,13 +203,91 @@ export const useTodoStore = create<TodoStore>()(
                 
                 togglePomodoroTimer: () => {
                     const { pomodoro } = get();
-                    set({
-                        pomodoro: {
-                            ...pomodoro,
-                            isActive: !pomodoro.isActive,
-                            lastUpdatedAt: Date.now(),
+                    const newState = {
+                        ...pomodoro,
+                        lastUpdatedAt: Date.now(),
+                    };
+
+                    if (pomodoro.isActive) {
+                        // Currently active, so pause it
+                        newState.isActive = false;
+                        newState.isPaused = true;
+                    } else if (pomodoro.isPaused) {
+                        // Currently paused, so resume it
+                        newState.isActive = true;
+                        newState.isPaused = false;
+                    } else {
+                        // Currently stopped, so start it
+                        newState.isActive = true;
+                        newState.isPaused = false;
+                    }
+
+                    set({ pomodoro: newState });
+                },
+
+                // Sync functions
+                syncPomodoroState: async (userId: string) => {
+                    const { pomodoro } = get();
+                    try {
+                        await pomodoroService.syncState(userId, pomodoro);
+                        
+                        // Mark as synced
+                        set((state) => ({
+                            pomodoro: {
+                                ...state.pomodoro,
+                                syncedAt: Date.now()
+                            }
+                        }));
+                    } catch (error) {
+                        console.error('Failed to sync pomodoro state:', error);
+                    }
+                },
+
+                loadPomodoroState: async (userId: string) => {
+                    try {
+                        const serverState = await pomodoroService.loadState(userId);
+                        
+                        if (serverState) {
+                            const { pomodoro } = get();
+                            
+                            // Only sync if server state is newer and from different device
+                            if (serverState.lastUpdatedAt > pomodoro.lastUpdatedAt && 
+                                serverState.deviceId !== pomodoro.deviceId) {
+                                set({
+                                    pomodoro: {
+                                        ...serverState,
+                                        syncedAt: Date.now(),
+                                        deviceId: pomodoro.deviceId // Keep current device ID
+                                    }
+                                });
+                            }
                         }
-                    });
+                    } catch (error) {
+                        console.error('Failed to load pomodoro state:', error);
+                    }
+                },
+
+                subscribeToPomodoroSync: (userId: string) => {
+                    try {
+                        return pomodoroService.subscribeToStateChanges(userId, (newState) => {
+                            const { pomodoro } = get();
+                            
+                            // Only update if it's from a different device and newer
+                            if (newState.deviceId !== pomodoro.deviceId && 
+                                newState.lastUpdatedAt > pomodoro.lastUpdatedAt) {
+                                set({
+                                    pomodoro: {
+                                        ...newState,
+                                        syncedAt: Date.now(),
+                                        deviceId: pomodoro.deviceId // Keep current device ID
+                                    }
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Failed to subscribe to pomodoro sync:', error);
+                        return null;
+                    }
                 },
             }),
             {

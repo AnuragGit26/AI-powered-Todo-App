@@ -83,6 +83,7 @@ export interface SessionHistory {
 
 export interface PomodoroState {
     isActive: boolean;
+    isPaused: boolean;
     isWorkTime: boolean;
     timeLeft: number;
     completedSessions: number;
@@ -90,12 +91,14 @@ export interface PomodoroState {
     sessionHistory: SessionHistory[];
     currentLabel: string;
     autoStartNext: boolean;
-    autoStartBreaks: boolean;
+    autoStartBreaks?: boolean;
     notificationEnabled: boolean;
     notificationVolume: number;
-    soundEnabled: boolean;
-    soundVolume: number;
+    soundEnabled?: boolean;
+    soundVolume?: number;
     lastUpdatedAt: number;
+    syncedAt?: number;
+    deviceId?: string;
 }
 
 export interface TodoStore {
@@ -120,6 +123,9 @@ export interface TodoStore {
   updatePomodoroState: (state: Partial<PomodoroState>) => void;
   resetPomodoroTimer: () => void;
   togglePomodoroTimer: () => void;
+  syncPomodoroState: (userId: string) => Promise<void>;
+  loadPomodoroState: (userId: string) => Promise<void>;
+  subscribeToPomodoroSync: (userId: string) => any;
 }
 
 export interface userData {

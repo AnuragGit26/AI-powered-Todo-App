@@ -87,7 +87,7 @@ export const PomodoroTimer: React.FC = () => {
 
     // Update timer when settings change (only when timer is not active)
     useEffect(() => {
-        if (!pomodoro.isActive) {
+        if (!pomodoro.isActive && !pomodoro.isPaused) {
             const newTimeLeft = pomodoro.isWorkTime
                 ? pomodoro.settings.workTime * 60
                 : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0
@@ -96,7 +96,7 @@ export const PomodoroTimer: React.FC = () => {
 
             updatePomodoroState({ timeLeft: newTimeLeft });
         }
-    }, [pomodoro.settings, pomodoro.isActive, pomodoro.isWorkTime, pomodoro.completedSessions]);
+    }, [pomodoro.settings, pomodoro.isActive, pomodoro.isPaused, pomodoro.isWorkTime, pomodoro.completedSessions]);
 
     // Timer management is now handled by MiniPomodoro component and store
 
@@ -134,7 +134,7 @@ export const PomodoroTimer: React.FC = () => {
     };
 
     const updateSetting = (key: keyof typeof pomodoro.settings, value: number) => {
-        if (!pomodoro.isActive) {
+        if (!pomodoro.isActive && !pomodoro.isPaused) {
             updatePomodoroState({
                 settings: {
                     ...pomodoro.settings,
@@ -142,6 +142,26 @@ export const PomodoroTimer: React.FC = () => {
                 }
             });
         }
+    };
+
+    const getTimerStatus = () => {
+        if (pomodoro.isActive && !pomodoro.isPaused) return 'running';
+        if (pomodoro.isPaused) return 'paused';
+        return 'stopped';
+    };
+
+    const getButtonText = () => {
+        const status = getTimerStatus();
+        if (status === 'running') return 'Pause';
+        if (status === 'paused') return 'Resume';
+        return 'Start';
+    };
+
+    const getButtonVariant = () => {
+        const status = getTimerStatus();
+        if (status === 'running') return 'destructive';
+        if (status === 'paused') return 'default';
+        return 'default';
     };
 
     // Update theme CSS variables
@@ -167,7 +187,7 @@ export const PomodoroTimer: React.FC = () => {
 
             <div className="relative z-10 p-6 sm:p-8">
                 <div className="relative z-10 bg-white/5 dark:bg-black/5 rounded-xl backdrop-blur-sm p-6">
-                    {(pomodoro.isActive || pomodoro.completedSessions > 0 || pomodoro.timeLeft < pomodoro.settings.workTime * 60) && (
+                    {(pomodoro.isActive || pomodoro.isPaused || pomodoro.completedSessions > 0 || pomodoro.timeLeft < pomodoro.settings.workTime * 60) && (
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6 overflow-hidden">
                             <div
                                 className="h-full transition-all duration-300 ease-linear rounded-full"
@@ -182,6 +202,9 @@ export const PomodoroTimer: React.FC = () => {
                     <div className="text-center">
                         <h2 className="text-3xl font-bold mb-2 text-gray-700 dark:text-gray-100">
                             {pomodoro.isWorkTime ? 'Work Time' : 'Break Time'}
+                            {pomodoro.isPaused && (
+                                <span className="text-orange-500 ml-2 text-lg">⏸ Paused</span>
+                            )}
                         </h2>
                         <div className="text-6xl font-mono font-bold mb-4 text-gray-800 dark:text-gray-100">
                             {formatTime(pomodoro.timeLeft)}
@@ -196,22 +219,28 @@ export const PomodoroTimer: React.FC = () => {
                                 value={pomodoro.currentLabel}
                                 onChange={(e) => updatePomodoroState({ currentLabel: e.target.value })}
                                 className="max-w-xs text-center placeholder:text-gray-500"
-                                disabled={pomodoro.isActive}
+                                disabled={pomodoro.isActive && !pomodoro.isPaused}
                             />
                         </div>
 
                         <div className="flex justify-center gap-4">
                             <Button
                                 onClick={togglePomodoroTimer}
-                                variant={pomodoro.isActive ? "destructive" : "default"}
+                                variant={getButtonVariant()}
                                 size="lg"
-                                className={pomodoro.isActive ? "bg-red-600 hover:bg-red-700" : ""}
-                                style={!pomodoro.isActive ? {
+                                className={
+                                    getTimerStatus() === 'running'
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : getTimerStatus() === 'paused'
+                                            ? "bg-orange-600 hover:bg-orange-700"
+                                            : ""
+                                }
+                                style={getTimerStatus() === 'stopped' ? {
                                     backgroundColor: theme.primaryColor,
                                     color: theme.mode === 'dark' ? '#fff' : '#000'
                                 } : undefined}
                             >
-                                {pomodoro.isActive ? 'Pause' : 'Start'}
+                                {getButtonText()}
                             </Button>
                             <Button
                                 onClick={resetPomodoroTimer}
@@ -236,8 +265,8 @@ export const PomodoroTimer: React.FC = () => {
                                     min={1}
                                     max={60}
                                     step={1}
-                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={pomodoro.isActive}
+                                    className={`w-32 ${(pomodoro.isActive || pomodoro.isPaused) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive || pomodoro.isPaused}
                                     style={{
                                         '--slider-thumb-color': theme.primaryColor,
                                         '--slider-track-color': theme.primaryColor
@@ -256,8 +285,8 @@ export const PomodoroTimer: React.FC = () => {
                                     min={1}
                                     max={30}
                                     step={1}
-                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={pomodoro.isActive}
+                                    className={`w-32 ${(pomodoro.isActive || pomodoro.isPaused) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive || pomodoro.isPaused}
                                     style={{
                                         '--slider-thumb-color': theme.secondaryColor,
                                         '--slider-track-color': theme.secondaryColor
@@ -276,8 +305,8 @@ export const PomodoroTimer: React.FC = () => {
                                     min={5}
                                     max={60}
                                     step={1}
-                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={pomodoro.isActive}
+                                    className={`w-32 ${(pomodoro.isActive || pomodoro.isPaused) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive || pomodoro.isPaused}
                                     style={{
                                         '--slider-thumb-color': '#9333ea',
                                         '--slider-track-color': '#9333ea'
@@ -296,8 +325,8 @@ export const PomodoroTimer: React.FC = () => {
                                     min={1}
                                     max={10}
                                     step={1}
-                                    className={`w-32 ${pomodoro.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    disabled={pomodoro.isActive}
+                                    className={`w-32 ${(pomodoro.isActive || pomodoro.isPaused) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={pomodoro.isActive || pomodoro.isPaused}
                                     style={{
                                         '--slider-thumb-color': theme.primaryColor,
                                         '--slider-track-color': theme.primaryColor
@@ -315,8 +344,8 @@ export const PomodoroTimer: React.FC = () => {
                                 </label>
                                 <Switch
                                     id="auto-start"
-                                    checked={pomodoro.autoStartBreaks}
-                                    onCheckedChange={(checked) => updatePomodoroState({ autoStartBreaks: checked })}
+                                    checked={pomodoro.autoStartNext}
+                                    onCheckedChange={(checked) => updatePomodoroState({ autoStartNext: checked })}
                                     style={{
                                         '--switch-thumb-color': theme.primaryColor,
                                         '--switch-track-color': theme.primaryColor
@@ -330,8 +359,8 @@ export const PomodoroTimer: React.FC = () => {
                                 </label>
                                 <Switch
                                     id="notification"
-                                    checked={pomodoro.soundEnabled}
-                                    onCheckedChange={(checked) => updatePomodoroState({ soundEnabled: checked })}
+                                    checked={pomodoro.notificationEnabled}
+                                    onCheckedChange={(checked) => updatePomodoroState({ notificationEnabled: checked })}
                                     style={{
                                         '--switch-thumb-color': theme.primaryColor,
                                         '--switch-track-color': theme.primaryColor
@@ -339,13 +368,13 @@ export const PomodoroTimer: React.FC = () => {
                                 />
                             </div>
 
-                            {pomodoro.soundEnabled && (
+                            {pomodoro.notificationEnabled && (
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Volume</span>
                                     <div className="flex items-center gap-2">
                                         <Slider
-                                            value={[pomodoro.soundVolume * 100]}
-                                            onValueChange={(value) => updatePomodoroState({ soundVolume: value[0] / 100 })}
+                                            value={[pomodoro.notificationVolume * 100]}
+                                            onValueChange={(value) => updatePomodoroState({ notificationVolume: value[0] / 100 })}
                                             min={0}
                                             max={100}
                                             step={1}
@@ -355,7 +384,7 @@ export const PomodoroTimer: React.FC = () => {
                                                 '--slider-track-color': theme.secondaryColor
                                             } as React.CSSProperties}
                                         />
-                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{Math.round(pomodoro.soundVolume * 100)}%</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{Math.round(pomodoro.notificationVolume * 100)}%</span>
                                     </div>
                                 </div>
                             )}
