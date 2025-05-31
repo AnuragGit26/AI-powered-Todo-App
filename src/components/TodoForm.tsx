@@ -6,6 +6,7 @@ import { useTodoStore } from '../store/todoStore';
 import { analyzeTodo } from '../services/gemini';
 import type { Priority, Status, SubTodo, Todo, RecurrenceFrequency, RecurrenceConfig } from '../types';
 import { createSubtask, createTask, getTaskById } from '../services/taskService';
+import { useBillingUsage } from '../hooks/useBillingUsage';
 import { Input } from "./ui/input.tsx";
 import { format } from "date-fns";
 import { Button } from "./ui/button.tsx";
@@ -53,21 +54,41 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     const [dayOfMonth, setDayOfMonth] = useState<number>(1);
     const [monthOfYear, setMonthOfYear] = useState<number>(1);
     const { addTodo } = useTodoStore();
+    const { trackUsage, canUseFeature } = useBillingUsage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim()) return;
 
+        // Check if user can create more tasks
+        if (!trackUsage('maxTasks')) {
+            return;
+        }
+
         setIsAnalyzing(true);
         let analysis;
-        if (parentId) {
-            const parentTask = getTaskById(parentId);
-            analysis = await analyzeTodo(title, {
-                type: "subtask",
-                parentTitle: parentTask?.title || "Unknown",
-            });
+
+        // Check if user can use AI analysis
+        if (canUseFeature('maxAiAnalysis')) {
+            if (parentId) {
+                const parentTask = getTaskById(parentId);
+                analysis = await analyzeTodo(title, {
+                    type: "subtask",
+                    parentTitle: parentTask?.title || "Unknown",
+                });
+            } else {
+                analysis = await analyzeTodo(title, { type: "task" });
+            }
+            // Track AI analysis usage
+            trackUsage('maxAiAnalysis', false);
         } else {
-            analysis = await analyzeTodo(title, { type: "task" });
+            // Provide basic analysis without AI
+            analysis = {
+                priority: priority,
+                estimatedTime: 30, // Default 30 minutes
+                tags: [],
+                suggestions: []
+            };
         }
         setIsAnalyzing(false);
 

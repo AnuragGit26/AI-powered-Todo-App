@@ -136,3 +136,95 @@ export interface userData {
   phoneNumber?: string;
 
 }
+
+// Billing and Subscription Types
+export type SubscriptionTier = 'free' | 'premium' | 'enterprise';
+export type BillingInterval = 'monthly' | 'yearly';
+export type PaymentStatus = 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  tier: SubscriptionTier;
+  price: number;
+  interval: BillingInterval;
+  features: string[];
+  popular?: boolean;
+  stripePriceId?: string;
+}
+
+export interface SubscriptionUsage {
+  tasksCreated: number;
+  aiAnalysisUsed: number;
+  pomodoroSessions: number;
+  integrationsSynced: number;
+  teamMembersInvited: number;
+}
+
+export interface SubscriptionLimits {
+  maxTasks: number;
+  maxAiAnalysis: number;
+  maxPomodoroSessions: number;
+  maxIntegrations: number;
+  maxTeamMembers: number;
+  advancedAnalytics: boolean;
+  prioritySupport: boolean;
+  customThemes: boolean;
+  offlineSync: boolean;
+  voiceToTask: boolean;
+}
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  tier: SubscriptionTier;
+  status: PaymentStatus;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  trialEnd?: Date;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
+  usage: SubscriptionUsage;
+  limits: SubscriptionLimits;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'card' | 'paypal' | 'bank_transfer';
+  last4?: string;
+  brand?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  isDefault: boolean;
+  stripePaymentMethodId?: string;
+}
+
+export interface BillingInvoice {
+  id: string;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  status: 'paid' | 'pending' | 'failed';
+  invoiceDate: Date;
+  dueDate: Date;
+  downloadUrl?: string;
+  stripeInvoiceId?: string;
+}
+
+export interface BillingStore {
+  subscription: Subscription | null;
+  paymentMethods: PaymentMethod[];
+  invoices: BillingInvoice[];
+  isLoading: boolean;
+  error: string | null;
+  setSubscription: (subscription: Subscription | null) => void;
+  setPaymentMethods: (methods: PaymentMethod[]) => void;
+  setInvoices: (invoices: BillingInvoice[]) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  checkUsageLimits: (feature: keyof SubscriptionLimits) => boolean;
+  incrementUsage: (feature: keyof SubscriptionUsage) => void;
+}

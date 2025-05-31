@@ -10,6 +10,7 @@ import { History, Tag } from 'lucide-react';
 import useSound from 'use-sound';
 import notifySound from '../assets/notify.wav';
 import { useTodoStore } from '../store/todoStore';
+import { useBillingUsage } from '../hooks/useBillingUsage';
 
 interface PomodoroSettings {
     workTime: number;
@@ -61,6 +62,7 @@ const hexToRgb = (hex: string) => {
 export const PomodoroTimer: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const { pomodoro, updatePomodoroState, togglePomodoroTimer, resetPomodoroTimer } = useTodoStore();
+    const { trackUsage, canUseFeature } = useBillingUsage();
 
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
