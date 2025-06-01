@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -41,6 +41,37 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
         type: 'upgrade',
         show: false
     });
+    const [currency, setCurrency] = useState('USD');
+    const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ USD: 1 });
+    const [currencyLoaded, setCurrencyLoaded] = useState(false);
+
+    useEffect(() => {
+        async function fetchCurrencyAndRates() {
+            try {
+                // Get user currency
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                const userCurrency = data.currency || 'USD';
+                setCurrency(userCurrency);
+                // Get exchange rates
+                const ratesRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const ratesData = await ratesRes.json();
+                setExchangeRates(ratesData.rates);
+            } catch (e) {
+                setCurrency('USD');
+                setExchangeRates({ USD: 1 });
+            } finally {
+                setCurrencyLoaded(true);
+            }
+        }
+        fetchCurrencyAndRates();
+    }, []);
+
+    function formatPrice(usdPrice: number) {
+        const rate = exchangeRates[currency] || 1;
+        const price = (usdPrice * rate).toFixed(2);
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(Number(price));
+    }
 
     const getCurrentPlan = () => {
         if (!subscription) return null;
@@ -159,7 +190,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
     const availableUpgrades = getAvailableUpgrades();
     const availableDowngrades = getAvailableDowngrades();
 
-    if (!subscription) {
+    if (!subscription || !currencyLoaded) {
         return (
             <div className="text-center py-8">
                 <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -195,7 +226,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
                             <CreditCard className="h-6 w-6 text-green-500 mx-auto mb-2" />
                             <p className="text-sm text-gray-600 dark:text-gray-400">Plan Price</p>
                             <p className="font-semibold">
-                                {currentPlan ? `$${currentPlan.price}/${currentPlan.interval}` : 'Free'}
+                                {currentPlan ? `${formatPrice(currentPlan.price)}/${currentPlan.interval}` : 'Free'}
                             </p>
                         </div>
 
@@ -243,16 +274,17 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
                                         <div>
                                             <p className="font-medium">{plan.name}</p>
                                             <p className="text-sm text-gray-500">
-                                                ${plan.price}/{plan.interval}
+                                                {formatPrice(plan.price)}/{plan.interval}
                                             </p>
                                         </div>
                                     </div>
                                     <Button
                                         size="sm"
-                                        onClick={() => handlePlanChange(plan, 'upgrade')}
+                                        onClick={() => !plan.comingSoon && handlePlanChange(plan, 'upgrade')}
                                         className={`bg-gradient-to-r ${getTierColor(plan.tier)}`}
+                                        disabled={!!plan.comingSoon}
                                     >
-                                        Upgrade
+                                        {plan.comingSoon ? 'Coming Soon' : 'Upgrade'}
                                     </Button>
                                 </div>
                             ))}
@@ -280,7 +312,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
                                         <div>
                                             <p className="font-medium">{plan.name}</p>
                                             <p className="text-sm text-gray-500">
-                                                {plan.price === 0 ? 'Free' : `$${plan.price}/${plan.interval}`}
+                                                {plan.price === 0 ? 'Free' : `${formatPrice(plan.price)}/${plan.interval}`}
                                             </p>
                                         </div>
                                     </div>
@@ -385,7 +417,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
                                     )}
                                     {confirmation.type === 'upgrade' && confirmation.plan && (
                                         <p className="text-gray-600 dark:text-gray-400">
-                                            Upgrade to {confirmation.plan.name} plan for ${confirmation.plan.price}/{confirmation.plan.interval}? You'll get immediate access to all premium features.
+                                            Upgrade to {confirmation.plan.name} plan for {formatPrice(confirmation.plan.price)}/{confirmation.plan.interval}? You'll get immediate access to all premium features.
                                         </p>
                                     )}
                                     {confirmation.type === 'downgrade' && confirmation.plan && (

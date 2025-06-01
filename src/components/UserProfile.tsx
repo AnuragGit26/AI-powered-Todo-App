@@ -21,6 +21,7 @@ import { invalidateUserData } from '../hooks/useUserData';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 import BillingDashboard from './BillingDashboard';
+import BillingAnalytics from './BillingAnalytics';
 
 interface UserMetadata {
     bio?: string;
@@ -392,7 +393,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full p-6">
-                    <TabsList className="grid grid-cols-4 mb-8 bg-gray-100/50 dark:bg-gray-800/30">
+                    <TabsList className="grid grid-cols-5 mb-8 bg-gray-100/50 dark:bg-gray-800/30">
                         <TabsTrigger value="profile" className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             <span className="hidden sm:inline">Profile</span>
@@ -400,6 +401,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                         <TabsTrigger value="activity" className="flex items-center gap-2">
                             <Activity className="h-4 w-4" />
                             <span className="hidden sm:inline">Activity</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="analytics" className="flex items-center gap-2">
+                            <BarChart className="h-4 w-4" />
+                            <span className="hidden sm:inline">Analytics</span>
                         </TabsTrigger>
                         <TabsTrigger value="security" className="flex items-center gap-2">
                             <Shield className="h-4 w-4" />
@@ -510,6 +515,155 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                         {isLoading ? 'Saving...' : 'Update Profile'}
                                     </Button>
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="activity">
+                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Activity className="h-5 w-5 text-blue-500" />
+                                    Activity Dashboard
+                                </CardTitle>
+                                <CardDescription>
+                                    Track your account activity and interactions
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingActivity ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {/* Stats Cards */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Activities</p>
+                                                        <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                            {activityStats.totalActivities}
+                                                        </h3>
+                                                    </div>
+                                                    <BarChart className="h-8 w-8 text-blue-500" />
+                                                </div>
+                                            </motion.div>
+
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.1 }}
+                                                className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Login Sessions</p>
+                                                        <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {activityStats.loginCount}
+                                                        </h3>
+                                                    </div>
+                                                    <UserCheck className="h-8 w-8 text-green-500" />
+                                                </div>
+                                            </motion.div>
+
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.2 }}
+                                                className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Profile Updates</p>
+                                                        <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                                            {activityStats.profileUpdates}
+                                                        </h3>
+                                                    </div>
+                                                    <Settings className="h-8 w-8 text-purple-500" />
+                                                </div>
+                                            </motion.div>
+
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.3 }}
+                                                className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-xl"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Task Actions</p>
+                                                        <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                                            {activityStats.taskActions}
+                                                        </h3>
+                                                    </div>
+                                                    <TrendingUp className="h-8 w-8 text-orange-500" />
+                                                </div>
+                                            </motion.div>
+                                        </div>
+
+                                        {/* Activity Timeline */}
+                                        <div className="mt-8">
+                                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                                <Calendar className="h-5 w-5 text-blue-500" />
+                                                Activity Timeline
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {activityLogs.map((log, index) => (
+                                                    <motion.div
+                                                        key={log.id}
+                                                        initial={{ opacity: 0, x: -20 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: index * 0.05 }}
+                                                        className="flex items-start gap-4 p-4 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                                    >
+                                                        <div className={`p-2 rounded-full ${getActivityIconStyle(log.activity)}`}>
+                                                            {getActivityIcon(log.activity)}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                                {log.activity}
+                                                            </p>
+                                                            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                                <Clock className="h-4 w-4" />
+                                                                {new Date(log.timestamp).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {activityLogs.length === 0 && !isLoadingActivity && (
+                                            <div className="text-center py-8">
+                                                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                                <p className="text-gray-500">No activity recorded yet</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="analytics">
+                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart className="h-5 w-5 text-blue-500" />
+                                    Analytics
+                                </CardTitle>
+                                <CardDescription>
+                                    Visualize your productivity and feature usage
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <BillingAnalytics userId={userData.id} />
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -661,138 +815,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                         </div>
                                     )}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="activity">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Activity className="h-5 w-5 text-blue-500" />
-                                    Activity Dashboard
-                                </CardTitle>
-                                <CardDescription>
-                                    Track your account activity and interactions
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {isLoadingActivity ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {/* Stats Cards */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Activities</p>
-                                                        <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                                            {activityStats.totalActivities}
-                                                        </h3>
-                                                    </div>
-                                                    <BarChart className="h-8 w-8 text-blue-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.1 }}
-                                                className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Login Sessions</p>
-                                                        <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                            {activityStats.loginCount}
-                                                        </h3>
-                                                    </div>
-                                                    <UserCheck className="h-8 w-8 text-green-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.2 }}
-                                                className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Profile Updates</p>
-                                                        <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                                            {activityStats.profileUpdates}
-                                                        </h3>
-                                                    </div>
-                                                    <Settings className="h-8 w-8 text-purple-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.3 }}
-                                                className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Task Actions</p>
-                                                        <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                                            {activityStats.taskActions}
-                                                        </h3>
-                                                    </div>
-                                                    <TrendingUp className="h-8 w-8 text-orange-500" />
-                                                </div>
-                                            </motion.div>
-                                        </div>
-
-                                        {/* Activity Timeline */}
-                                        <div className="mt-8">
-                                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                                <Calendar className="h-5 w-5 text-blue-500" />
-                                                Activity Timeline
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {activityLogs.map((log, index) => (
-                                                    <motion.div
-                                                        key={log.id}
-                                                        initial={{ opacity: 0, x: -20 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: index * 0.05 }}
-                                                        className="flex items-start gap-4 p-4 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
-                                                    >
-                                                        <div className={`p-2 rounded-full ${getActivityIconStyle(log.activity)}`}>
-                                                            {getActivityIcon(log.activity)}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                                {log.activity}
-                                                            </p>
-                                                            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                                <Clock className="h-4 w-4" />
-                                                                {new Date(log.timestamp).toLocaleString()}
-                                                            </p>
-                                                        </div>
-                                                    </motion.div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {activityLogs.length === 0 && !isLoadingActivity && (
-                                            <div className="text-center py-8">
-                                                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                                <p className="text-gray-500">No activity recorded yet</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

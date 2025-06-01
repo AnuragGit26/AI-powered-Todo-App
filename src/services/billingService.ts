@@ -19,7 +19,7 @@ export const pricingPlans: PricingPlan[] = [
     features: [
       'Up to 50 tasks',
       '10 AI task analyses',
-      '100 Pomodoro sessions',
+      'Unlimited Pomodoro sessions',
       'Basic analytics',
       'Email support',
       'Basic themes',
@@ -33,6 +33,7 @@ export const pricingPlans: PricingPlan[] = [
     interval: 'monthly',
     popular: true,
     stripePriceId: 'price_premium_monthly',
+    comingSoon: true,
     features: [
       'Unlimited tasks',
       '500 AI task analyses',
@@ -53,6 +54,7 @@ export const pricingPlans: PricingPlan[] = [
     price: 99.99,
     interval: 'yearly',
     stripePriceId: 'price_premium_yearly',
+    comingSoon: true,
     features: [
       'Unlimited tasks',
       '500 AI task analyses',
@@ -74,6 +76,7 @@ export const pricingPlans: PricingPlan[] = [
     price: 29.99,
     interval: 'monthly',
     stripePriceId: 'price_enterprise_monthly',
+    comingSoon: true,
     features: [
       'Everything in Premium',
       'Unlimited AI task analyses',
@@ -157,7 +160,7 @@ class BillingService {
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -326,13 +329,13 @@ class BillingService {
     };
   }
 
-  private getLimitsForTier(tier: SubscriptionTier) {
+  private getLimitsForTier(tier: SubscriptionTier): import('../types').SubscriptionLimits {
     switch (tier) {
       case 'free':
         return {
           maxTasks: 50,
           maxAiAnalysis: 10,
-          maxPomodoroSessions: 100,
+          maxPomodoroSessions: -1,
           maxIntegrations: 1,
           maxTeamMembers: 0,
           advancedAnalytics: false,

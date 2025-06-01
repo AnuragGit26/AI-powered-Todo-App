@@ -36,8 +36,13 @@ import { billingService, pricingPlans, getPremiumFeatures } from '../services/bi
 import { toast } from 'react-hot-toast';
 import { PricingPlan, SubscriptionTier } from '../types';
 import PremiumFeaturesShowcase from './PremiumFeaturesShowcase';
-import BillingAnalytics from './BillingAnalytics';
 import SubscriptionManager from './SubscriptionManager';
+import {
+    Tooltip,
+    TooltipTrigger,
+    TooltipContent,
+    TooltipProvider
+} from "./ui/tooltip";
 
 interface BillingDashboardProps {
     userId: string;
@@ -61,6 +66,9 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
     const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showUsageWarning, setShowUsageWarning] = useState(false);
+    const [currency, setCurrency] = useState('USD');
+    const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ USD: 1 });
+    const [currencyLoaded, setCurrencyLoaded] = useState(false);
 
     // Listen for upgrade modal events
     useEffect(() => {
@@ -80,6 +88,28 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
             setShowUsageWarning(warnings.length > 0);
         }
     }, [subscription]);
+
+    useEffect(() => {
+        async function fetchCurrencyAndRates() {
+            try {
+                // Get user currency
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                const userCurrency = data.currency || 'USD';
+                setCurrency(userCurrency);
+                // Get exchange rates
+                const ratesRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const ratesData = await ratesRes.json();
+                setExchangeRates(ratesData.rates);
+            } catch (e) {
+                setCurrency('USD');
+                setExchangeRates({ USD: 1 });
+            } finally {
+                setCurrencyLoaded(true);
+            }
+        }
+        fetchCurrencyAndRates();
+    }, []);
 
     const loadBillingData = async () => {
         if (!userId) return;
@@ -166,9 +196,9 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
 
     const getTierIcon = (tier: SubscriptionTier) => {
         switch (tier) {
-            case 'premium': return <Crown className="h-5 w-5 text-yellow-500" />;
-            case 'enterprise': return <Star className="h-5 w-5 text-purple-500" />;
-            default: return <Zap className="h-5 w-5 text-blue-500" />;
+            case 'premium': return <Crown className="h-5 w-5 text-yellow-500 icon-contrast" />;
+            case 'enterprise': return <Star className="h-5 w-5 text-purple-500 icon-contrast" />;
+            default: return <Zap className="h-5 w-5 text-blue-500 icon-contrast" />;
         }
     };
 
@@ -189,7 +219,13 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
     const premiumFeatures = getPremiumFeatures();
     const usageWarnings = getUsageWarnings();
 
-    if (isLoading) {
+    function formatPrice(usdPrice: number) {
+        const rate = exchangeRates[currency] || 1;
+        const price = (usdPrice * rate).toFixed(2);
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(Number(price));
+    }
+
+    if (isLoading || !currencyLoaded) {
         return (
             <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -263,7 +299,7 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                                 onClick={() => setShowUpgradeModal(true)}
                                 className={`bg-gradient-to-r ${getTierColor(subscription?.tier || 'free')} hover:shadow-lg transition-all`}
                             >
-                                <Sparkles className="h-4 w-4 mr-2" />
+                                <Sparkles className="h-4 w-4 mr-2 icon-contrast" />
                                 Upgrade
                             </Button>
                         )}
@@ -271,80 +307,111 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                 </CardHeader>
                 <CardContent>
                     {subscription && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                            {/* Enhanced Usage Statistics with Color Coding */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Tasks</span>
-                                    <span className={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks) >= 80 ? 'text-red-600 font-semibold' : ''}>
-                                        {subscription.usage.tasksCreated}/{subscription.limits.maxTasks === -1 ? '∞' : subscription.limits.maxTasks}
-                                    </span>
+                        <TooltipProvider delayDuration={0}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                {/* Enhanced Usage Statistics with Color Coding */}
+                                <div className="space-y-2">
+                                    <div className="usage-row-responsive text-sm">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="usage-row-label cursor-help">Tasks</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">Tasks</TooltipContent>
+                                        </Tooltip>
+                                        <span className={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                            {subscription.usage.tasksCreated}/{subscription.limits.maxTasks === -1 ? '∞' : subscription.limits.maxTasks}
+                                        </span>
+                                    </div>
+                                    <Progress
+                                        value={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks)}
+                                        className="h-2"
+                                    />
                                 </div>
-                                <Progress
-                                    value={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks)}
-                                    className="h-2"
-                                />
-                            </div>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>AI Analysis</span>
-                                    <span className={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis) >= 80 ? 'text-red-600 font-semibold' : ''}>
-                                        {subscription.usage.aiAnalysisUsed}/{subscription.limits.maxAiAnalysis === -1 ? '∞' : subscription.limits.maxAiAnalysis}
-                                    </span>
+                                <div className="space-y-2">
+                                    <div className="usage-row-responsive text-sm">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="usage-row-label cursor-help">AI Analysis</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">AI Analysis</TooltipContent>
+                                        </Tooltip>
+                                        <span className={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                            {subscription.usage.aiAnalysisUsed}/{subscription.limits.maxAiAnalysis === -1 ? '∞' : subscription.limits.maxAiAnalysis}
+                                        </span>
+                                    </div>
+                                    <Progress
+                                        value={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis)}
+                                        className="h-2"
+                                    />
                                 </div>
-                                <Progress
-                                    value={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis)}
-                                    className="h-2"
-                                />
-                            </div>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Pomodoro Sessions</span>
-                                    <span className={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions) >= 80 ? 'text-red-600 font-semibold' : ''}>
-                                        {subscription.usage.pomodoroSessions}/{subscription.limits.maxPomodoroSessions === -1 ? '∞' : subscription.limits.maxPomodoroSessions}
-                                    </span>
+                                <div className="space-y-2">
+                                    <div className="usage-row-responsive text-sm">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="usage-row-label cursor-help">Pomodoro Sessions</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">Pomodoro Sessions</TooltipContent>
+                                        </Tooltip>
+                                        <span className={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                            {subscription.usage.pomodoroSessions}/{subscription.limits.maxPomodoroSessions === -1 ? '∞' : subscription.limits.maxPomodoroSessions}
+                                        </span>
+                                    </div>
+                                    <Progress
+                                        value={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions)}
+                                        className="h-2"
+                                    />
                                 </div>
-                                <Progress
-                                    value={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions)}
-                                    className="h-2"
-                                />
-                            </div>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Integrations</span>
-                                    <span className={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations) >= 80 ? 'text-red-600 font-semibold' : ''}>
-                                        {subscription.usage.integrationsSynced}/{subscription.limits.maxIntegrations === -1 ? '∞' : subscription.limits.maxIntegrations}
-                                    </span>
+                                <div className="space-y-2">
+                                    <div className="usage-row-responsive text-sm">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="usage-row-label cursor-help">Integrations</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">Integrations</TooltipContent>
+                                        </Tooltip>
+                                        <span className={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                            {subscription.usage.integrationsSynced}/{subscription.limits.maxIntegrations === -1 ? '∞' : subscription.limits.maxIntegrations}
+                                        </span>
+                                    </div>
+                                    <Progress
+                                        value={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations)}
+                                        className="h-2"
+                                    />
                                 </div>
-                                <Progress
-                                    value={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations)}
-                                    className="h-2"
-                                />
-                            </div>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Team Members</span>
-                                    <span>{subscription.usage.teamMembersInvited}/{subscription.limits.maxTeamMembers === -1 ? '∞' : subscription.limits.maxTeamMembers}</span>
+                                <div className="space-y-2">
+                                    <div className="usage-row-responsive text-sm">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="usage-row-label cursor-help">Team Members</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">Team Members</TooltipContent>
+                                        </Tooltip>
+                                        <span className={getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                            {subscription.usage.teamMembersInvited}/{subscription.limits.maxTeamMembers === -1 ? '∞' : subscription.limits.maxTeamMembers}
+                                        </span>
+                                    </div>
+                                    <Progress
+                                        value={getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers)}
+                                        className="h-2"
+                                    />
                                 </div>
-                                <Progress value={getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers)} className="h-2" />
                             </div>
-                        </div>
+                        </TooltipProvider>
                     )}
                 </CardContent>
             </Card>
 
             <Tabs defaultValue="plans" className="w-full">
-                <TabsList className="grid grid-cols-6 w-full">
-                    <TabsTrigger value="plans">Pricing Plans</TabsTrigger>
-                    <TabsTrigger value="features">Premium Features</TabsTrigger>
-                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                    <TabsTrigger value="billing">Billing History</TabsTrigger>
-                    <TabsTrigger value="manage">Manage Plan</TabsTrigger>
-                    <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsList className="billing-tabs-list">
+                    <TabsTrigger value="plans" className="billing-tabs-trigger">Pricing Plans</TabsTrigger>
+                    <TabsTrigger value="features" className="billing-tabs-trigger">Premium Features</TabsTrigger>
+                    <TabsTrigger value="billing" className="billing-tabs-trigger">Billing History</TabsTrigger>
+                    <TabsTrigger value="manage" className="billing-tabs-trigger">Manage Plan</TabsTrigger>
+                    <TabsTrigger value="settings" className="billing-tabs-trigger">Settings</TabsTrigger>
                 </TabsList>
 
                 {/* Pricing Plans */}
@@ -392,11 +459,14 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                                             <CardTitle className="text-2xl">{plan.name}</CardTitle>
                                             <div className="space-y-1">
                                                 <div className="text-3xl font-bold">
-                                                    ${plan.price}
+                                                    {formatPrice(plan.price)}
                                                     <span className="text-lg text-gray-500">/{plan.interval}</span>
                                                 </div>
                                                 {plan.interval === 'yearly' && plan.tier === 'premium' && (
                                                     <p className="text-sm text-green-600">Save $20 per year</p>
+                                                )}
+                                                {plan.comingSoon && (
+                                                    <Badge className="bg-gradient-to-r from-gray-400 to-gray-600 text-white">Coming Soon</Badge>
                                                 )}
                                             </div>
                                         </CardHeader>
@@ -414,11 +484,12 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                                             <Button
                                                 className="w-full"
                                                 variant={plan.tier === subscription?.tier ? 'outline' : 'default'}
-                                                disabled={plan.tier === subscription?.tier}
-                                                onClick={() => plan.tier !== subscription?.tier && handleUpgrade(plan)}
+                                                disabled={plan.tier === subscription?.tier || plan.comingSoon}
+                                                onClick={() => plan.tier !== subscription?.tier && !plan.comingSoon && handleUpgrade(plan)}
                                             >
-                                                {plan.tier === subscription?.tier ? 'Current Plan' :
-                                                    plan.tier === 'free' ? 'Downgrade' : 'Upgrade Now'}
+                                                {plan.comingSoon ? 'Coming Soon' :
+                                                    plan.tier === subscription?.tier ? 'Current Plan' :
+                                                        plan.tier === 'free' ? 'Downgrade' : 'Upgrade Now'}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -430,11 +501,6 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                 {/* Premium Features */}
                 <TabsContent value="features" className="space-y-6">
                     <PremiumFeaturesShowcase />
-                </TabsContent>
-
-                {/* Analytics */}
-                <TabsContent value="analytics" className="space-y-6">
-                    <BillingAnalytics userId={userId} />
                 </TabsContent>
 
                 {/* Manage Plan */}
@@ -465,7 +531,7 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <div className="text-right">
-                                                    <p className="font-medium">${invoice.amount}</p>
+                                                    <p className="font-medium">{formatPrice(invoice.amount)}</p>
                                                     <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'}>
                                                         {invoice.status}
                                                     </Badge>
@@ -656,7 +722,7 @@ const BillingDashboard: React.FC<BillingDashboardProps> = ({ userId }) => {
                                                         </div>
                                                         <div className="space-y-2">
                                                             <div className="flex items-baseline gap-1">
-                                                                <span className="text-3xl font-bold">${plan.price}</span>
+                                                                <span className="text-3xl font-bold">{formatPrice(plan.price)}</span>
                                                                 <span className="text-gray-500">/{plan.interval}</span>
                                                             </div>
                                                             {plan.interval === 'yearly' && (

@@ -42,7 +42,6 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip.tsx";
-import { cn } from "../lib/utils";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -191,12 +190,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
         setIsEditing(false);
     };
 
-    const handleKeyDown = async (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            await handleSave();
-        }
-    };
-
     const handleTodoCompletion = (todo: Todo) => {
         const updatedCompleted = !todo.completed;
         const newStatus = updatedCompleted ? "Completed" : "In progress";
@@ -283,7 +276,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`task-item p-3 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
+            className={`task-item p-0 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
                 } ${todo.completed ? "border-l-4 border-l-emerald-500" : "hover:border-l-4 hover:border-l-blue-500"}`}
         >
             {/* Row 1: Checkbox and Title */}
@@ -307,12 +300,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         value={editedTitle}
                         onChange={(e) => setEditedTitle(e.target.value)}
                         onBlur={handleSave}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSave();
-                            }
-                        }}
                         className="w-full p-3 text-lg border rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none min-h-[80px] resize-y"
                         placeholder="Enter task description..."
                     />
@@ -781,6 +768,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     const todos = useTodoStore((state) => state.todos);
     const [sortCriteria, setSortCriteria] = useState<"date" | "priority">("date");
     const [searchQuery, setSearchQuery] = useState("");
+    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'uncompleted'>('all');
 
     const sortedTodos = useMemo(() => {
         return [...todos].sort((a, b) => {
@@ -800,17 +788,21 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     const filteredTodos = useMemo(() => {
-        return sortedTodos.filter((todo) =>
-            todo.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-        );
-    }, [sortedTodos, debouncedSearchQuery]);
+        return sortedTodos.filter((todo) => {
+            const matchesSearch = todo.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+            if (filterStatus === 'all') return matchesSearch;
+            if (filterStatus === 'completed') return matchesSearch && todo.completed;
+            if (filterStatus === 'uncompleted') return matchesSearch && !todo.completed;
+            return matchesSearch;
+        });
+    }, [sortedTodos, debouncedSearchQuery, filterStatus]);
 
     const handleSearchTasks = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
     }, []);
 
     return (
-        <div className="flex flex-col h-full min-h-[calc(100vh-240px)]">
+        <div className="flex flex-col h-full min-h-[calc(100vh-240px)] md:min-h-[60vh] lg:min-h-[70vh] md:mb-12 lg:mb-20 md:pb-8 lg:pb-12">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -829,7 +821,20 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                             />
                             <Search className="absolute top-2.5 left-3 w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </div>
-                        <div className="flex justify-start sm:justify-end">
+                        <div className="flex justify-start sm:justify-end gap-2">
+                            <Select
+                                value={filterStatus}
+                                onValueChange={(e) => setFilterStatus(e as 'all' | 'completed' | 'uncompleted')}
+                            >
+                                <SelectTrigger className="w-full sm:w-[160px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                    <SelectValue placeholder="Filter Tasks" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Tasks</SelectItem>
+                                    <SelectItem value="completed">Completed Tasks</SelectItem>
+                                    <SelectItem value="uncompleted">Uncompleted Tasks</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Select
                                 value={sortCriteria}
                                 onValueChange={(e) => setSortCriteria(e as "date" | "priority")}
@@ -861,7 +866,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="todo-list-scroll space-y-4 mb-4">
+                            <div className="todo-list-scroll space-y-2 mb-4">
                                 {filteredTodos.length > 0 ? (
                                     filteredTodos.map((todo) => (
                                         <TodoItem key={todo.id} todo={todo} />

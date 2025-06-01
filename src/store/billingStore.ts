@@ -17,7 +17,7 @@ const getDefaultLimits = (tier: SubscriptionTier): SubscriptionLimits => {
       return {
         maxTasks: 50,
         maxAiAnalysis: 10,
-        maxPomodoroSessions: 100,
+        maxPomodoroSessions: -1, // unlimited
         maxIntegrations: 1,
         maxTeamMembers: 0,
         advancedAnalytics: false,

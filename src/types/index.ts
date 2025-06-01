@@ -151,6 +151,7 @@ export interface PricingPlan {
   features: string[];
   popular?: boolean;
   stripePriceId?: string;
+  comingSoon?: boolean;
 }
 
 export interface SubscriptionUsage {

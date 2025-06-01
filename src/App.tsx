@@ -20,7 +20,6 @@ import TaskAnalytics from "./components/TaskAnalytics.jsx";
 import ProductivityTrends from "./components/ProductivityTrends.tsx";
 import Footer from "./components/ui/Footer";
 import { useSessionRecording } from './hooks/useSessionRecording';
-import { RunDatabaseMigration } from './db/RunDatabaseMigration';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
 import GradientText from "./components/ui/GradientText";
@@ -43,7 +42,6 @@ const App: React.FC = () => {
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
-    const [dbMigrationNeeded, setDbMigrationNeeded] = useState(false);
     const { toast } = useToast();
 
     // Initialize theme on first load and whenever theme changes
@@ -235,7 +233,7 @@ const App: React.FC = () => {
                         errorDetails.includes('lastRecurrenceDate') ||
                         (errorObj?.code === 'PGRST204' && errorMessage.includes('column'))) {
 
-                        setDbMigrationNeeded(true);
+                        // setDbMigrationNeeded(true);
 
                         toast({
                             title: "Database Update Required",
@@ -259,7 +257,7 @@ const App: React.FC = () => {
         };
 
         loadData();
-    }, [session, setDbMigrationNeeded, setTodos, toast]);
+    }, [session, setTodos, toast]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
@@ -301,12 +299,11 @@ const App: React.FC = () => {
     // Show a more streamlined loading state
     if (isAuthChecking) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-                <div className="text-xl text-center text-gray-700 dark:text-gray-300">
-                    <Logo size={80} className="mx-auto mb-4" />
+            <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8">
+                <div className="text-xl sm:text-2xl md:text-3xl text-center text-gray-700 dark:text-gray-300 responsive-text">
                     <SplitText
                         text="Setting up things for you"
-                        className="text-2xl font-semibold text-center"
+                        className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center responsive-text"
                         delay={70}
                         animationFrom={{ opacity: 0, transform: "translate3d(0,50px,0)" }}
                         animationTo={{ opacity: 1, transform: "translate3d(0,0,0)" }}
@@ -338,7 +335,7 @@ const App: React.FC = () => {
                 speed={0.9}
             />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8">
+            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8 md:min-h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] md:pb-32 lg:pb-40">
                 <div className="w-full sm:w-4/5 md:w-3/5 mx-auto">
                     <div className="flex justify-start -mt-28 mb-1">
                         <Logo size={120} />
@@ -381,7 +378,6 @@ const App: React.FC = () => {
                         )}
                     </AnimatePresence>
                     <TodoList isLoading={!isDataLoaded} />
-                    <Toaster />
                 </div>
             </div>
 
@@ -440,23 +436,24 @@ const App: React.FC = () => {
     return (
         <>
             <NavBar />
+            <Toaster />
             <Routes>
                 <Route
                     path="/login"
                     element={
-                        session ? <Navigate to="/" replace /> : <><LoginForm /><Toaster /></>
+                        session ? <Navigate to="/" replace /> : <><LoginForm /></>
                     }
                 />
                 <Route
                     path="/signup"
                     element={
-                        session ? <Navigate to="/" replace /> : <><SignUpForm /><Toaster /></>
+                        session ? <Navigate to="/" replace /> : <><SignUpForm /></>
                     }
                 />
                 <Route
                     path="/password-reset-request"
                     element={
-                        session ? <Navigate to="/" replace /> : <><PasswordResetRequestForm /><Toaster /></>
+                        session ? <Navigate to="/" replace /> : <><PasswordResetRequestForm /></>
                     }
                 />
                 <Route
@@ -478,7 +475,6 @@ const App: React.FC = () => {
                                 />
                                 {session?.user && <UserProfile userData={session.user} />}
                                 <Footer />
-                                <Toaster />
                             </div>
                         </ProtectedRoute>
                     }
@@ -491,11 +487,6 @@ const App: React.FC = () => {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/admin/migration" element={
-                    <ProtectedRoute isAuthenticated={!!session}>
-                        <RunDatabaseMigration />
-                    </ProtectedRoute>
-                } />
                 <Route
                     path="/pomodoro"
                     element={
@@ -519,7 +510,6 @@ const App: React.FC = () => {
                                     </div>
                                 </div>
                                 <Footer />
-                                <Toaster />
                             </div>
                         </ProtectedRoute>
                     }
@@ -531,17 +521,7 @@ const App: React.FC = () => {
                     }
                 />
 
-                {/* Database migration route */}
-                <Route
-                    path="db-migration"
-                    element={
-                        <ProtectedRoute isAuthenticated={!!session}>
-                            <RunDatabaseMigration />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route path="*" element={<><NotFound /><Toaster /></>} />
+                <Route path="*" element={<><NotFound /></>} />
             </Routes>
         </>
     );
