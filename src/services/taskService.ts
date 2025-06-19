@@ -28,24 +28,61 @@ export const fetchTasks = async () => {
         return null;
     }
 
-    const { data, error } = await supabase
-        .from('tasks')
-        .select('*').eq('userId', userId);
+    try {
+        // Fetch all tasks
+        const { data: tasks, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('userId', userId);
 
-    if (error) throw error;
-    return !data || data.length === 0 ? null : data;
+        if (tasksError) throw tasksError;
+        if (!tasks || tasks.length === 0) return null;
+
+        // Fetch all subtasks for these tasks
+        const taskIds = tasks.map(task => task.id);
+        const { data: subtasks, error: subtasksError } = await supabase
+            .from('subtasks')
+            .select('*')
+            .in('parentId', taskIds);
+
+        if (subtasksError) throw subtasksError;
+
+        // Group subtasks by parent ID
+        const subtasksByParent = (subtasks || []).reduce((acc, subtask) => {
+            if (!acc[subtask.parentId]) {
+                acc[subtask.parentId] = [];
+            }
+            acc[subtask.parentId].push(subtask);
+            return acc;
+        }, {});
+
+        // Combine tasks with their subtasks
+        const tasksWithSubtasks = tasks.map(task => ({
+            ...task,
+            subtasks: subtasksByParent[task.id] || []
+        }));
+
+        return tasksWithSubtasks;
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        throw error;
+    }
 };
 
 export const createTask = async (task: Todo) => {
     // Clone the task to avoid modifying the original object
     const taskToSave = { ...task };
-    
+
     // Validate UUID format
     if (!isValidUUID(taskToSave.id)) {
         console.warn(`Invalid UUID format: ${taskToSave.id}, generating a new one.`);
         taskToSave.id = handleUUID(taskToSave.id);
     }
-    
+
+    // Extract subtasks before saving
+    const subtasks = taskToSave.subtasks;
+    delete taskToSave.subtasks;
+
     // Ensure recurrence is properly formatted as JSONB for database
     if (taskToSave.recurrence) {
         try {
@@ -60,10 +97,9 @@ export const createTask = async (task: Todo) => {
             console.warn("Error processing recurrence data:", err);
         }
     }
-    
-    // If we're in the process of migrating and the column doesn't exist yet,
-    // temporarily remove lastRecurrenceDate to prevent errors
+
     try {
+        // Insert the main task
         const { error } = await supabase
             .from('tasks')
             .insert([taskToSave]);
@@ -72,20 +108,20 @@ export const createTask = async (task: Todo) => {
             // If the error is related to lastRecurrenceDate or recurrence column not existing
             if (error.message && (error.message.includes('lastRecurrenceDate') || error.message.includes('recurrence'))) {
                 console.warn(`Column not found: ${error.message}. Attempting without problematic fields.`);
-                
+
                 // Delete the problematic properties and try again
                 if (error.message.includes('lastRecurrenceDate')) {
                     delete taskToSave.lastRecurrenceDate;
                 }
-                
+
                 if (error.message.includes('recurrence')) {
                     delete taskToSave.recurrence;
                 }
-                
+
                 const { error: retryError } = await supabase
                     .from('tasks')
                     .insert([taskToSave]);
-                    
+
                 if (retryError) {
                     console.error('Error creating task (retry):', retryError);
                     return;
@@ -95,7 +131,23 @@ export const createTask = async (task: Todo) => {
                 return;
             }
         }
-        
+
+        // If there are subtasks, create them
+        if (subtasks && subtasks.length > 0) {
+            const subtasksToCreate = subtasks.map(subtask => ({
+                ...subtask,
+                parentId: taskToSave.id
+            }));
+
+            const { error: subtasksError } = await supabase
+                .from('subtasks')
+                .insert(subtasksToCreate);
+
+            if (subtasksError) {
+                console.error('Error creating subtasks:', subtasksError);
+            }
+        }
+
         console.log('Task created:', task.id);
         const userId = localStorage.getItem('userId');
         if (userId) {
@@ -188,7 +240,7 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
     try {
         // Clone the updates to avoid modifying the original object
         const updatesToApply = { ...updates };
-        
+
         const { error } = await supabase
             .from('tasks')
             .update(updatesToApply)
@@ -198,21 +250,21 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
             // If the error is related to missing columns
             if (error.message && (error.message.includes('lastRecurrenceDate') || error.message.includes('recurrence'))) {
                 console.warn(`Column not found: ${error.message}. Attempting without problematic fields.`);
-                
+
                 // Delete the problematic properties and try again
                 if (error.message.includes('lastRecurrenceDate')) {
                     delete updatesToApply.lastRecurrenceDate;
                 }
-                
+
                 if (error.message.includes('recurrence')) {
                     delete updatesToApply.recurrence;
                 }
-                
+
                 const { error: retryError } = await supabase
                     .from('tasks')
                     .update(updatesToApply)
                     .eq('id', taskId).eq('userId', userId);
-                    
+
                 if (retryError) {
                     console.error('Error updating task (retry):', retryError);
                     return;
@@ -222,7 +274,7 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
                 return;
             }
         }
-        
+
         console.log('Task updated:', taskId);
         const changedFields = Object.keys(updates).join(', ');
         await logActivity(userId, `Task Updated: ${taskId} (Changed: ${changedFields})`);

@@ -1,47 +1,37 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+    Book,
     Check,
-    ChevronDown, Clock,
+    ChevronDown,
+    Clock,
     Edit3,
-    HelpCircle, Loader2,
+    ExternalLink,
+    FileText,
+    HelpCircle,
+    Loader2,
+    MapPin,
     Minus,
     Plus,
+    Repeat,
     Search,
     Tag,
     Trash2,
-    MapPin,
-    FileText,
-    ExternalLink,
-    Book,
-    Wrench,
-    Repeat
-} from "lucide-react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-    SelectLabel,
-    SelectGroup
-} from "./ui/select.tsx";
+    Wrench
+} from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
-import TodoForm from "./TodoForm";
-import type { Priority, Status, Todo } from "../types";
+import { Todo } from "../types";
 import { ConfettiSideCannons } from "./ui/ConfettiSideCannons.ts";
 import { analyzeTodo } from "../services/gemini.ts";
-import { deleteSubtask, deleteTask, updateSubtask, updateTask } from "../services/taskService";
+import { createNextRecurrence, deleteSubtask, deleteTask, updateSubtask, updateTask } from "../services/taskService";
 import { Label } from "./ui/label.tsx";
 import { Input } from "./ui/input.tsx";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select.tsx";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip.tsx";
+import TodoForm from "./TodoForm";
+import type { Priority, Status } from "../types";
 import useDebounce from "../hooks/useDebounce.ts";
 import { getUserRegion } from "../hooks/getUserRegion.ts";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "./ui/tooltip.tsx";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -190,23 +180,39 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
         setIsEditing(false);
     };
 
-    const handleTodoCompletion = (todo: Todo) => {
+    const handleTodoCompletion = async (todo: Todo) => {
         const updatedCompleted = !todo.completed;
-        const newStatus = updatedCompleted ? "Completed" : "In progress";
+        const newStatus: Status = updatedCompleted ? "Completed" : "In progress";
+
+        // If completing a task with recurrence, create the next occurrence
+        if (updatedCompleted && todo.recurrence && !todo.parentId) {
+            await createNextRecurrence(todo);
+        }
+
+        const updates: Partial<Todo> = {
+            completed: updatedCompleted,
+            status: newStatus,
+            completedAt: updatedCompleted ? new Date() : null,
+        };
+
         if (todo.parentId) {
-            useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, {
-                completed: updatedCompleted,
-                status: newStatus,
-                completedAt: updatedCompleted ? new Date() : null,
-            });
-            updateSubtask(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null }).catch((error) =>
-                console.error("Error updating subtask:", error)
-            );
+            // Update in store
+            useTodoStore.getState().updateSubtaskStore(todo.parentId, todo.id, updates);
+            // Update in database
+            try {
+                await updateSubtask(todo.id, updates);
+            } catch (error) {
+                console.error("Error updating subtask:", error);
+            }
         } else {
-            updateTodo(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null, });
-            updateTask(todo.id, { completed: updatedCompleted, status: newStatus, completedAt: updatedCompleted ? new Date() : null, }).catch((error) =>
-                console.error("Error updating task:", error)
-            );
+            // Update in store
+            updateTodo(todo.id, updates);
+            // Update in database
+            try {
+                await updateTask(todo.id, updates);
+            } catch (error) {
+                console.error("Error updating task:", error);
+            }
         }
     };
 
@@ -385,11 +391,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                     </div>
 
                     {/* Row 3: Recurrence Info */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2">
-                        <div className="flex-1 flex items-center justify-center text-xs sm:text-sm">
-                            {renderRecurrenceInfo()}
+                    {todo.recurrence && (
+                        <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2">
+                            <div className="flex-1 flex items-center justify-center text-xs sm:text-sm">
+                                {renderRecurrenceInfo()}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Row 4: Insights, Subtask, Time buttons */}
                     <div className="flex flex-wrap items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2 mt-2 gap-1.5">
