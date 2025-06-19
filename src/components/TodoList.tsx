@@ -17,7 +17,8 @@ import {
     Search,
     Tag,
     Trash2,
-    Wrench
+    Wrench,
+    AlertCircle
 } from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
 import { Todo } from "../types";
@@ -32,6 +33,8 @@ import TodoForm from "./TodoForm";
 import type { Priority, Status } from "../types";
 import useDebounce from "../hooks/useDebounce.ts";
 import { getUserRegion } from "../hooks/getUserRegion.ts";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -45,6 +48,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [editedPriority, setEditedPriority] = useState(todo.priority);
     const [editedStatus, setEditedStatus] = useState(todo.status);
     const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 
     const renderDueDate = (dueDate: Date | string | null) => {
@@ -69,7 +73,6 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     };
 
     const handleRemove = async (id: string) => {
-        removeTodo(id);
         if (todo.parentId) {
             deleteSubtaskStore(todo.parentId, id);
             await deleteSubtask(id);
@@ -77,6 +80,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             removeTodo(id);
             await deleteTask(id);
         }
+        setShowDeleteConfirm(false);
     };
 
     const toggleStatus = () => {
@@ -336,7 +340,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(254 226 226)" }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => handleRemove(todo.id)}
+                            onClick={() => setShowDeleteConfirm(true)}
                             className="flex items-center justify-center p-1.5 sm:p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-red-100 dark:border-red-800/30"
                         >
                             <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -717,6 +721,34 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                     {todo.subtasks.map((subtask) => (
                         <TodoItem key={subtask.id} todo={subtask} level={level + 1} />
                     ))}
+                </div>
+            )}
+            {showDeleteConfirm && (
+                <div className="mt-4">
+                    <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/30">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Delete Confirmation</AlertTitle>
+                        <AlertDescription className="mt-2">
+                            <p className="mb-3">Are you sure you want to delete this task{todo.subtasks?.length ? ' and all its subtasks' : ''}?</p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleRemove(todo.id)}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    Delete
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
                 </div>
             )}
         </motion.div>

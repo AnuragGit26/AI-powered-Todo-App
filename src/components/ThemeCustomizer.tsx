@@ -8,7 +8,17 @@ import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from "react-router-dom";
 import { useMetrics } from "../hooks/useMetrics.ts";
-import { applyColorScheme, changeFontSize, toggleAnimations, resetToDefaultTheme, getOptimizedDarkModeColor, getDarkModeColors } from "../lib/themeUtils";
+import {
+    applyColorScheme,
+    changeFontSize,
+    changeFontFamily,
+    toggleAnimations,
+    resetToDefaultTheme,
+    getOptimizedDarkModeColor,
+    getDarkModeColors,
+    loadThemeSettings,
+    saveThemeSettings
+} from "../lib/themeUtils";
 
 // Predefined color schemes
 const COLOR_SCHEMES = [
@@ -38,6 +48,18 @@ const FONT_SIZES = [
     { name: 'Extra Large', value: 'text-xl' }
 ];
 
+// Font family options
+const FONT_FAMILIES = [
+    { name: 'Inter', value: 'Inter' },
+    { name: 'Roboto', value: 'Roboto' },
+    { name: 'Open Sans', value: 'Open Sans' },
+    { name: 'Montserrat', value: 'Montserrat' },
+    { name: 'Poppins', value: 'Poppins' },
+    { name: 'Lato', value: 'Lato' },
+    { name: 'Source Sans Pro', value: 'Source Sans Pro' },
+    { name: 'Ubuntu', value: 'Ubuntu' },
+];
+
 // Define preset type interface to fix 'any' type issues
 interface ThemePreset {
     name: string;
@@ -59,6 +81,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     const [newPresetName, setNewPresetName] = useState('');
     const [presetError, setPresetError] = useState('');
     const [fontSize, setFontSize] = useState('text-base');
+    const [fontFamily, setFontFamily] = useState('Inter');
     const [enableAnimations, setEnableAnimations] = useState(true);
 
     const { theme, setTheme } = useTodoStore();
@@ -66,25 +89,21 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     const username = localStorage.getItem('username');
     const { logUserActivity } = useMetrics();
 
-    // Initialize state from theme
+    // Initialize state from theme settings
     useEffect(() => {
-        setCustomPrimary(theme.primaryColor || '#53c9d9');
-        setCustomSecondary(theme.secondaryColor || '#5f4ae8');
-
-        // Load font size from localStorage
-        const savedFontSize = localStorage.getItem('fontSize') || 'text-base';
-        setFontSize(savedFontSize);
-
-        // Load animation preference from localStorage
-        const animationPref = localStorage.getItem('enableAnimations');
-        setEnableAnimations(animationPref !== 'false');
+        const settings = loadThemeSettings();
+        setCustomPrimary(settings.primaryColor);
+        setCustomSecondary(settings.secondaryColor);
+        setFontSize(settings.fontSize);
+        setFontFamily(settings.fontFamily);
+        setEnableAnimations(settings.enableAnimations);
 
         // Load user theme presets
         const savedPresets = localStorage.getItem('themePresets');
         if (savedPresets) {
             setUserPresets(JSON.parse(savedPresets));
         }
-    }, [theme]);
+    }, []);
 
     const toggleTheme = useCallback(() => {
         const newMode = theme.mode === 'light' ? 'dark' : 'light';
@@ -92,7 +111,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
             ...theme,
             mode: newMode,
         });
-        // Force document class update - fixed to use the new mode value directly
+        saveThemeSettings({ mode: newMode });
         document.documentElement.classList.toggle('dark', newMode === 'dark');
     }, [theme, setTheme]);
 
@@ -102,22 +121,26 @@ const ThemeCustomizer: React.FC = React.memo(() => {
             primaryColor: primary,
             secondaryColor: secondary,
         });
-
-        // Apply CSS variables for colors using the utility function
         applyColorScheme(primary, secondary);
     }, [theme, setTheme]);
 
     const handleChangeFontSize = useCallback((size: string) => {
-        // Use the utility function
         changeFontSize(size);
         setFontSize(size);
     }, []);
 
+    const handleChangeFontFamily = useCallback((family: string) => {
+        changeFontFamily(family);
+        setFontFamily(family);
+        setTheme({
+            ...theme,
+            fontFamily: family,
+        });
+    }, [theme, setTheme]);
+
     const handleToggleAnimations = useCallback(() => {
         const newValue = !enableAnimations;
         setEnableAnimations(newValue);
-
-        // Use the utility function
         toggleAnimations(newValue);
     }, [enableAnimations]);
 
@@ -133,14 +156,16 @@ const ThemeCustomizer: React.FC = React.memo(() => {
             return;
         }
 
+        const settings = loadThemeSettings();
         const newPreset = {
             name: newPresetName,
             theme: {
                 mode: theme.mode,
-                primaryColor: theme.primaryColor,
-                secondaryColor: theme.secondaryColor,
-                fontSize: fontSize,
-                enableAnimations: enableAnimations
+                primaryColor: settings.primaryColor,
+                secondaryColor: settings.secondaryColor,
+                fontFamily: settings.fontFamily,
+                fontSize: settings.fontSize,
+                enableAnimations: settings.enableAnimations
             }
         };
 
@@ -150,7 +175,7 @@ const ThemeCustomizer: React.FC = React.memo(() => {
 
         setNewPresetName('');
         setPresetError('');
-    }, [newPresetName, userPresets, theme, fontSize, enableAnimations]);
+    }, [newPresetName, userPresets, theme]);
 
     const applyPreset = useCallback((preset: ThemePreset) => {
         // Apply theme settings
@@ -158,20 +183,26 @@ const ThemeCustomizer: React.FC = React.memo(() => {
             mode: preset.theme.mode,
             primaryColor: preset.theme.primaryColor,
             secondaryColor: preset.theme.secondaryColor,
+            fontFamily: preset.theme.fontFamily,
         });
 
-        // Apply font size
-        handleChangeFontSize(preset.theme.fontSize || 'text-base');
+        // Save and apply all settings
+        saveThemeSettings({
+            mode: preset.theme.mode,
+            primaryColor: preset.theme.primaryColor,
+            secondaryColor: preset.theme.secondaryColor,
+            fontFamily: preset.theme.fontFamily,
+            fontSize: preset.theme.fontSize || 'text-base',
+            enableAnimations: preset.theme.enableAnimations !== false,
+        });
 
-        // Apply animations setting
-        const animationSetting = preset.theme.enableAnimations !== false;
-        setEnableAnimations(animationSetting);
-        toggleAnimations(animationSetting);
+        // Update local state
+        setFontSize(preset.theme.fontSize || 'text-base');
+        setEnableAnimations(preset.theme.enableAnimations !== false);
 
-        // Update document classes for theme mode
+        // Apply theme mode
         document.documentElement.classList.toggle('dark', preset.theme.mode === 'dark');
-        applyColorScheme(preset.theme.primaryColor, preset.theme.secondaryColor);
-    }, [setTheme, handleChangeFontSize]);
+    }, [setTheme]);
 
     const deletePreset = useCallback((presetName: string) => {
         const updatedPresets = userPresets.filter(preset => preset.name !== presetName);
@@ -480,8 +511,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                         key={size.value}
                                                         onClick={() => handleChangeFontSize(size.value)}
                                                         className={`p-3 rounded-lg flex items-center justify-between transition-colors ${fontSize === size.value
-                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                                             }`}
                                                     >
                                                         <span className={size.value}>{size.name}</span>
@@ -489,8 +520,33 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                     </button>
                                                 ))}
                                             </div>
+                                        </div>
+
+                                        <div className="space-y-2 mt-6">
+                                            <label className="block text-m font-medium dark:text-gray-200">Font Family</label>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {FONT_FAMILIES.map((font) => (
+                                                    <button
+                                                        key={font.value}
+                                                        onClick={() => handleChangeFontFamily(font.value)}
+                                                        className={`p-3 rounded-lg flex items-center justify-between transition-colors ${fontFamily === font.value
+                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                            }`}
+                                                        style={{ fontFamily: font.value }}
+                                                    >
+                                                        <span>
+                                                            {font.name}
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                                                The quick brown fox jumps over the lazy dog
+                                                            </span>
+                                                        </span>
+                                                        {fontFamily === font.value && <Check className="w-4 h-4" />}
+                                                    </button>
+                                                ))}
+                                            </div>
                                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                                Font size changes will affect the entire application.
+                                                Font changes will affect the entire application.
                                             </p>
                                         </div>
                                     </div>

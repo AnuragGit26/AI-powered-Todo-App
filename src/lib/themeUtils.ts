@@ -1,59 +1,105 @@
 import { ThemeConfig } from '../types';
 
+// Theme storage key
+const THEME_STORAGE_KEY = 'app_theme_settings';
+
+interface ThemeSettings extends ThemeConfig {
+  fontSize: string;
+  enableAnimations: boolean;
+}
+
+/**
+ * Save all theme settings to localStorage
+ */
+export const saveThemeSettings = (settings: Partial<ThemeSettings>) => {
+  const currentSettings = loadThemeSettings();
+  const updatedSettings = {
+    ...currentSettings,
+    ...settings,
+  };
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updatedSettings));
+  return updatedSettings;
+};
+
+/**
+ * Load all theme settings from localStorage
+ */
+export const loadThemeSettings = (): ThemeSettings => {
+  const defaultSettings: ThemeSettings = {
+    mode: 'light',
+    primaryColor: '#53c9d9',
+    secondaryColor: '#5f4ae8',
+    fontFamily: 'Inter',
+    fontSize: 'text-base',
+    enableAnimations: true,
+  };
+
+  const savedSettings = localStorage.getItem(THEME_STORAGE_KEY);
+  if (!savedSettings) {
+    return defaultSettings;
+  }
+
+  try {
+    const parsedSettings = JSON.parse(savedSettings);
+    return { ...defaultSettings, ...parsedSettings };
+  } catch (error) {
+    console.error('Error parsing theme settings:', error);
+    return defaultSettings;
+  }
+};
+
 /**
  * Initialize theme settings in the DOM based on stored preferences
  */
 export const initializeTheme = (theme: ThemeConfig) => {
+  const settings = loadThemeSettings();
+
   // Apply theme mode (light/dark)
-  document.documentElement.classList.toggle('dark', theme.mode === 'dark');
+  const mode = theme.mode || settings.mode;
+  document.documentElement.classList.toggle('dark', mode === 'dark');
 
   // Apply custom colors as CSS variables
-  const isDarkMode = theme.mode === 'dark';
+  const isDarkMode = mode === 'dark';
   const darkModeColors = getDarkModeColors();
 
   // Use different colors for dark mode with better contrast
-  const primaryColor = isDarkMode 
-    ? getOptimizedDarkModeColor(theme.primaryColor, darkModeColors) 
-    : theme.primaryColor || '#53c9d9';
-    
-  const secondaryColor = isDarkMode 
-    ? getOptimizedDarkModeColor(theme.secondaryColor, darkModeColors) 
-    : theme.secondaryColor || '#5f4ae8';
+  const primaryColor = isDarkMode
+    ? getOptimizedDarkModeColor(theme.primaryColor || settings.primaryColor, darkModeColors)
+    : theme.primaryColor || settings.primaryColor;
+
+  const secondaryColor = isDarkMode
+    ? getOptimizedDarkModeColor(theme.secondaryColor || settings.secondaryColor, darkModeColors)
+    : theme.secondaryColor || settings.secondaryColor;
 
   document.documentElement.style.setProperty('--primary-color', primaryColor);
   document.documentElement.style.setProperty('--secondary-color', secondaryColor);
 
-  // Set additional theme colors for better UI/UX
-  if (isDarkMode) {
-    document.documentElement.style.setProperty('--hover-bg', 'hsla(222, 47%, 20%, 0.7)');
-    document.documentElement.style.setProperty('--hover-border', primaryColor);
-    document.documentElement.style.setProperty('--card-bg', 'hsl(222, 47%, 14%)');
-    document.documentElement.style.setProperty('--card-border', 'hsl(223, 47%, 22%)');
-    document.documentElement.style.setProperty('--input-bg', 'hsl(222, 47%, 10%)');
-  } else {
-    document.documentElement.style.setProperty('--hover-bg', 'hsla(0, 0%, 96%, 0.7)');
-    document.documentElement.style.setProperty('--hover-border', primaryColor);
-    document.documentElement.style.setProperty('--card-bg', 'hsl(0, 0%, 100%)');
-    document.documentElement.style.setProperty('--card-border', 'hsl(0, 0%, 90%)');
-    document.documentElement.style.setProperty('--input-bg', 'hsl(0, 0%, 98%)');
-  }
+  // Apply font family
+  const fontFamily = theme.fontFamily || settings.fontFamily;
+  document.documentElement.style.setProperty('--font-family', fontFamily);
 
-  // Load and apply font size preference
-  const savedFontSize = localStorage.getItem('fontSize') || 'text-base';
-
-  // Remove all possible font size classes first
+  // Apply font size
+  const fontSize = settings.fontSize;
   document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-
-  // Add the selected font size class
-  document.documentElement.classList.add(savedFontSize);
+  document.documentElement.classList.add(fontSize);
 
   // Apply animations preference
-  const enableAnimations = localStorage.getItem('enableAnimations') !== 'false';
+  const enableAnimations = settings.enableAnimations;
   if (!enableAnimations) {
     document.documentElement.classList.add('disable-animations');
   } else {
     document.documentElement.classList.remove('disable-animations');
   }
+
+  // Save all current settings
+  saveThemeSettings({
+    mode,
+    primaryColor,
+    secondaryColor,
+    fontFamily,
+    fontSize,
+    enableAnimations,
+  });
 };
 
 /**
@@ -75,7 +121,7 @@ export const getOptimizedDarkModeColor = (color: string, darkColors: Record<stri
   if (color === '#ff7043') return '#ffa726';                // Sunset
   if (color === '#ad1457') return '#f472b6';                // Berry
   if (color === '#424242') return '#a1a1aa';                // Monochrome
-  
+
   // Default case - use dark mode primary or return original
   return darkColors.primary || color;
 };
@@ -86,6 +132,7 @@ export const getOptimizedDarkModeColor = (color: string, darkColors: Record<stri
 export const applyColorScheme = (primary: string, secondary: string) => {
   document.documentElement.style.setProperty('--primary-color', primary);
   document.documentElement.style.setProperty('--secondary-color', secondary);
+  saveThemeSettings({ primaryColor: primary, secondaryColor: secondary });
 };
 
 /**
@@ -97,7 +144,15 @@ export const changeFontSize = (size: string) => {
 
   // Add selected font size class
   document.documentElement.classList.add(size);
-  localStorage.setItem('fontSize', size);
+  saveThemeSettings({ fontSize: size });
+};
+
+/**
+ * Change the global font family
+ */
+export const changeFontFamily = (fontFamily: string) => {
+  document.documentElement.style.setProperty('--font-family', fontFamily);
+  saveThemeSettings({ fontFamily });
 };
 
 /**
@@ -109,29 +164,33 @@ export const toggleAnimations = (enable: boolean) => {
   } else {
     document.documentElement.classList.add('disable-animations');
   }
-  localStorage.setItem('enableAnimations', enable.toString());
+  saveThemeSettings({ enableAnimations: enable });
 };
 
 /**
  * Reset to default theme settings
  */
 export const resetToDefaultTheme = () => {
-  // Default theme values
-  const defaultTheme = {
-    mode: 'light' as 'light' | 'dark',
+  const defaultTheme: ThemeSettings = {
+    mode: 'light',
     primaryColor: '#53c9d9',
     secondaryColor: '#5f4ae8',
+    fontFamily: 'Inter',
+    fontSize: 'text-base',
+    enableAnimations: true,
   };
 
   // Apply default theme
   document.documentElement.classList.remove('dark');
-  applyColorScheme(defaultTheme.primaryColor, defaultTheme.secondaryColor);
+  document.documentElement.style.setProperty('--primary-color', defaultTheme.primaryColor);
+  document.documentElement.style.setProperty('--secondary-color', defaultTheme.secondaryColor);
+  document.documentElement.style.setProperty('--font-family', defaultTheme.fontFamily);
+  document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
+  document.documentElement.classList.add(defaultTheme.fontSize);
+  document.documentElement.classList.remove('disable-animations');
 
-  // Reset font size to default
-  changeFontSize('text-base');
-
-  // Enable animations
-  toggleAnimations(true);
+  // Save default settings
+  saveThemeSettings(defaultTheme);
 
   return defaultTheme;
 };

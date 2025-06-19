@@ -8,7 +8,7 @@ import type { Priority, Status, SubTodo, Todo, RecurrenceFrequency, RecurrenceCo
 import { createSubtask, createTask, getTaskById } from '../services/taskService';
 import { useBillingUsage } from '../hooks/useBillingUsage';
 import { Input } from "./ui/input.tsx";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { Button } from "./ui/button.tsx";
 import { Calendar } from "./ui/calendar.tsx";
 import {
@@ -53,6 +53,8 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     const [selectedDays, setSelectedDays] = useState<number[]>([]);
     const [dayOfMonth, setDayOfMonth] = useState<number>(1);
     const [monthOfYear, setMonthOfYear] = useState<number>(1);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [isEndDateCalendarOpen, setIsEndDateCalendarOpen] = useState(false);
     const { addTodo } = useTodoStore();
     const { trackUsage, canUseFeature } = useBillingUsage();
 
@@ -187,7 +189,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                     </AnimatePresence>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
@@ -204,10 +206,13 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                             <Calendar
                                 mode="single"
                                 selected={dueDate || undefined}
-                                onSelect={(date: Date | undefined) => setDueDate(date || null)}
+                                onSelect={(date: Date | undefined) => {
+                                    setDueDate(date || null);
+                                    setIsCalendarOpen(false);
+                                }}
                                 initialFocus
                                 disabled={(date) =>
-                                    date < new Date() || date < new Date("1900-01-01")
+                                    date < startOfDay(new Date()) || date < new Date("1900-01-01")
                                 }
                             />
                         </PopoverContent>
@@ -402,7 +407,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                     <span>End date</span>
                                     <span className="text-xs text-gray-500">(optional)</span>
                                 </Label>
-                                <Popover>
+                                <Popover open={isEndDateCalendarOpen} onOpenChange={setIsEndDateCalendarOpen}>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant={"outline"}
@@ -420,7 +425,10 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => setRecurrenceEndDate(null)}
+                                                onClick={() => {
+                                                    setRecurrenceEndDate(null);
+                                                    setIsEndDateCalendarOpen(false);
+                                                }}
                                             >
                                                 Clear
                                             </Button>
@@ -428,7 +436,10 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                         <Calendar
                                             mode="single"
                                             selected={recurrenceEndDate || undefined}
-                                            onSelect={(date: Date | undefined) => setRecurrenceEndDate(date || null)}
+                                            onSelect={(date: Date | undefined) => {
+                                                setRecurrenceEndDate(date || null);
+                                                setIsEndDateCalendarOpen(false);
+                                            }}
                                             initialFocus
                                             disabled={(date) =>
                                                 date < new Date() || date < new Date("1900-01-01")

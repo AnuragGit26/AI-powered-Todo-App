@@ -6,6 +6,7 @@ import {
     Edit3,
     Trash2,
     ChevronDown,
+    AlertCircle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { type Todo as TodoType, type Priority, type Status } from '../types';
@@ -19,6 +20,8 @@ import {
 import { Input } from './ui/input';
 import { useTodoStore } from '../store/todoStore';
 import { updateTask, updateSubtask, deleteTask, deleteSubtask } from '../services/taskService';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { Button } from './ui/button';
 
 interface TodoProps {
     todo: TodoType;
@@ -32,6 +35,7 @@ const Todo: React.FC<TodoProps> = ({ todo, level = 0 }) => {
     const [editedPriority, setEditedPriority] = useState<Priority>(todo.priority);
     const [editedStatus, setEditedStatus] = useState<Status>(todo.status);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleSave = async () => {
         const updates = {
@@ -58,6 +62,7 @@ const Todo: React.FC<TodoProps> = ({ todo, level = 0 }) => {
             removeTodo(todo.id);
             await deleteTask(todo.id);
         }
+        setShowDeleteConfirm(false);
     };
 
     const handleStatusChange = async (newStatus: Status) => {
@@ -209,7 +214,7 @@ const Todo: React.FC<TodoProps> = ({ todo, level = 0 }) => {
                                 <Edit3 className="w-4 h-4" />
                             </button>
                             <button
-                                onClick={handleDelete}
+                                onClick={() => setShowDeleteConfirm(true)}
                                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-red-500"
                             >
                                 <Trash2 className="w-4 h-4" />
@@ -231,6 +236,35 @@ const Todo: React.FC<TodoProps> = ({ todo, level = 0 }) => {
                     </>
                 )}
             </div>
+
+            {showDeleteConfirm && (
+                <div className="mt-4">
+                    <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/30">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Delete Confirmation</AlertTitle>
+                        <AlertDescription className="mt-2">
+                            <p className="mb-3">Are you sure you want to delete this task{todo.subtasks?.length ? ' and all its subtasks' : ''}?</p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    Delete
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            )}
 
             {isExpanded && todo.subtasks && (
                 <div className="mt-2">

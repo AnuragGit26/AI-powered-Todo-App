@@ -65,40 +65,41 @@ export interface ThemeConfig {
   mode: 'light' | 'dark';
   primaryColor: string;
   secondaryColor: string;
+  fontFamily?: string;
 }
 
 export interface PomodoroSettings {
-    workTime: number;
-    shortBreak: number;
-    longBreak: number;
-    longBreakInterval: number;
+  workTime: number;
+  shortBreak: number;
+  longBreak: number;
+  longBreakInterval: number;
 }
 
 export interface SessionHistory {
-    type: 'work' | 'shortBreak' | 'longBreak';
-    duration: number;
-    completedAt: Date;
-    label: string;
+  type: 'work' | 'shortBreak' | 'longBreak';
+  duration: number;
+  completedAt: Date;
+  label: string;
 }
 
 export interface PomodoroState {
-    isActive: boolean;
-    isPaused: boolean;
-    isWorkTime: boolean;
-    timeLeft: number;
-    completedSessions: number;
-    settings: PomodoroSettings;
-    sessionHistory: SessionHistory[];
-    currentLabel: string;
-    autoStartNext: boolean;
-    autoStartBreaks?: boolean;
-    notificationEnabled: boolean;
-    notificationVolume: number;
-    soundEnabled?: boolean;
-    soundVolume?: number;
-    lastUpdatedAt: number;
-    syncedAt?: number;
-    deviceId?: string;
+  isActive: boolean;
+  isPaused: boolean;
+  isWorkTime: boolean;
+  timeLeft: number;
+  completedSessions: number;
+  settings: PomodoroSettings;
+  sessionHistory: SessionHistory[];
+  currentLabel: string;
+  autoStartNext: boolean;
+  autoStartBreaks?: boolean;
+  notificationEnabled: boolean;
+  notificationVolume: number;
+  soundEnabled?: boolean;
+  soundVolume?: number;
+  lastUpdatedAt: number;
+  syncedAt?: number;
+  deviceId?: string;
 }
 
 export interface TodoStore {
@@ -117,7 +118,7 @@ export interface TodoStore {
   createSubtaskStore: (parentId: string, subtask: SubTodo) => void;
   updateSubtaskStore: (parentId: string, subtaskId: string, subtask: Partial<SubTodo>) => void;
   deleteSubtaskStore: (parentId: string, subtaskId: string) => void;
-  
+
   // Pomodoro Timer state
   pomodoro: PomodoroState;
   updatePomodoroState: (state: Partial<PomodoroState>) => void;

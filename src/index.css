@@ -1,7 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Lato:wght@400;700&family=Source+Sans+Pro:wght@400;600;700&family=Ubuntu:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 @layer base {
     :root {
@@ -35,38 +36,49 @@
         --secondary-color: #5f4ae8;
         --animation-duration: 0.3s;
         --animation-timing: ease-in-out;
+        --font-family: 'Inter';
     }
 
-    @layer base {
-        .dark {
-            --background: 222 47% 11%;
-            --foreground: 213 31% 91%;
-            --card: 222 47% 13%;
-            --card-foreground: 213 31% 91%;
-            --popover: 222 47% 11%;
-            --popover-foreground: 213 31% 91%;
-            --primary: 199 89% 48%;
-            --primary-foreground: 0 0% 100%;
-            --secondary: 217 33% 17%;
-            --secondary-foreground: 213 31% 91%;
-            --muted: 223 47% 14%;
-            --muted-foreground: 215 20% 65%;
-            --accent: 217 33% 18%;
-            --accent-foreground: 210 40% 98%;
-            --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 210 40% 98%;
-            --border: 216 34% 17%;
-            --input: 216 34% 17%;
-            --ring: 224 76% 48%;
-            --chart-1: 220 70% 50%;
-            --chart-2: 160 60% 45%;
-            --chart-3: 30 80% 55%;
-            --chart-4: 280 65% 60%;
-            --scrollbar-track-bg: #1e293b;
-            --scrollbar-thumb-bg: #475569;
-            --task-hover-bg: 221 39% 16%;
-            --task-hover-border: 224 76% 48%;
-        }
+    .dark {
+        --background: 222 47% 11%;
+        --foreground: 213 31% 91%;
+        --card: 222 47% 13%;
+        --card-foreground: 213 31% 91%;
+        --popover: 222 47% 11%;
+        --popover-foreground: 213 31% 91%;
+        --primary: 199 89% 48%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 33% 17%;
+        --secondary-foreground: 213 31% 91%;
+        --muted: 223 47% 14%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 217 33% 18%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 216 34% 17%;
+        --input: 216 34% 17%;
+        --ring: 224 76% 48%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --scrollbar-track-bg: #1e293b;
+        --scrollbar-thumb-bg: #475569;
+        --task-hover-bg: 221 39% 16%;
+        --task-hover-border: 224 76% 48%;
+    }
+
+    * {
+        border-color: hsl(var(--border));
+    }
+
+    body {
+        font-family: var(--font-family), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
     }
 
     /* Animation Toggle */
@@ -337,23 +349,6 @@
         color: white;
     }
 }
-
-
-@layer base {
-    * {
-        border-color: hsl(var(--border));
-    }
-
-    body {
-        font-family: theme('fontFamily.sans', 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji');
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
-    }
-}
-
-
 
 @layer base {
     * {
