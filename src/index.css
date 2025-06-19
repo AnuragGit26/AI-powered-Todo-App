@@ -137,7 +137,8 @@
     }
 
     .todo-list-scroll {
-        max-height: calc(48vh);
+        max-height: calc(100vh - 16rem);
+        /* 16rem accounts for header, nav, margins and 1rem footer gap */
         overflow-y: auto;
         scrollbar-width: none;
     }

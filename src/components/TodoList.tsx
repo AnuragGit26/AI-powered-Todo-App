@@ -276,22 +276,22 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className={`task-item p-0 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
+            className={`task-item p-2 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
                 } ${todo.completed ? "border-l-4 border-l-emerald-500" : "hover:border-l-4 hover:border-l-blue-500"}`}
         >
             {/* Row 1: Checkbox and Title */}
-            <div className="flex items-center w-full mb-4">
+            <div className="flex items-center w-full mb-2 sm:mb-4">
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => handleTodoCompletion(todo)}
-                    className={`p-3 rounded-full ${todo.completed
+                    className={`p-2 sm:p-3 rounded-full ${todo.completed
                         ? "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md"
                         : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600"
-                        } mr-4 shadow-sm flex-shrink-0 transition-all duration-200`}
+                        } mr-2 sm:mr-4 shadow-sm flex-shrink-0 transition-all duration-200`}
                 >
                     <Check
-                        className={`w-5 h-5 ${todo.completed ? "text-white" : "text-gray-500 dark:text-gray-400"
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${todo.completed ? "text-white" : "text-gray-500 dark:text-gray-400"
                             }`}
                     />
                 </motion.button>
@@ -304,8 +304,8 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         placeholder="Enter task description..."
                     />
                 ) : (
-                    <div className="relative group">
-                        <p className={`text-lg sm:text-xl ${todo.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-white"} break-words flex-1 font-medium overflow-hidden text-ellipsis ${todo.title.length > 80 ? "line-clamp-2" : ""}`}>
+                    <div className="relative group flex-1 min-w-0">
+                        <p className={`text-base sm:text-lg md:text-xl ${todo.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-white"} break-words font-medium overflow-hidden text-ellipsis ${todo.title.length > 80 ? "line-clamp-2" : ""}`}>
                             {todo.title}
                         </p>
                         {todo.title.length > 80 && (
@@ -318,22 +318,22 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
 
                 {/* Edit and Delete buttons in right corner */}
                 {!isEditing && (
-                    <div className="flex ml-auto gap-2 task-actions">
+                    <div className="flex ml-2 sm:ml-auto gap-1 sm:gap-2 task-actions flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(219 234 254)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={handleEdit}
-                            className="flex items-center justify-center p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-blue-100 dark:border-blue-800/30"
+                            className="flex items-center justify-center p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-blue-100 dark:border-blue-800/30"
                         >
-                            <Edit3 className="w-5 h-5" />
+                            <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </motion.button>
                         <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: "rgb(254 226 226)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleRemove(todo.id)}
-                            className="flex items-center justify-center p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-red-100 dark:border-red-800/30"
+                            className="flex items-center justify-center p-1.5 sm:p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg transition-all duration-200 shadow-sm hover:shadow border border-red-100 dark:border-red-800/30"
                         >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </motion.button>
                     </div>
                 )}
@@ -355,19 +355,19 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             {!isEditing && (
                 <>
                     {/* Row 2: Priority, Time left, Status */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2 gap-1 mb-2">
-                        <div className="flex-1 flex items-center justify-center">
-                            <span className={`${getPriorityColor(todo.priority)} min-w-16 text-center`}>
+                    <div className="flex flex-wrap items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2 gap-1 mb-2">
+                        <div className="flex-1 min-w-[80px] flex items-center justify-center">
+                            <span className={`${getPriorityColor(todo.priority)} min-w-16 text-center text-xs sm:text-sm`}>
                                 {todo.priority ? todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1) : ""}
                             </span>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-center">
+                        <div className="flex-1 min-w-[100px] flex items-center justify-center">
                             {todo.dueDate && (
                                 <p
                                     onMouseEnter={() => setIsHovered(true)}
                                     onMouseLeave={() => setIsHovered(false)}
-                                    className={`transition-colors duration-200 text-center border rounded-lg py-1 px-2 sm:px-3 text-sm ${renderDueDate(todo.dueDate)?.toString().includes("days left")
+                                    className={`transition-colors duration-200 text-center border rounded-lg py-1 px-1.5 sm:px-2 text-xs sm:text-sm ${renderDueDate(todo.dueDate)?.toString().includes("days left")
                                         ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700"
                                         : "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700"
                                         }`}
@@ -377,61 +377,55 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             )}
                         </div>
 
-                        <div className="flex-1 flex items-center justify-center">
-                            <span onClick={toggleStatus} className={`task-status ${getStatusClasses(todo.status)} w-26 inline-block overflow-hidden whitespace-nowrap`}>
+                        <div className="flex-1 min-w-[90px] flex items-center justify-center">
+                            <span onClick={toggleStatus} className={`task-status ${getStatusClasses(todo.status)} text-xs sm:text-sm w-24 sm:w-26 inline-block overflow-hidden whitespace-nowrap`}>
                                 {todo.status}
                             </span>
                         </div>
                     </div>
 
                     {/* Row 3: Recurrence Info */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2">
-                        <div className="flex-1 flex items-center justify-center">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2">
+                        <div className="flex-1 flex items-center justify-center text-xs sm:text-sm">
                             {renderRecurrenceInfo()}
                         </div>
                     </div>
 
                     {/* Row 4: Insights, Subtask, Time buttons */}
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-2">
-                        <div className="flex-1 flex items-center justify-center">
-                            {todo.analysis && (
-                                <button
-                                    onClick={() => toggleInsights(todo.id)}
-                                    className="flex items-center gap-1 text-indigo-700 dark:text-indigo-200 hover:text-indigo-900 dark:hover:text-indigo-100 px-2 sm:px-3 py-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-all duration-200 shadow-sm"
-                                >
-                                    {expandedInsights.includes(todo.id) ? (
-                                        <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                        <img
-                                            src="https://svgmix.com/uploads/e567ca-google-bard.svg"
-                                            alt={`Gemini`}
-                                            className="w-4 h-4"
-                                        />
-                                    )}
-                                    <Label className="cursor-pointer">Insights</Label>
-                                </button>
-                            )}
+                    <div className="flex flex-wrap items-center justify-between rounded-lg bg-gray-50/80 dark:bg-gray-700/70 backdrop-blur-sm border border-gray-100 dark:border-gray-600 transition-all duration-200 p-1.5 sm:p-2 mt-2 gap-1.5">
+                        <div className="flex-1 min-w-[100px] flex items-center justify-center">
+                            <button
+                                onClick={() => toggleInsights(todo.id)}
+                                className="flex items-center gap-1 text-indigo-700 dark:text-indigo-200 hover:text-indigo-900 dark:hover:text-indigo-100 px-2 sm:px-3 py-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-all duration-200 shadow-sm text-xs sm:text-sm"
+                            >
+                                {expandedInsights.includes(todo.id) ? (
+                                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                                ) : (
+                                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 transform -rotate-90" />
+                                )}
+                                <span>Insights</span>
+                            </button>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-center">
+                        <div className="flex-1 min-w-[100px] flex items-center justify-center">
                             <button
                                 onClick={() => setShowSubtaskForm(!showSubtaskForm)}
-                                className="flex items-center gap-1 text-violet-700 dark:text-violet-200 hover:text-violet-900 dark:hover:text-violet-100 px-2 sm:px-3 py-1.5 rounded-md bg-violet-100 dark:bg-violet-900/50 hover:bg-violet-200 dark:hover:bg-violet-900/70 transition-all duration-200 shadow-sm"
+                                className="flex items-center gap-1 text-violet-700 dark:text-violet-200 hover:text-violet-900 dark:hover:text-violet-100 px-2 sm:px-3 py-1.5 rounded-md bg-violet-100 dark:bg-violet-900/50 hover:bg-violet-200 dark:hover:bg-violet-900/70 transition-all duration-200 shadow-sm text-xs sm:text-sm"
                             >
                                 {showSubtaskForm ? (
-                                    <Minus className="w-4 h-4" />
+                                    <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                                 ) : (
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                                 )}
                                 <Label className="cursor-pointer">Subtask</Label>
                             </button>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-center">
+                        <div className="flex-1 min-w-[100px] flex items-center justify-center">
                             <TooltipProvider delayDuration={0}>
                                 <Tooltip>
-                                    <TooltipTrigger className="flex items-center gap-1 text-cyan-700 dark:text-cyan-200 hover:text-cyan-900 dark:hover:text-cyan-100 px-2 sm:px-3 py-1.5 rounded-md bg-cyan-100 dark:bg-cyan-900/50 hover:bg-cyan-200 dark:hover:bg-cyan-900/70 transition-all duration-200 shadow-sm">
-                                        <Clock className="w-4 h-4" />
+                                    <TooltipTrigger className="flex items-center gap-1 text-cyan-700 dark:text-cyan-200 hover:text-cyan-900 dark:hover:text-cyan-100 px-2 sm:px-3 py-1.5 rounded-md bg-cyan-100 dark:bg-cyan-900/50 hover:bg-cyan-200 dark:hover:bg-cyan-900/70 transition-all duration-200 shadow-sm text-xs sm:text-sm">
+                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span className="font-medium">Time</span>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" sideOffset={5} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">

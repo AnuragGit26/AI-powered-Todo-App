@@ -8,8 +8,9 @@ import SplitText from "./ui/SplitText";
 import Aurora from "./ui/AuroraBG.tsx";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
-import { Loader, Mail, Lock, Check, Info, ArrowRight, UserCheck } from "lucide-react";
+import { Loader, Mail, Lock, Check, Info, ArrowRight, UserCheck, Github } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { Separator } from "./ui/separator";
 
 export function SignUpForm() {
     const [email, setEmail] = useState("");
@@ -19,6 +20,7 @@ export function SignUpForm() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [githubLoading, setGithubLoading] = useState(false);
 
     // Validation state variables
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -160,6 +162,30 @@ export function SignUpForm() {
         }
     };
 
+    const handleGithubSignUp = async () => {
+        try {
+            setGithubLoading(true);
+            setError(null);
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'github',
+                options: {
+                    redirectTo: `${window.location.origin}/`,
+                }
+            });
+
+            if (error) {
+                throw error;
+            }
+
+        } catch (err) {
+            console.error("GitHub signup error:", err);
+            setError(err instanceof Error ? err.message : "Failed to sign up with GitHub");
+        } finally {
+            setGithubLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-white dark:bg-gray-950">
             <Aurora
@@ -210,6 +236,37 @@ export function SignUpForm() {
                                             <AlertDescription>{success}</AlertDescription>
                                         </Alert>
                                     )}
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600"
+                                        onClick={handleGithubSignUp}
+                                        disabled={githubLoading}
+                                    >
+                                        {githubLoading ? (
+                                            <>
+                                                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                                Connecting to GitHub...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Github className="mr-2 h-4 w-4" />
+                                                Continue with GitHub
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <Separator className="w-full" />
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
+                                                Or continue with email
+                                            </span>
+                                        </div>
+                                    </div>
 
                                     <form onSubmit={handleSignUp} className="flex flex-col gap-4">
                                         <div className="grid gap-1">
