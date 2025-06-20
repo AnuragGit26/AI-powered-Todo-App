@@ -1,6 +1,6 @@
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
     xmlns="http://www.w3.org/2000/svg">
     <!-- Simple 16x16 favicon -->
-    <circle cx="8" cy="8" r="7" fill="#3B82F6"/>
+    <rect x="1" y="1" width="14" height="14" rx="4" ry="4" fill="#3B82F6"/>
     <path d="M5 8L7 10L11 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg> 
