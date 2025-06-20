@@ -511,8 +511,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                         key={size.value}
                                                         onClick={() => handleChangeFontSize(size.value)}
                                                         className={`p-3 rounded-lg flex items-center justify-between transition-colors ${fontSize === size.value
-                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                                             }`}
                                                     >
                                                         <span className={size.value}>{size.name}</span>
@@ -530,8 +530,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
                                                         key={font.value}
                                                         onClick={() => handleChangeFontFamily(font.value)}
                                                         className={`p-3 rounded-lg flex items-center justify-between transition-colors ${fontFamily === font.value
-                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                                             }`}
                                                         style={{ fontFamily: font.value }}
                                                     >

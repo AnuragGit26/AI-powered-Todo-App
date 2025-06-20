@@ -55,12 +55,50 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     const [monthOfYear, setMonthOfYear] = useState<number>(1);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isEndDateCalendarOpen, setIsEndDateCalendarOpen] = useState(false);
+    const [formError, setFormError] = useState<string>('');
     const { addTodo } = useTodoStore();
     const { trackUsage, canUseFeature } = useBillingUsage();
 
+    const announceToScreenReader = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+        const liveRegion = document.createElement('div');
+        liveRegion.setAttribute('aria-live', priority);
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.style.position = 'absolute';
+        liveRegion.style.left = '-10000px';
+        liveRegion.textContent = message;
+        document.body.appendChild(liveRegion);
+        setTimeout(() => document.body.removeChild(liveRegion), 1000);
+    };
+
+    const validateForm = (): boolean => {
+        if (!title.trim()) {
+            setFormError('Task title is required');
+            announceToScreenReader('Error: Task title is required', 'assertive');
+            return false;
+        }
+
+        if (isRecurring && !recurrenceFrequency) {
+            setFormError('Please select a recurrence frequency');
+            announceToScreenReader('Error: Please select a recurrence frequency', 'assertive');
+            return false;
+        }
+
+        if (isRecurring && recurrenceFrequency === 'weekly' && selectedDays.length === 0) {
+            setFormError('Please select at least one day for weekly recurrence');
+            announceToScreenReader('Error: Please select at least one day for weekly recurrence', 'assertive');
+            return false;
+        }
+
+        setFormError('');
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim()) return;
+
+        if (!validateForm()) {
+            return;
+        }
 
         // Check if user can create more tasks
         if (!trackUsage('maxTasks')) {
@@ -68,6 +106,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         }
 
         setIsAnalyzing(true);
+        announceToScreenReader('Analyzing task with AI...');
         let analysis;
 
         // Check if user can use AI analysis
@@ -86,10 +125,13 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         } else {
             // Provide basic analysis without AI
             analysis = {
-                priority: priority,
-                estimatedTime: 30, // Default 30 minutes
-                tags: [],
-                suggestions: []
+                category: "General",
+                howTo: "Complete this task step by step",
+                estimatedTime: "30 minutes",
+                difficulty: "Medium",
+                resources: "No specific resources required",
+                potentialBlockers: "None identified",
+                nextSteps: "Start working on the task"
             };
         }
         setIsAnalyzing(false);
@@ -127,12 +169,14 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                 };
                 useTodoStore.getState().createSubtaskStore(parentId, newSubtask);
                 await createSubtask(newSubtask);
+                announceToScreenReader(`Subtask "${title.trim()}" has been created`);
             } else {
                 console.error("Parent task not found or ID mismatch");
             }
         } else {
             addTodo(newTodo);
             await createTask(newTodo);
+            announceToScreenReader(`Task "${title.trim()}" has been created`);
         }
 
         // Reset form
@@ -147,10 +191,18 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         setSelectedDays([]);
         setDayOfMonth(1);
         setMonthOfYear(1);
+        setFormError('');
 
         // Call the onSubmitSuccess callback if provided
         if (onSubmitSuccess) {
             onSubmitSuccess();
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey && title.trim()) {
+            e.preventDefault();
+            handleSubmit(e as any);
         }
     };
 
@@ -160,21 +212,43 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
             className={`mb-1 sm:mb-2 space-y-4 ${parentId ? 'ml-2 sm:ml-4 md:ml-8 mt-2' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            role="form"
+            aria-label={parentId ? "Create new subtask" : "Create new task"}
+            noValidate
         >
-            <div className="flex flex-col gap-2 bg-white/80 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-600 backdrop-blur rounded-lg p-3 sm:p-4 transition-all duration-300 animate-fadeIn">
+            {formError && (
+                <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="text-red-600 text-sm font-medium p-2 bg-red-50 border border-red-200 rounded-md"
+                >
+                    {formError}
+                </div>
+            )}
+
+            <fieldset className="flex flex-col gap-2 bg-white/80 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-600 backdrop-blur rounded-lg p-3 sm:p-4 transition-all duration-300 animate-fadeIn">
+                <legend className="sr-only">
+                    {parentId ? "Subtask details" : "Task details"}
+                </legend>
+
                 <div className="relative flex-auto">
+                    <label htmlFor="task-title" className="sr-only">
+                        {parentId ? "Subtask title" : "Task title"}
+                    </label>
                     <textarea
+                        id="task-title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder={parentId ? "Add a subtask..." : "Add a new task..."}
-                        className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg min-h-[60px] resize-y"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey && title.trim()) {
-                                e.preventDefault();
-                                handleSubmit(e as any);
-                            }
-                        }}
+                        className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg min-h-[60px] resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        onKeyDown={handleKeyDown}
+                        aria-required="true"
+                        aria-describedby="task-title-help"
+                        aria-invalid={formError.includes('title') ? 'true' : 'false'}
                     />
+                    <div id="task-title-help" className="sr-only">
+                        Press Enter to submit, or Shift+Enter for a new line
+                    </div>
                     <AnimatePresence>
                         {isAnalyzing && (
                             <motion.div
@@ -182,93 +256,158 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 className="absolute top-2.5 right-1"
+                                role="status"
+                                aria-label="Analyzing task with AI"
                             >
                                 <Loader2 className="left-3 w-5 h-5 text-blue-500 animate-spin" />
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg",
-                                    !dueDate && "text-muted-foreground"
-                                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2" role="group" aria-label="Task settings">
+                    <div>
+                        <Label htmlFor="due-date" className="sr-only">Due date</Label>
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="due-date"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                    aria-haspopup="dialog"
+                                    aria-expanded={isCalendarOpen}
+                                    aria-describedby="due-date-description"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start" role="dialog" aria-label="Select due date">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate || undefined}
+                                    onSelect={(date: Date | undefined) => {
+                                        setDueDate(date || null);
+                                        setIsCalendarOpen(false);
+                                        if (date) {
+                                            announceToScreenReader(`Due date set to ${format(date, "PPP")}`);
+                                        }
+                                    }}
+                                    initialFocus
+                                    disabled={(date) =>
+                                        date < startOfDay(new Date()) || date < new Date("1900-01-01")
+                                    }
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <div id="due-date-description" className="sr-only">
+                            Optional: Set a due date for this task
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="priority-select" className="sr-only">Priority level</Label>
+                        <Select
+                            value={priority}
+                            onValueChange={(e) => {
+                                setPriority(e as Priority);
+                                announceToScreenReader(`Priority set to ${e}`);
+                            }}
+                        >
+                            <SelectTrigger
+                                id="priority-select"
+                                className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                aria-describedby="priority-description"
                             >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={dueDate || undefined}
-                                onSelect={(date: Date | undefined) => {
-                                    setDueDate(date || null);
-                                    setIsCalendarOpen(false);
-                                }}
-                                initialFocus
-                                disabled={(date) =>
-                                    date < startOfDay(new Date()) || date < new Date("1900-01-01")
-                                }
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    <Select
-                        value={priority}
-                        onValueChange={(e) => setPriority(e as Priority)}>
-                        <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg">
-                            <SelectValue placeholder="Priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Priority</SelectLabel>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        value={status}
-                        onValueChange={(e) => setStatus(e as Status)}>
-                        <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Status</SelectLabel>
-                                <SelectItem value="Not Started">Not Started</SelectItem>
-                                <SelectItem value="In progress">In Progress</SelectItem>
-                                <SelectItem value="Completed">Completed</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                                <SelectValue placeholder="Priority" />
+                            </SelectTrigger>
+                            <SelectContent role="listbox" aria-label="Priority options">
+                                <SelectGroup>
+                                    <SelectLabel>Priority</SelectLabel>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <div id="priority-description" className="sr-only">
+                            Set the priority level for this task
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="status-select" className="sr-only">Task status</Label>
+                        <Select
+                            value={status}
+                            onValueChange={(e) => {
+                                setStatus(e as Status);
+                                announceToScreenReader(`Status set to ${e}`);
+                            }}
+                        >
+                            <SelectTrigger
+                                id="status-select"
+                                className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 backdrop-blur rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                aria-describedby="status-description"
+                            >
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent role="listbox" aria-label="Status options">
+                                <SelectGroup>
+                                    <SelectLabel>Status</SelectLabel>
+                                    <SelectItem value="Not Started">Not Started</SelectItem>
+                                    <SelectItem value="In progress">In Progress</SelectItem>
+                                    <SelectItem value="Completed">Completed</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <div id="status-description" className="sr-only">
+                            Set the current status of this task
+                        </div>
+                    </div>
+
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out shadow-sm"
+                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         type="submit"
+                        disabled={isAnalyzing}
+                        aria-label={parentId ? "Create subtask" : "Create task"}
+                        aria-describedby="submit-button-help"
                     >
-                        <Plus className="w-5 h-5" />
+                        {isAnalyzing ? (
+                            <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                        ) : (
+                            <Plus className="w-5 h-5" aria-hidden="true" />
+                        )}
                     </motion.button>
+                    <div id="submit-button-help" className="sr-only">
+                        Click to create the task with the current settings
+                    </div>
                 </div>
 
                 {/* Recurrence Section */}
-                <div className="w-full border rounded-lg p-2 transition-all">
+                <fieldset className="w-full border rounded-lg p-2 transition-all">
+                    <legend className="sr-only">Recurrence settings</legend>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                             <Switch
                                 id="recurrence-toggle"
                                 checked={isRecurring}
-                                onCheckedChange={setIsRecurring}
+                                onCheckedChange={(checked) => {
+                                    setIsRecurring(checked);
+                                    announceToScreenReader(checked ? 'Recurrence enabled' : 'Recurrence disabled');
+                                }}
+                                aria-describedby="recurrence-description"
                             />
                             <Label htmlFor="recurrence-toggle" className="cursor-pointer">
                                 {isRecurring ? "Recurring Task" : "Make recurring?"}
                             </Label>
+                        </div>
+                        <div id="recurrence-description" className="sr-only">
+                            Toggle to make this task repeat on a schedule
                         </div>
                         {isRecurring && (
                             <Button
@@ -276,30 +415,42 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                 size="sm"
                                 onClick={() => setIsRecurring(!isRecurring)}
                                 className="px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                                aria-label="Toggle recurrence settings"
                             >
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="h-4 w-4" aria-hidden="true" />
                             </Button>
                         )}
                     </div>
 
                     {isRecurring && (
-                        <div className="mt-3 space-y-3">
+                        <div className="mt-3 space-y-3" role="group" aria-label="Recurrence settings">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <Label htmlFor="recurrence-frequency">Repeat</Label>
                                     <Select
                                         value={recurrenceFrequency || undefined}
-                                        onValueChange={(value) => setRecurrenceFrequency(value as RecurrenceFrequency)}>
-                                        <SelectTrigger id="recurrence-frequency" className="w-full mt-1">
+                                        onValueChange={(value) => {
+                                            setRecurrenceFrequency(value as RecurrenceFrequency);
+                                            announceToScreenReader(`Recurrence frequency set to ${value}`);
+                                        }}
+                                    >
+                                        <SelectTrigger
+                                            id="recurrence-frequency"
+                                            className="w-full mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            aria-describedby="frequency-help"
+                                        >
                                             <SelectValue placeholder="Select frequency" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent role="listbox" aria-label="Recurrence frequency options">
                                             <SelectItem value="daily">Daily</SelectItem>
                                             <SelectItem value="weekly">Weekly</SelectItem>
                                             <SelectItem value="monthly">Monthly</SelectItem>
                                             <SelectItem value="yearly">Yearly</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    <div id="frequency-help" className="sr-only">
+                                        Choose how often this task should repeat
+                                    </div>
                                 </div>
 
                                 <div>
@@ -310,23 +461,31 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                             type="number"
                                             min="1"
                                             value={recurrenceInterval}
-                                            onChange={(e) => setRecurrenceInterval(parseInt(e.target.value) || 1)}
-                                            className="w-20"
+                                            onChange={(e) => {
+                                                const value = parseInt(e.target.value) || 1;
+                                                setRecurrenceInterval(value);
+                                                announceToScreenReader(`Interval set to ${value}`);
+                                            }}
+                                            className="w-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            aria-describedby="interval-help"
                                         />
-                                        <span className="ml-2">
+                                        <span className="ml-2" id="interval-label">
                                             {recurrenceFrequency === 'daily' && (recurrenceInterval > 1 ? 'days' : 'day')}
                                             {recurrenceFrequency === 'weekly' && (recurrenceInterval > 1 ? 'weeks' : 'week')}
                                             {recurrenceFrequency === 'monthly' && (recurrenceInterval > 1 ? 'months' : 'month')}
                                             {recurrenceFrequency === 'yearly' && (recurrenceInterval > 1 ? 'years' : 'year')}
                                         </span>
                                     </div>
+                                    <div id="interval-help" className="sr-only">
+                                        Set the interval between repetitions
+                                    </div>
                                 </div>
                             </div>
 
                             {recurrenceFrequency === 'weekly' && (
-                                <div>
-                                    <Label className="block mb-2">On these days</Label>
-                                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                                <fieldset>
+                                    <legend className="block mb-2">On these days</legend>
+                                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2" role="group" aria-label="Days of the week">
                                         {DAYS_OF_WEEK.map((day) => (
                                             <div key={day.value} className="flex items-center space-x-1">
                                                 <Checkbox
@@ -335,12 +494,16 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                                     onCheckedChange={(checked) => {
                                                         if (checked) {
                                                             setSelectedDays([...selectedDays, day.value]);
+                                                            announceToScreenReader(`${day.label} selected`);
                                                         } else {
                                                             setSelectedDays(selectedDays.filter(d => d !== day.value));
+                                                            announceToScreenReader(`${day.label} deselected`);
                                                         }
                                                     }}
+                                                    aria-describedby={`day-${day.value}-label`}
                                                 />
                                                 <Label
+                                                    id={`day-${day.value}-label`}
                                                     htmlFor={`day-${day.value}`}
                                                     className="cursor-pointer text-sm"
                                                 >
@@ -349,7 +512,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                             </div>
                                         ))}
                                     </div>
-                                </div>
+                                </fieldset>
                             )}
 
                             {recurrenceFrequency === 'monthly' && (
@@ -361,9 +524,17 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                         min="1"
                                         max="31"
                                         value={dayOfMonth}
-                                        onChange={(e) => setDayOfMonth(parseInt(e.target.value) || 1)}
-                                        className="w-full mt-1"
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value) || 1;
+                                            setDayOfMonth(value);
+                                            announceToScreenReader(`Day of month set to ${value}`);
+                                        }}
+                                        className="w-full mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        aria-describedby="day-of-month-help"
                                     />
+                                    <div id="day-of-month-help" className="sr-only">
+                                        Choose which day of the month this task should repeat
+                                    </div>
                                 </div>
                             )}
 
@@ -373,11 +544,20 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                         <Label htmlFor="month-of-year">Month</Label>
                                         <Select
                                             value={monthOfYear.toString()}
-                                            onValueChange={(value) => setMonthOfYear(parseInt(value))}>
-                                            <SelectTrigger id="month-of-year" className="w-full mt-1">
+                                            onValueChange={(value) => {
+                                                setMonthOfYear(parseInt(value));
+                                                const monthName = new Date(2000, parseInt(value) - 1).toLocaleString('default', { month: 'long' });
+                                                announceToScreenReader(`Month set to ${monthName}`);
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                id="month-of-year"
+                                                className="w-full mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                aria-describedby="month-help"
+                                            >
                                                 <SelectValue placeholder="Select month" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent role="listbox" aria-label="Month options">
                                                 {[...Array(12)].map((_, i) => (
                                                     <SelectItem key={i + 1} value={(i + 1).toString()}>
                                                         {new Date(2000, i).toLocaleString('default', { month: 'long' })}
@@ -385,6 +565,9 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        <div id="month-help" className="sr-only">
+                                            Choose which month this task should repeat
+                                        </div>
                                     </div>
 
                                     <div>
@@ -395,9 +578,17 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                             min="1"
                                             max="31"
                                             value={dayOfMonth}
-                                            onChange={(e) => setDayOfMonth(parseInt(e.target.value) || 1)}
-                                            className="w-full mt-1"
+                                            onChange={(e) => {
+                                                const value = parseInt(e.target.value) || 1;
+                                                setDayOfMonth(value);
+                                                announceToScreenReader(`Day set to ${value}`);
+                                            }}
+                                            className="w-full mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            aria-describedby="yearly-day-help"
                                         />
+                                        <div id="yearly-day-help" className="sr-only">
+                                            Choose which day of the month for yearly recurrence
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -412,15 +603,18 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                         <Button
                                             variant={"outline"}
                                             className={cn(
-                                                "w-full justify-start text-left font-normal",
+                                                "w-full justify-start text-left font-normal focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
                                                 !recurrenceEndDate && "text-muted-foreground"
                                             )}
+                                            aria-haspopup="dialog"
+                                            aria-expanded={isEndDateCalendarOpen}
+                                            aria-describedby="end-date-help"
                                         >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                                             {recurrenceEndDate ? format(recurrenceEndDate, "PPP") : <span>No end date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <PopoverContent className="w-auto p-0" align="start" role="dialog" aria-label="Select recurrence end date">
                                         <div className="p-2 flex justify-between border-b">
                                             <Button
                                                 variant="ghost"
@@ -428,7 +622,9 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                                 onClick={() => {
                                                     setRecurrenceEndDate(null);
                                                     setIsEndDateCalendarOpen(false);
+                                                    announceToScreenReader('Recurrence end date cleared');
                                                 }}
+                                                aria-label="Clear end date"
                                             >
                                                 Clear
                                             </Button>
@@ -439,6 +635,9 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                             onSelect={(date: Date | undefined) => {
                                                 setRecurrenceEndDate(date || null);
                                                 setIsEndDateCalendarOpen(false);
+                                                if (date) {
+                                                    announceToScreenReader(`Recurrence end date set to ${format(date, "PPP")}`);
+                                                }
                                             }}
                                             initialFocus
                                             disabled={(date) =>
@@ -447,11 +646,14 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                         />
                                     </PopoverContent>
                                 </Popover>
+                                <div id="end-date-help" className="sr-only">
+                                    Optional: Set when the recurrence should stop
+                                </div>
                             </div>
                         </div>
                     )}
-                </div>
-            </div>
+                </fieldset>
+            </fieldset>
         </motion.form>
     );
 };

@@ -271,18 +271,22 @@ export function LoginForm({
                                             <AlertDescription>{successMessage}</AlertDescription>
                                         </Alert>
                                     )}
-                                    <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+                                    <form onSubmit={handleSignIn} className="flex flex-col gap-4" role="form" aria-label="Sign in form" noValidate>
                                         <Button
                                             type="button"
                                             variant="outline"
                                             onClick={handleGithubSignIn}
-                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                                            className="w-full flex items-center gap-2 justify-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white dark:hover:bg-gray-700 hover:bg-gray-100 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                            aria-describedby="github-signin-help"
                                         >
-                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" aria-hidden="true">
                                                 <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor" />
                                             </svg>
                                             Continue with GitHub
                                         </Button>
+                                        <div id="github-signin-help" className="sr-only">
+                                            Sign in using your GitHub account for quick access
+                                        </div>
                                         {/* <Button
                                             type="button"
                                             variant="outline"
@@ -306,7 +310,7 @@ export function LoginForm({
                                                 Email address
                                             </Label>
                                             <div className="relative">
-                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} aria-hidden="true" />
                                                 <Input
                                                     id="email"
                                                     type="email"
@@ -314,9 +318,19 @@ export function LoginForm({
                                                     onChange={handleEmailChange}
                                                     placeholder="you@example.com"
                                                     className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${emailError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                    aria-required="true"
+                                                    aria-invalid={emailError ? 'true' : 'false'}
+                                                    aria-describedby={emailError ? 'email-error' : 'email-help'}
                                                 />
                                             </div>
-                                            {emailError && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{emailError}</p>}
+                                            <div id="email-help" className="sr-only">
+                                                Enter your email address to sign in
+                                            </div>
+                                            {emailError && (
+                                                <p id="email-error" className="text-xs text-red-500 dark:text-red-400 mt-1" role="alert" aria-live="polite">
+                                                    {emailError}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="grid gap-1">
@@ -324,7 +338,7 @@ export function LoginForm({
                                                 Password
                                             </Label>
                                             <div className="relative">
-                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} aria-hidden="true" />
                                                 <Input
                                                     id="password"
                                                     type={showPassword ? "text" : "password"}
@@ -332,20 +346,32 @@ export function LoginForm({
                                                     onChange={handlePasswordChange}
                                                     placeholder="••••••••"
                                                     className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${passwordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                    aria-required="true"
+                                                    aria-invalid={passwordError ? 'true' : 'false'}
+                                                    aria-describedby={passwordError ? 'password-error' : 'password-help'}
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                                    tabIndex={0}
                                                 >
                                                     {showPassword ? (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
                                                     ) : (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
                                                     )}
                                                 </button>
                                             </div>
-                                            {passwordError && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{passwordError}</p>}
+                                            <div id="password-help" className="sr-only">
+                                                Enter your password. Minimum 6 characters required.
+                                            </div>
+                                            {passwordError && (
+                                                <p id="password-error" className="text-xs text-red-500 dark:text-red-400 mt-1" role="alert" aria-live="polite">
+                                                    {passwordError}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="text-right">
@@ -357,20 +383,24 @@ export function LoginForm({
                                         <Button
                                             disabled={loading}
                                             type="submit"
-                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200"
+                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            aria-describedby="submit-button-help"
                                         >
                                             {loading ? (
                                                 <>
-                                                    <Loader className="h-4 w-4 animate-spin" />
-                                                    Signing in...
+                                                    <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                                    <span>Signing in...</span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    Sign In
-                                                    <ArrowRight className="w-4 h-4" />
+                                                    <span>Sign In</span>
+                                                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
                                                 </>
                                             )}
                                         </Button>
+                                        <div id="submit-button-help" className="sr-only">
+                                            Submit the sign in form with your email and password
+                                        </div>
                                     </form>
                                 </CardContent>
                                 <CardFooter className="flex flex-col space-y-4 pb-6">
