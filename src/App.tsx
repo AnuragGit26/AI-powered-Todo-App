@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
@@ -33,6 +33,8 @@ import { Link } from "react-router-dom";
 import type { Todo } from "./types";
 import { pomodoroService } from "./services/pomodoroService";
 import { useBillingStore, initializeFreeTierSubscription } from "./store/billingStore";
+
+const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
     const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
@@ -337,10 +339,6 @@ const App: React.FC = () => {
 
             <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8 md:min-h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] md:pb-32 lg:pb-40">
                 <div className="w-full sm:w-4/5 md:w-3/5 mx-auto">
-                    <div className="flex justify-start -mt-28 mb-1">
-                        <Logo size={120} />
-                    </div>
-
                     {/* Create Task Button for All Screens */}
                     <div className="w-full mb-4">
                         <Button
@@ -385,8 +383,9 @@ const App: React.FC = () => {
             {isLargeScreen && (
                 <div className="fixed top-16 right-0 max-h-full w-72 lg:w-80 p-4 overflow-y-auto z-10 pr-5">
                     <div className="space-y-4">
-                        <TaskAnalytics />
-                        <ProductivityTrends />
+                        <Suspense fallback={<div>Loading Analytics...</div>}>
+                            <AnalyticsDashboard />
+                        </Suspense>
                     </div>
                 </div>
             )}
@@ -421,8 +420,9 @@ const App: React.FC = () => {
                                 </Button>
                             </div>
                             <div className="space-y-4 px-1">
-                                <TaskAnalytics />
-                                <ProductivityTrends />
+                                <Suspense fallback={<div>Loading Analytics...</div>}>
+                                    <AnalyticsDashboard />
+                                </Suspense>
                             </div>
                         </motion.div>
                     </motion.div>

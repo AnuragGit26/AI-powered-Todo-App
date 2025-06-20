@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import viteCompression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), viteCompression()],
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -25,7 +26,6 @@ export default defineConfig({
   build: {
     rollupOptions: {
       // Ensure static assets are properly handled
-      external: [],
       output: {
         // Ensure proper asset naming
         assetFileNames: (assetInfo) => {
