@@ -12,7 +12,7 @@ import {
     Camera, Monitor, Smartphone, Tablet,
     FileEdit, X, MapPin, Clock, CheckCircle2, AlertCircle,
     Calendar, BarChart, TrendingUp, UserCheck, Trash2,
-    Settings, RefreshCw, LogIn, LogOut, Edit
+    Settings, RefreshCw, LogIn, LogOut, Edit, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UserProfilePictureUploader from './UserProfilePictureUploader';
@@ -363,465 +363,579 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         userData.email.charAt(0).toUpperCase();
 
     return (
-        <div className="min-h-screen bg-white/10 dark:bg-transparent p-4 md:p-8">
-            <div className="max-w-4xl mx-auto rounded-xl bg-white dark:bg-gray-900/20 shadow-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
-                <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-600/80 dark:to-purple-600/80">
-                    <div className="flex items-center gap-4">
+        <div className="min-h-screen bg-gradient-to-b from-background to-background/80 dark:from-background dark:to-background/40 p-4 md:p-8">
+            <div className="max-w-5xl mx-auto rounded-xl bg-white dark:bg-gray-900/20 shadow-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
+                {/* Header with gradient background */}
+                <div className="p-8 bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-purple-600/90 dark:from-blue-700/80 dark:via-indigo-700/80 dark:to-purple-700/80">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
                         <div className="relative group">
-                            <Avatar className="h-16 w-16 border-2 border-white">
-                                <AvatarImage src={profilePicture || ''} alt={userData.user_metadata.username || ''} />
-                                <AvatarFallback className="bg-blue-500 text-white text-xl">
-                                    {nameInitial}
-                                </AvatarFallback>
-                            </Avatar>
-                            <button
-                                onClick={() => setShowUploader(true)}
-                                className="absolute bottom-0 right-0 bg-blue-600 p-1 rounded-full border-2 border-white text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="relative"
                             >
-                                <Camera size={14} />
-                            </button>
+                                <Avatar className="h-24 w-24 border-4 border-white/80 shadow-lg">
+                                    <AvatarImage src={profilePicture || ''} alt={userData.user_metadata.username || ''} />
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-3xl">
+                                        {nameInitial}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <button
+                                    onClick={() => setShowUploader(true)}
+                                    className="absolute bottom-1 right-1 bg-blue-600 p-2 rounded-full border-2 border-white text-white opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-blue-700 shadow-md"
+                                >
+                                    <Camera size={16} />
+                                </button>
+                            </motion.div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">
-                                {userData.user_metadata.username || 'Your'}'s Profile
-                            </h1>
-                            <p className="text-blue-100 mt-1">
+                        <div className="text-center md:text-left">
+                            <motion.h1
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ duration: 0.4 }}
+                                className="text-3xl font-bold text-white"
+                            >
+                                {userData.user_metadata.username || 'Your Profile'}
+                            </motion.h1>
+                            <motion.p
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ duration: 0.4, delay: 0.1 }}
+                                className="text-blue-100 mt-2 max-w-md"
+                            >
                                 {userData.user_metadata.bio || 'Manage your account settings and preferences'}
-                            </p>
+                            </motion.p>
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ duration: 0.4, delay: 0.2 }}
+                                className="flex items-center justify-center md:justify-start mt-3 text-sm text-blue-100/80"
+                            >
+                                <Clock className="h-4 w-4 mr-1" />
+                                <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
+                            </motion.div>
                         </div>
                     </div>
                 </div>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full p-6">
-                    <TabsList className="grid grid-cols-5 mb-8 bg-gray-100/50 dark:bg-gray-800/30">
-                        <TabsTrigger value="profile" className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span className="hidden sm:inline">Profile</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="activity" className="flex items-center gap-2">
-                            <Activity className="h-4 w-4" />
-                            <span className="hidden sm:inline">Activity</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="analytics" className="flex items-center gap-2">
-                            <BarChart className="h-4 w-4" />
-                            <span className="hidden sm:inline">Analytics</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="security" className="flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            <span className="hidden sm:inline">Security</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="billing" className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            <span className="hidden sm:inline">Billing</span>
-                        </TabsTrigger>
-                    </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="px-6 pt-6">
+                        <TabsList className="flex flex-wrap justify-center h-auto p-2 mb-6 bg-gray-100/50 dark:bg-gray-800/30 rounded-lg">
+                            <TabsTrigger value="profile" className="flex items-center gap-2 py-3">
+                                <User className="h-4 w-4" />
+                                <span className="hidden sm:inline">Profile</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="activity" className="flex items-center gap-2 py-3">
+                                <Activity className="h-4 w-4" />
+                                <span className="hidden sm:inline">Activity</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="analytics" className="flex items-center gap-2 py-3">
+                                <BarChart className="h-4 w-4" />
+                                <span className="hidden sm:inline">Analytics</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="security" className="flex items-center gap-2 py-3">
+                                <Shield className="h-4 w-4" />
+                                <span className="hidden sm:inline">Security</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="billing" className="flex items-center gap-2 py-3">
+                                <CreditCard className="h-4 w-4" />
+                                <span className="hidden sm:inline">Billing</span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                    <TabsContent value="profile">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <User className="h-5 w-5 text-blue-500" />
-                                    Personal Information
-                                </CardTitle>
-                                <CardDescription>
-                                    Update your account details and personal information
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="email">Email Address</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                value={userData.email}
-                                                disabled
-                                                className="bg-gray-50/50 dark:bg-gray-800/30"
-                                            />
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                {userData.confirmed_at ? 'Verified email address' : 'Email address pending verification'}
-                                            </p>
-                                        </div>
+                    <div className="px-6 pb-6">
+                        <TabsContent value="profile">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Left column - Personal Information */}
+                                <div className="lg:col-span-2">
+                                    <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-xl">
+                                                <User className="h-5 w-5 text-blue-500" />
+                                                Personal Information
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Update your account details and personal information
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                                                    <Input
+                                                        id="email"
+                                                        type="email"
+                                                        value={userData.email}
+                                                        disabled
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                    <div className="flex items-center mt-1.5 text-xs text-gray-500">
+                                                        {userData.confirmed_at ? (
+                                                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+                                                        ) : (
+                                                            <AlertCircle className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
+                                                        )}
+                                                        <span>
+                                                            {userData.confirmed_at ? 'Verified email address' : 'Email address pending verification'}
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                                        <div>
-                                            <Label htmlFor="username">Username</Label>
-                                            <Input
-                                                id="username"
-                                                name="username"
-                                                value={editedData.username}
-                                                onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
-                                                className="bg-gray-50/50 dark:bg-gray-800/30"
-                                            />
-                                        </div>
+                                                <div>
+                                                    <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                                                    <Input
+                                                        id="username"
+                                                        name="username"
+                                                        value={editedData.username}
+                                                        onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                </div>
 
-                                        <div>
-                                            <Label htmlFor="bio">Bio</Label>
-                                            <Textarea
-                                                id="bio"
-                                                name="bio"
-                                                value={editedData.bio}
-                                                onChange={(e) => setEditedData({ ...editedData, bio: e.target.value })}
-                                                className="bg-gray-50/50 dark:bg-gray-800/30 min-h-[120px]"
-                                            />
-                                        </div>
-                                    </div>
+                                                <div className="md:col-span-2">
+                                                    <Label htmlFor="phone-number" className="text-sm font-medium">Phone Number</Label>
+                                                    <Input
+                                                        id="phone-number"
+                                                        name="phone_number"
+                                                        ref={phoneInputRef}
+                                                        value={editedData.phone_number}
+                                                        onChange={(e) => setEditedData({ ...editedData, phone_number: e.target.value })}
+                                                        type="tel"
+                                                        pattern="^\+[0-9]{1,4}[0-9]{6,12}$"
+                                                        title="Phone number must start with a country code (e.g., +91) followed by 6-12 digits"
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                    <div className="flex items-center mt-1.5 text-xs text-gray-500">
+                                                        {userData.user_metadata.phone_verified ? (
+                                                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+                                                        ) : (
+                                                            <AlertCircle className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
+                                                        )}
+                                                        <span>
+                                                            {userData.user_metadata.phone_verified ? 'Verified phone number' : 'Phone number pending verification'}
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="phone-number">Phone Number</Label>
-                                            <Input
-                                                id="phone-number"
-                                                name="phone_number"
-                                                ref={phoneInputRef}
-                                                value={editedData.phone_number}
-                                                onChange={(e) => setEditedData({ ...editedData, phone_number: e.target.value })}
-                                                type="tel"
-                                                pattern="^\+[0-9]{1,4}[0-9]{6,12}$"
-                                                title="Phone number must start with a country code (e.g., +91) followed by 6-12 digits"
-                                                className="bg-gray-50/50 dark:bg-gray-800/30"
-                                            />
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                {userData.user_metadata.phone_verified ? 'Verified phone number' : 'Phone number pending verification'}
-                                            </p>
-                                        </div>
+                                                <div className="md:col-span-2">
+                                                    <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
+                                                    <Textarea
+                                                        id="bio"
+                                                        name="bio"
+                                                        value={editedData.bio}
+                                                        onChange={(e) => setEditedData({ ...editedData, bio: e.target.value })}
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30 min-h-[120px]"
+                                                        placeholder="Tell us a bit about yourself..."
+                                                    />
+                                                </div>
+                                            </div>
 
-                                        <div className="pt-4">
+                                            <div className="flex justify-end pt-2">
+                                                <Button
+                                                    onClick={handleSave}
+                                                    disabled={isLoading}
+                                                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md"
+                                                >
+                                                    {isLoading ? (
+                                                        <>
+                                                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                                                            Saving...
+                                                        </>
+                                                    ) : (
+                                                        <>Save Changes</>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Right column - Profile Picture */}
+                                <div>
+                                    <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-xl">
+                                                <Camera className="h-5 w-5 text-blue-500" />
+                                                Profile Picture
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Update your profile image
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
                                             <div className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-300 dark:border-gray-700/50 rounded-lg bg-gray-50/50 dark:bg-gray-800/30">
-                                                <Avatar className="h-24 w-24 mb-4">
+                                                <Avatar className="h-32 w-32 mb-6 border-2 border-gray-200 dark:border-gray-700">
                                                     <AvatarImage src={profilePicture || ''} alt={userData.user_metadata.username || ''} />
-                                                    <AvatarFallback className="bg-blue-500 text-white text-2xl">
+                                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-4xl">
                                                         {nameInitial}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <Button
                                                     onClick={() => setShowUploader(true)}
-                                                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md"
                                                 >
                                                     <Camera className="mr-2 h-4 w-4" />
-                                                    Change Profile Picture
+                                                    Change Picture
                                                 </Button>
                                             </div>
-                                        </div>
-                                    </div>
+                                        </CardContent>
+                                    </Card>
                                 </div>
+                            </div>
+                        </TabsContent>
 
-                                <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mt-6">
-                                    <Button
-                                        onClick={handleSave}
-                                        disabled={isLoading}
-                                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                                    >
-                                        {isLoading ? 'Saving...' : 'Update Profile'}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="activity">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Activity className="h-5 w-5 text-blue-500" />
-                                    Activity Dashboard
-                                </CardTitle>
-                                <CardDescription>
-                                    Track your account activity and interactions
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {isLoadingActivity ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {/* Stats Cards */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Activities</p>
-                                                        <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                                            {activityStats.totalActivities}
-                                                        </h3>
-                                                    </div>
-                                                    <BarChart className="h-8 w-8 text-blue-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.1 }}
-                                                className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Login Sessions</p>
-                                                        <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                            {activityStats.loginCount}
-                                                        </h3>
-                                                    </div>
-                                                    <UserCheck className="h-8 w-8 text-green-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.2 }}
-                                                className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Profile Updates</p>
-                                                        <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                                            {activityStats.profileUpdates}
-                                                        </h3>
-                                                    </div>
-                                                    <Settings className="h-8 w-8 text-purple-500" />
-                                                </div>
-                                            </motion.div>
-
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.3 }}
-                                                className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-xl"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Task Actions</p>
-                                                        <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                                            {activityStats.taskActions}
-                                                        </h3>
-                                                    </div>
-                                                    <TrendingUp className="h-8 w-8 text-orange-500" />
-                                                </div>
-                                            </motion.div>
+                        <TabsContent value="activity">
+                            <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                <CardHeader className="pb-4">
+                                    <CardTitle className="flex items-center gap-2 text-xl">
+                                        <Activity className="h-5 w-5 text-blue-500" />
+                                        Activity Dashboard
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Track your account activity and interactions
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {isLoadingActivity ? (
+                                        <div className="flex items-center justify-center py-12">
+                                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
                                         </div>
+                                    ) : (
+                                        <div className="space-y-8">
+                                            {/* Stats Cards */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-5 rounded-xl shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Activities</p>
+                                                            <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                                                                {activityStats.totalActivities}
+                                                            </h3>
+                                                        </div>
+                                                        <div className="bg-blue-200/50 dark:bg-blue-700/30 p-3 rounded-lg">
+                                                            <BarChart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
 
-                                        {/* Activity Timeline */}
-                                        <div className="mt-8">
-                                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                                <Calendar className="h-5 w-5 text-blue-500" />
-                                                Activity Timeline
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {activityLogs.map((log, index) => (
-                                                    <motion.div
-                                                        key={log.id}
-                                                        initial={{ opacity: 0, x: -20 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: index * 0.05 }}
-                                                        className="flex items-start gap-4 p-4 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
-                                                    >
-                                                        <div className={`p-2 rounded-full ${getActivityIconStyle(log.activity)}`}>
-                                                            {getActivityIcon(log.activity)}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.1 }}
+                                                    className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-5 rounded-xl shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Login Sessions</p>
+                                                            <h3 className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                                                                {activityStats.loginCount}
+                                                            </h3>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                                {log.activity}
-                                                            </p>
-                                                            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                                <Clock className="h-4 w-4" />
-                                                                {new Date(log.timestamp).toLocaleString()}
-                                                            </p>
+                                                        <div className="bg-green-200/50 dark:bg-green-700/30 p-3 rounded-lg">
+                                                            <UserCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
                                                         </div>
-                                                    </motion.div>
-                                                ))}
+                                                    </div>
+                                                </motion.div>
+
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.2 }}
+                                                    className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-5 rounded-xl shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Profile Updates</p>
+                                                            <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+                                                                {activityStats.profileUpdates}
+                                                            </h3>
+                                                        </div>
+                                                        <div className="bg-purple-200/50 dark:bg-purple-700/30 p-3 rounded-lg">
+                                                            <Settings className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.3 }}
+                                                    className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-5 rounded-xl shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Task Actions</p>
+                                                            <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+                                                                {activityStats.taskActions}
+                                                            </h3>
+                                                        </div>
+                                                        <div className="bg-orange-200/50 dark:bg-orange-700/30 p-3 rounded-lg">
+                                                            <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
                                             </div>
+
+                                            {/* Activity Timeline */}
+                                            <div className="mt-8">
+                                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                                                    <Calendar className="h-5 w-5 text-blue-500" />
+                                                    Activity Timeline
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    {activityLogs.map((log, index) => (
+                                                        <motion.div
+                                                            key={log.id}
+                                                            initial={{ opacity: 0, x: -20 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: index * 0.05 }}
+                                                            className="flex items-start gap-4 p-4 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                                        >
+                                                            <div className={`p-2.5 rounded-full ${getActivityIconStyle(log.activity)}`}>
+                                                                {getActivityIcon(log.activity)}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                                    {log.activity}
+                                                                </p>
+                                                                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                                                                    <Clock className="h-3.5 w-3.5" />
+                                                                    {new Date(log.timestamp).toLocaleString()}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-gray-400 dark:text-gray-600">
+                                                                <ChevronRight className="h-5 w-5" />
+                                                            </div>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {activityLogs.length === 0 && !isLoadingActivity && (
+                                                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/20 rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
+                                                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                                    <p className="text-gray-500 font-medium">No activity recorded yet</p>
+                                                    <p className="text-gray-400 text-sm mt-1">Your actions will appear here as you use the application</p>
+                                                </div>
+                                            )}
                                         </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                                        {activityLogs.length === 0 && !isLoadingActivity && (
-                                            <div className="text-center py-8">
-                                                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                                <p className="text-gray-500">No activity recorded yet</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                        <TabsContent value="analytics">
+                            <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                <CardHeader className="pb-4">
+                                    <CardTitle className="flex items-center gap-2 text-xl">
+                                        <BarChart className="h-5 w-5 text-blue-500" />
+                                        Analytics
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Visualize your productivity and feature usage
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <BillingAnalytics userId={userData.id} />
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                    <TabsContent value="analytics">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart className="h-5 w-5 text-blue-500" />
-                                    Analytics
-                                </CardTitle>
-                                <CardDescription>
-                                    Visualize your productivity and feature usage
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <BillingAnalytics userId={userData.id} />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="security">
-                        <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Shield className="h-5 w-5 text-blue-500" />
-                                    Security & Sessions
-                                </CardTitle>
-                                <CardDescription>
-                                    Manage your password and active login sessions
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
+                        <TabsContent value="security">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Password Change Section */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Change Password</h3>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="current">Current Password</Label>
-                                        <Input
-                                            id="current"
-                                            type="password"
-                                            value={passwordData.current}
-                                            onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="new">New Password</Label>
-                                        <Input
-                                            id="new"
-                                            type="password"
-                                            value={passwordData.new}
-                                            onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="confirm">Confirm Password</Label>
-                                        <Input
-                                            id="confirm"
-                                            type="password"
-                                            value={passwordData.confirm}
-                                            onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                                        />
-                                    </div>
-                                    <Button
-                                        onClick={handlePasswordChange}
-                                        disabled={isLoading}
-                                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                                    >
-                                        {isLoading ? 'Updating...' : 'Update Password'}
-                                    </Button>
-                                    {passwordError && (
-                                        <p className="text-red-500 text-sm">{passwordError}</p>
-                                    )}
-                                    {passwordSuccess && (
-                                        <p className="text-green-500 text-sm">{passwordSuccess}</p>
-                                    )}
+                                <div className="lg:col-span-1">
+                                    <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm h-full">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-xl">
+                                                <Shield className="h-5 w-5 text-blue-500" />
+                                                Password
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Update your password
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <Label htmlFor="current" className="text-sm font-medium">Current Password</Label>
+                                                    <Input
+                                                        id="current"
+                                                        type="password"
+                                                        value={passwordData.current}
+                                                        onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="new" className="text-sm font-medium">New Password</Label>
+                                                    <Input
+                                                        id="new"
+                                                        type="password"
+                                                        value={passwordData.new}
+                                                        onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="confirm" className="text-sm font-medium">Confirm Password</Label>
+                                                    <Input
+                                                        id="confirm"
+                                                        type="password"
+                                                        value={passwordData.confirm}
+                                                        onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                                                        className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {passwordError && (
+                                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-md text-red-600 dark:text-red-400 text-sm flex items-start">
+                                                    <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                    <span>{passwordError}</span>
+                                                </div>
+                                            )}
+
+                                            {passwordSuccess && (
+                                                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-md text-green-600 dark:text-green-400 text-sm flex items-start">
+                                                    <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                    <span>{passwordSuccess}</span>
+                                                </div>
+                                            )}
+
+                                            <Button
+                                                onClick={handlePasswordChange}
+                                                disabled={isLoading}
+                                                className="w-full mt-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md"
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                                                        Updating...
+                                                    </>
+                                                ) : (
+                                                    <>Update Password</>
+                                                )}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
                                 </div>
 
                                 {/* Active Sessions Section */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Active Sessions</h3>
-                                    {sessionLoading ? (
-                                        <div className="flex items-center justify-center py-6 space-x-2 text-gray-500">
-                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                                            <span>Loading sessions...</span>
-                                        </div>
-                                    ) : sessionError ? (
-                                        <div className="flex items-center justify-center py-6 space-x-2 text-red-500">
-                                            <AlertCircle className="h-5 w-5" />
-                                            <span>{sessionError}</span>
-                                        </div>
-                                    ) : sessions.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-6 space-y-2 text-gray-500">
-                                            <Monitor className="h-8 w-8" />
-                                            <span>No active sessions found</span>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {sessions.map((session) => {
-                                                const { device, location, lastActive, isCurrent, deviceIcon } = formatSessionInfo(session);
-                                                return (
-                                                    <motion.div
-                                                        key={session.id}
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        className={`p-4 rounded-xl border ${isCurrent
-                                                            ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800'
-                                                            : 'bg-white dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'
-                                                            } shadow-sm hover:shadow-md transition-shadow`}
-                                                    >
-                                                        <div className="flex items-start justify-between">
-                                                            <div className="flex items-start space-x-4">
-                                                                <div className={`p-2 rounded-lg ${isCurrent
-                                                                    ? 'bg-blue-100 dark:bg-blue-800/40'
-                                                                    : 'bg-gray-100 dark:bg-gray-700/40'
-                                                                    }`}>
-                                                                    {deviceIcon}
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <p className="font-medium">{device}</p>
-                                                                        {isCurrent && (
-                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                                                                Current Device
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                                                                        <MapPin className="h-4 w-4" />
-                                                                        <span>{location}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                                                                        <Clock className="h-4 w-4" />
-                                                                        <span>Last active: {lastActive}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <Button
-                                                                onClick={() => handleSessionTerminate(session.id, isCurrent)}
-                                                                variant={isCurrent ? "default" : "destructive"}
-                                                                size="sm"
-                                                                className={`ml-4 ${isCurrent
-                                                                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                                                                    : ''
-                                                                    }`}
+                                <div className="lg:col-span-2">
+                                    <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-xl">
+                                                <Monitor className="h-5 w-5 text-blue-500" />
+                                                Active Sessions
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Manage your active login sessions across devices
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {sessionLoading ? (
+                                                <div className="flex items-center justify-center py-12">
+                                                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                                                </div>
+                                            ) : sessionError ? (
+                                                <div className="flex items-center justify-center py-8 px-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg text-red-600 dark:text-red-400">
+                                                    <AlertCircle className="h-5 w-5 mr-2" />
+                                                    <span>{sessionError}</span>
+                                                </div>
+                                            ) : sessions.length === 0 ? (
+                                                <div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800/20 rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
+                                                    <Monitor className="h-12 w-12 text-gray-400 mb-3" />
+                                                    <span className="text-gray-500 font-medium">No active sessions found</span>
+                                                    <p className="text-gray-400 text-sm mt-1">Your login sessions will appear here</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {sessions.map((session) => {
+                                                        const { device, location, lastActive, isCurrent, deviceIcon } = formatSessionInfo(session);
+                                                        return (
+                                                            <motion.div
+                                                                key={session.id}
+                                                                initial={{ opacity: 0, y: 10 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                className={`p-4 rounded-xl border ${isCurrent
+                                                                    ? 'bg-blue-50/70 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50'
+                                                                    : 'bg-white dark:bg-gray-800/30 border-gray-100 dark:border-gray-700/50'
+                                                                    } shadow-sm hover:shadow-md transition-all duration-200`}
                                                             >
-                                                                <div className="flex items-center gap-2">
-                                                                    {isCurrent ? (
-                                                                        <>
-                                                                            <LogOut className="h-4 w-4" />
-                                                                            Logout
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <X className="h-4 w-4" />
-                                                                            Terminate
-                                                                        </>
-                                                                    )}
+                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                                                    <div className="flex items-start space-x-4">
+                                                                        <div className={`p-3 rounded-lg ${isCurrent
+                                                                            ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-600 dark:text-blue-400'
+                                                                            : 'bg-gray-100 dark:bg-gray-700/40 text-gray-600 dark:text-gray-400'
+                                                                            }`}>
+                                                                            {deviceIcon}
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex items-center space-x-2">
+                                                                                <p className="font-medium text-gray-900 dark:text-gray-100">{device}</p>
+                                                                                {isCurrent && (
+                                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                                                                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                                                                                        Current
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                                <MapPin className="h-3.5 w-3.5" />
+                                                                                <span>{location}</span>
+                                                                            </div>
+                                                                            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                                <Clock className="h-3.5 w-3.5" />
+                                                                                <span>Last active: {lastActive}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Button
+                                                                        onClick={() => handleSessionTerminate(session.id, isCurrent)}
+                                                                        variant={isCurrent ? "default" : "destructive"}
+                                                                        size="sm"
+                                                                        className={`w-full sm:w-auto ${isCurrent
+                                                                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                                                                            : ''
+                                                                            }`}
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            {isCurrent ? (
+                                                                                <>
+                                                                                    <LogOut className="h-4 w-4" />
+                                                                                    Logout
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <X className="h-4 w-4" />
+                                                                                    Terminate
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </Button>
                                                                 </div>
-                                                            </Button>
-                                                        </div>
-                                                    </motion.div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                                            </motion.div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                            </div>
+                        </TabsContent>
 
-                    <TabsContent value="billing">
-                        <BillingDashboard userId={userData.id} />
-                    </TabsContent>
+                        <TabsContent value="billing">
+                            <BillingDashboard userId={userData.id} />
+                        </TabsContent>
+                    </div>
                 </Tabs>
             </div>
 
@@ -841,9 +955,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                         >
                             <button
                                 onClick={() => setShowUploader(false)}
-                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                             >
-                                <X className="h-4 w-4" />
+                                <X className="h-5 w-5" />
                             </button>
                             <UserProfilePictureUploader
                                 onUploadSuccess={() => {
@@ -867,6 +981,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                             } text-white`}
                     >
                         <div className="flex items-center space-x-2">
+                            {error ? (
+                                <AlertCircle className="h-5 w-5" />
+                            ) : (
+                                <CheckCircle2 className="h-5 w-5" />
+                            )}
                             <span>{error || success}</span>
                             <Button
                                 variant="ghost"
@@ -875,7 +994,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                     setError(null);
                                     setSuccess(null);
                                 }}
-                                className="text-white hover:bg-white/20"
+                                className="text-white hover:bg-white/20 ml-2"
                             >
                                 <X className="h-4 w-4" />
                             </Button>
@@ -899,13 +1018,13 @@ const getActivityIcon = (activity: string) => {
 };
 
 const getActivityIconStyle = (activity: string) => {
-    if (activity.includes('logged in')) return 'bg-green-100 dark:bg-green-900/20 text-green-600';
-    if (activity.includes('logged out')) return 'bg-orange-100 dark:bg-orange-900/20 text-orange-600';
-    if (activity.includes('profile')) return 'bg-blue-100 dark:bg-blue-900/20 text-blue-600';
-    if (activity.includes('Task Created')) return 'bg-purple-100 dark:bg-purple-900/20 text-purple-600';
-    if (activity.includes('Task Deleted')) return 'bg-red-100 dark:bg-red-900/20 text-red-600';
-    if (activity.includes('Updated')) return 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600';
-    return 'bg-gray-100 dark:bg-gray-900/20 text-gray-600';
+    if (activity.includes('logged in')) return 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400';
+    if (activity.includes('logged out')) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400';
+    if (activity.includes('profile')) return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+    if (activity.includes('Task Created')) return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
+    if (activity.includes('Task Deleted')) return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+    if (activity.includes('Updated')) return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400';
+    return 'bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400';
 };
 
 export default UserProfile;

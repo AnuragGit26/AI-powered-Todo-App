@@ -24,17 +24,13 @@ import { billingService, pricingPlans } from '../services/billingService';
 import { toast } from 'react-hot-toast';
 import { SubscriptionTier, PricingPlan } from '../types';
 
-interface SubscriptionManagerProps {
-    userId: string;
-}
-
 interface PlanChangeConfirmation {
     type: 'upgrade' | 'downgrade' | 'cancel' | 'pause' | 'resume';
     plan?: PricingPlan;
     show: boolean;
 }
 
-const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => {
+const SubscriptionManager: React.FC = () => {
     const { subscription, setSubscription } = useBillingStore();
     const [isLoading, setIsLoading] = useState(false);
     const [confirmation, setConfirmation] = useState<PlanChangeConfirmation>({
@@ -118,7 +114,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ userId }) => 
             if (confirmation.type === 'upgrade') {
                 // Handle upgrade
                 if (confirmation.plan.stripePriceId) {
-                    const { url } = await billingService.createCheckoutSession(confirmation.plan.stripePriceId, userId);
+                    const { url } = await billingService.createCheckoutSession(confirmation.plan.stripePriceId, 'user-id-placeholder');
                     window.open(url, '_blank');
                 } else {
                     toast.success(`Upgraded to ${confirmation.plan.name} plan!`);

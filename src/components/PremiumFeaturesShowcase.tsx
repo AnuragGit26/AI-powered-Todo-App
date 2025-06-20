@@ -24,7 +24,8 @@ import {
     CheckCircle2,
     ArrowRight,
     Star,
-    Rocket
+    Rocket,
+    X
 } from 'lucide-react';
 import { useBillingUsage } from '../hooks/useBillingUsage';
 import { toast } from 'react-hot-toast';
@@ -45,6 +46,7 @@ const PremiumFeaturesShowcase: React.FC = () => {
     const [activeDemo, setActiveDemo] = useState<string | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [voiceText, setVoiceText] = useState('');
+    const [activeTab, setActiveTab] = useState('ai-assistant');
 
     // Voice-to-Task Demo
     const VoiceToTaskDemo = () => {
@@ -249,42 +251,29 @@ const PremiumFeaturesShowcase: React.FC = () => {
                         <Users className="h-4 w-4 text-purple-500" />
                         Team Members
                     </h4>
-                    <div className="space-y-2">
-                        {teamMembers.map((member, index) => (
-                            <motion.div
-                                key={member.name}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-center gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg"
-                            >
-                                <span className="text-lg">{member.avatar}</span>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">{member.name}</p>
-                                    <p className="text-xs text-gray-500">{member.tasks} active tasks</p>
+                    <div className="space-y-3">
+                        {teamMembers.map((member) => (
+                            <div key={member.name} className="flex items-center gap-3">
+                                <span className="text-xl">{member.avatar}</span>
+                                <div>
+                                    <p className="font-medium">{member.name}</p>
+                                    <p className="text-sm text-gray-600">{member.tasks} tasks assigned</p>
                                 </div>
-                                <div className={`w-2 h-2 rounded-full ${member.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-                                    }`} />
-                            </motion.div>
+                                <div className={`ml-auto flex items-center gap-1.5 text-xs ${member.status === 'online' ? 'text-green-500' : 'text-orange-500'
+                                    }`}>
+                                    <div className={`w-2 h-2 rounded-full ${member.status === 'online' ? 'bg-green-500' : 'bg-orange-500'
+                                        }`} />
+                                    <span>{member.status}</span>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
-                    <h4 className="font-medium mb-3">Recent Activity</h4>
-                    <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                            <span>👩‍💼</span>
-                            <span>Alice assigned "Design Review" to you</span>
-                            <span className="text-xs text-gray-500 ml-auto">2m ago</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span>👨‍💻</span>
-                            <span>Bob completed "API Integration"</span>
-                            <span className="text-xs text-gray-500 ml-auto">5m ago</span>
-                        </div>
-                    </div>
-                </div>
+                <Button className="w-full bg-purple-500 hover:bg-purple-600">
+                    Invite Team Members
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
             </div>
         );
     };
@@ -292,253 +281,237 @@ const PremiumFeaturesShowcase: React.FC = () => {
     // AI Smart Prioritization Demo
     const SmartPrioritizationDemo = () => {
         const tasks = [
-            { name: 'Client presentation', priority: 'High', aiScore: 95, deadline: '2 hours' },
-            { name: 'Code review', priority: 'Medium', aiScore: 78, deadline: '1 day' },
-            { name: 'Team meeting prep', priority: 'Medium', aiScore: 82, deadline: '4 hours' },
-            { name: 'Documentation update', priority: 'Low', aiScore: 45, deadline: '1 week' },
+            { id: 1, title: 'Finalize Q3 report', priority: 'High', deadline: '2 days' },
+            { id: 2, title: 'Draft marketing email', priority: 'Medium', deadline: '4 days' },
+            { id: 3, title: 'Update server dependencies', priority: 'Low', deadline: '1 week' },
         ];
 
         return (
             <div className="space-y-4">
-                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 p-4 rounded-lg border">
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border">
                     <h4 className="font-medium mb-3 flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-indigo-500" />
-                        AI-Prioritized Tasks
+                        <Brain className="h-4 w-4 text-blue-500" />
+                        AI Prioritization Matrix
                     </h4>
                     <div className="space-y-2">
-                        {tasks.map((task, index) => (
-                            <motion.div
-                                key={task.name}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg"
-                            >
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">{task.name}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <Badge
-                                            variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'default' : 'secondary'}
-                                            className="text-xs"
-                                        >
-                                            {task.priority}
-                                        </Badge>
-                                        <span className="text-xs text-gray-500">Due in {task.deadline}</span>
-                                    </div>
+                        {tasks.map(task => (
+                            <div key={task.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md">
+                                <div>
+                                    <p className="font-medium">{task.title}</p>
+                                    <p className="text-xs text-gray-500">Deadline: {task.deadline}</p>
                                 </div>
-                                <div className="text-right">
-                                    <div className="flex items-center gap-1">
-                                        <Zap className="h-3 w-3 text-yellow-500" />
-                                        <span className="text-sm font-medium">{task.aiScore}</span>
-                                    </div>
-                                    <p className="text-xs text-gray-500">AI Score</p>
-                                </div>
-                            </motion.div>
+                                <Badge variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'secondary' : 'default'}>
+                                    {task.priority}
+                                </Badge>
+                            </div>
                         ))}
                     </div>
-                </div>
+                </Card>
+                <Button variant="outline" className="w-full">
+                    View Full Priority Matrix
+                </Button>
             </div>
         );
     };
 
-    const features: FeatureDemo[] = [
+    const premiumFeatures: FeatureDemo[] = [
         {
             id: 'voice-to-task',
             name: 'Voice-to-Task AI',
-            description: 'Convert speech to intelligent tasks with AI analysis, priority detection, and time estimation',
+            description: 'Convert speech to intelligent tasks with AI analysis, priority detection, and time estimation.',
             icon: <Mic className="h-6 w-6" />,
             category: 'AI Assistant',
-            benefits: [
-                'Natural speech recognition',
-                'Automatic priority detection',
-                'Smart time estimation',
-                'Context-aware task creation'
-            ],
+            benefits: ['Natural speech recognition', 'Automatic priority detection', 'Smart time estimation', 'Context-aware task creation'],
             demoComponent: <VoiceToTaskDemo />,
+            tier: 'premium'
+        },
+        {
+            id: 'smart-prioritization',
+            name: 'AI Smart Prioritization',
+            description: 'Intelligent priority scoring based on deadlines, importance, and workload balancing.',
+            icon: <Brain className="h-6 w-6" />,
+            category: 'AI Assistant',
+            benefits: ['Reduces manual sorting', 'Focuses on high-impact tasks', 'Adapts to changing priorities', 'Balances team workload'],
+            demoComponent: <SmartPrioritizationDemo />,
             tier: 'premium'
         },
         {
             id: 'advanced-analytics',
             name: 'Advanced Analytics',
-            description: 'Deep productivity insights with trend analysis, peak hours detection, and completion predictions',
+            description: 'Gain deeper insights into your productivity with trend analysis, peak performance tracking, and more.',
             icon: <BarChart3 className="h-6 w-6" />,
             category: 'Analytics',
-            benefits: [
-                'Productivity trend analysis',
-                'Peak performance hours',
-                'Completion rate tracking',
-                'Predictive insights'
-            ],
+            benefits: ['Identify productivity patterns', 'Optimize your work schedule', 'Track progress over time', 'Data-driven decision making'],
             demoComponent: <AdvancedAnalyticsDemo />,
             tier: 'premium'
         },
         {
             id: 'offline-sync',
             name: 'Offline Sync',
-            description: 'Work offline with full functionality and automatic sync when connected',
+            description: 'Work seamlessly without an internet connection. Your data syncs automatically when you\'re back online.',
             icon: <RefreshCw className="h-6 w-6" />,
             category: 'Sync',
-            benefits: [
-                'Full offline functionality',
-                'Automatic conflict resolution',
-                'Real-time sync when online',
-                'Local data encryption'
-            ],
+            benefits: ['Uninterrupted workflow', 'Work from anywhere', 'Automatic data synchronization', 'Peace of mind'],
             demoComponent: <OfflineSyncDemo />,
             tier: 'premium'
         },
         {
             id: 'team-collaboration',
             name: 'Team Collaboration',
-            description: 'Real-time task sharing, team progress tracking, and assignment delegation',
+            description: 'Collaborate with your team in real-time with shared projects, task assignments, and progress tracking.',
             icon: <Users className="h-6 w-6" />,
             category: 'Collaboration',
-            benefits: [
-                'Real-time collaboration',
-                'Task assignment & delegation',
-                'Team progress tracking',
-                'Activity notifications'
-            ],
+            benefits: ['Centralized team projects', 'Clear task ownership', 'Real-time progress updates', 'Improved team communication'],
             demoComponent: <TeamCollaborationDemo />,
-            tier: 'premium'
+            tier: 'enterprise'
         },
         {
-            id: 'smart-prioritization',
-            name: 'AI Smart Prioritization',
-            description: 'Intelligent priority scoring based on deadlines, importance, and workload balancing',
-            icon: <Brain className="h-6 w-6" />,
-            category: 'AI Assistant',
-            benefits: [
-                'Intelligent priority scoring',
-                'Deadline-aware scheduling',
-                'Workload balancing',
-                'Context-based recommendations'
-            ],
-            demoComponent: <SmartPrioritizationDemo />,
-            tier: 'premium'
-        }
+            id: 'priority-support',
+            name: 'Priority Support',
+            description: 'Get dedicated, fast-tracked support from our expert team to resolve issues and answer questions quickly.',
+            icon: <Shield className="h-6 w-6" />,
+            category: 'Support',
+            benefits: ['Skip the queue', 'Expert assistance', '24/7 availability', 'Personalized solutions'],
+            demoComponent: <></>, // No demo component for support
+            tier: 'enterprise'
+        },
     ];
 
-    const categories = [...new Set(features.map(f => f.category))];
+    const handleTryDemo = (feature: FeatureDemo) => {
+        if (canUseFeature(feature.id)) {
+            setActiveDemo(feature.id);
+        } else {
+            showUpgradePrompt(feature.id, `Upgrade to ${feature.tier} to try this feature`);
+        }
+    };
+
+    const categories = Array.from(new Set(premiumFeatures.map(f => f.category)));
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
-                    <Crown className="h-6 w-6 text-yellow-500" />
+                <h2 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-3">
+                    <Crown className="h-8 w-8 text-yellow-500" />
                     Premium Features
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                    Unlock powerful productivity features with our premium plans
+                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Unlock powerful productivity features with our premium plans.
+                    Collaborate, analyze, and achieve more.
                 </p>
             </div>
 
-            <Tabs defaultValue={categories[0]} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    {categories.map((category) => (
-                        <TabsTrigger key={category} value={category}>
+            <Tabs defaultValue="ai-assistant" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="flex flex-wrap h-auto p-2 mb-6 bg-gray-100/50 dark:bg-gray-800/30 rounded-lg">
+                    {categories.map(category => (
+                        <TabsTrigger
+                            key={category}
+                            value={category.toLowerCase().replace(' ', '-')}
+                            className="flex-grow md:flex-grow-0"
+                        >
                             {category}
                         </TabsTrigger>
                     ))}
                 </TabsList>
 
-                {categories.map((category) => (
-                    <TabsContent key={category} value={category} className="space-y-4">
-                        <div className="grid gap-4">
-                            {features
-                                .filter(feature => feature.category === category)
+                {categories.map(category => (
+                    <TabsContent
+                        key={category}
+                        value={category.toLowerCase().replace(' ', '-')}
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {premiumFeatures
+                                .filter(f => f.category === category)
                                 .map((feature) => (
-                                    <Card key={feature.id} className="overflow-hidden">
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg text-white">
-                                                        {feature.icon}
+                                    <motion.div
+                                        key={feature.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <Card className="h-full bg-white dark:bg-gray-800/20">
+                                            <CardHeader>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 rounded-lg">
+                                                            {feature.icon}
+                                                        </div>
+                                                        <CardTitle className="text-lg">{feature.name}</CardTitle>
                                                     </div>
-                                                    <div>
-                                                        <CardTitle className="flex items-center gap-2">
-                                                            {feature.name}
-                                                            <Badge variant="secondary" className="capitalize">
-                                                                {feature.tier}
-                                                            </Badge>
-                                                        </CardTitle>
-                                                        <CardDescription>
-                                                            {feature.description}
-                                                        </CardDescription>
-                                                    </div>
+                                                    <Badge variant={feature.tier === 'premium' ? 'default' : 'secondary'} className="capitalize">
+                                                        {feature.tier}
+                                                    </Badge>
                                                 </div>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setActiveDemo(activeDemo === feature.id ? null : feature.id)}
-                                                >
-                                                    {activeDemo === feature.id ? 'Hide Demo' : 'Try Demo'}
-                                                </Button>
-                                            </div>
-                                        </CardHeader>
+                                                <CardDescription className="pt-2">{feature.description}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <ul className="space-y-2">
+                                                    {feature.benefits.map((benefit, index) => (
+                                                        <li key={index} className="flex items-center gap-2 text-sm">
+                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                            <span>{benefit}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
 
-                                        <CardContent>
-                                            <div className="grid md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <h4 className="font-medium mb-2">Key Benefits</h4>
-                                                    <ul className="space-y-1">
-                                                        {feature.benefits.map((benefit, index) => (
-                                                            <li key={index} className="flex items-center gap-2 text-sm">
-                                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                                {benefit}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        onClick={() => handleTryDemo(feature)}
+                                                        className="w-full"
+                                                        disabled={feature.tier === 'enterprise' && tier !== 'enterprise'}
+                                                    >
+                                                        <Sparkles className="h-4 w-4 mr-2" />
+                                                        Try Demo
+                                                    </Button>
                                                 </div>
-
-                                                <AnimatePresence>
-                                                    {activeDemo === feature.id && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, height: 0 }}
-                                                            animate={{ opacity: 1, height: 'auto' }}
-                                                            exit={{ opacity: 0, height: 0 }}
-                                                            className="md:col-span-2"
-                                                        >
-                                                            <div className="border-t pt-4">
-                                                                <h4 className="font-medium mb-3 flex items-center gap-2">
-                                                                    <Sparkles className="h-4 w-4 text-purple-500" />
-                                                                    Interactive Demo
-                                                                </h4>
-                                                                {feature.demoComponent}
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
                                 ))}
                         </div>
                     </TabsContent>
                 ))}
             </Tabs>
 
-            {tier === 'free' && (
-                <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
-                    <CardContent className="p-6">
-                        <div className="text-center">
-                            <Rocket className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold mb-2">Ready to unlock these features?</h3>
-                            <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                Upgrade to Premium and boost your productivity with AI-powered features
-                            </p>
-                            <Button
-                                onClick={() => window.dispatchEvent(new CustomEvent('showUpgradeModal'))}
-                                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                            >
-                                <Crown className="h-4 w-4 mr-2" />
-                                Upgrade to Premium
-                                <ArrowRight className="h-4 w-4 ml-2" />
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+            <AnimatePresence>
+                {activeDemo && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setActiveDemo(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Card className="border-0">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-3">
+                                            <Sparkles className="h-5 w-5 text-yellow-500" />
+                                            {premiumFeatures.find(f => f.id === activeDemo)?.name} Demo
+                                        </CardTitle>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setActiveDemo(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {premiumFeatures.find(f => f.id === activeDemo)?.demoComponent}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
