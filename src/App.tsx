@@ -219,62 +219,6 @@ const App: React.FC = () => {
 
                     // Type assertion to handle the subtasks correctly
                     setTodos(tasksWithSubtasks as unknown as Todo[]);
-
-                    // Auto-calculate AI priority scores in the background
-                    setTimeout(async () => {
-                        try {
-                            // Check if user data is available
-                            const currentUserId = localStorage.getItem('userId');
-                            if (!currentUserId) {
-                                console.warn('User ID not available for AI score calculation');
-                                return;
-                            }
-
-                            // Set user data in store if not already set
-                            const storeState = useTodoStore.getState();
-                            if (!storeState.userData?.userId) {
-                                setUserData({ userId: currentUserId });
-                                console.log('Set user data for AI calculations:', currentUserId);
-                            }
-
-                            // Only calculate if there are tasks without AI scores
-                            const tasksWithoutScores = tasksWithSubtasks.filter((task: any) => !task.priorityScore);
-                            if (tasksWithoutScores.length > 0) {
-                                setIsAutoCalculating(true);
-                                console.log(`Starting auto AI calculation for ${tasksWithoutScores.length} tasks...`);
-
-                                // Show toast notification
-                                toast({
-                                    title: "AI Analysis Started",
-                                    description: `Calculating priority scores for ${tasksWithoutScores.length} tasks... This may take a few minutes.`,
-                                    duration: 4000,
-                                });
-
-                                await calculateAllPriorityScores();
-
-                                // Check if scores were actually calculated
-                                const updatedState = useTodoStore.getState();
-                                const tasksWithScores = updatedState.todos.filter(task => task.priorityScore);
-                                console.log(`✅ AI priority scores calculated automatically. Tasks with scores: ${tasksWithScores.length}`);
-
-                                // Force a state update to trigger re-render
-                                setTodos([...updatedState.todos]);
-
-                                // Show success toast
-                                toast({
-                                    title: "AI Analysis Complete",
-                                    description: `Priority scores calculated for ${tasksWithScores.length} tasks`,
-                                    duration: 2000,
-                                });
-
-                                setIsAutoCalculating(false);
-                            } else {
-                                console.log('All tasks already have AI priority scores');
-                            }
-                        } catch (error) {
-                            console.error('Auto AI score calculation failed:', error);
-                        }
-                    }, 3000); // Conservative delay to ensure user data is available and avoid immediate rate limits
                 } catch (error: unknown) {
                     console.error("Error loading data:", error);
 
@@ -356,7 +300,7 @@ const App: React.FC = () => {
     }, []);
 
     // Show a more streamlined loading state
-    if (isAuthChecking) {
+    if (isAuthChecking && !isDataLoaded) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8">
                 <div className="text-xl sm:text-2xl md:text-3xl text-center text-gray-700 dark:text-gray-300 responsive-text">
