@@ -37,7 +37,7 @@ import { useBillingStore, initializeFreeTierSubscription } from "./store/billing
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
-    const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
+    const { theme, setTodos, setUserToken, setTheme, calculateAllPriorityScores } = useTodoStore();
     const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -218,6 +218,22 @@ const App: React.FC = () => {
 
                     // Type assertion to handle the subtasks correctly
                     setTodos(tasksWithSubtasks as unknown as Todo[]);
+
+                    // Auto-calculate AI priority scores in the background
+                    setTimeout(async () => {
+                        try {
+                            // Only calculate if there are tasks without AI scores
+                            const tasksWithoutScores = tasksWithSubtasks.filter((task: any) => !task.priorityScore);
+                            if (tasksWithoutScores.length > 0) {
+                                await calculateAllPriorityScores();
+                                console.log(`AI priority scores calculated automatically for ${tasksWithoutScores.length} tasks`);
+                            } else {
+                                console.log('All tasks already have AI priority scores');
+                            }
+                        } catch (error) {
+                            console.warn('Auto AI score calculation failed:', error);
+                        }
+                    }, 1000); // Small delay to let UI settle
                 } catch (error: unknown) {
                     console.error("Error loading data:", error);
 
@@ -337,10 +353,10 @@ const App: React.FC = () => {
                 speed={0.9}
             />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-start mt-24 sm:mt-28 md:mt-32 p-4 sm:p-6 md:p-8 md:min-h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] md:pb-32 lg:pb-40">
-                <div className="w-full sm:w-4/5 md:w-3/5 mx-auto">
+            <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                <div className="max-w-4xl mx-auto space-y-6">
                     {/* Create Task Button for All Screens */}
-                    <div className="w-full mb-4">
+                    <div className="w-full">
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}
                             className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
@@ -375,6 +391,7 @@ const App: React.FC = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
                     <TodoList isLoading={!isDataLoaded} />
                 </div>
             </div>
@@ -473,7 +490,9 @@ const App: React.FC = () => {
                                     amplitude={2.5}
                                     speed={0.9}
                                 />
-                                {session?.user && <UserProfile userData={session.user} />}
+                                <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                    {session?.user && <UserProfile userData={session.user} />}
+                                </div>
                                 <Footer />
                             </div>
                         </ProtectedRoute>
@@ -492,7 +511,7 @@ const App: React.FC = () => {
                     element={
                         <ProtectedRoute isAuthenticated={!!session}>
                             <div
-                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-auto"
                                 style={{
                                     "--primary-color": theme.primaryColor,
                                     "--secondary-color": theme.secondaryColor,
@@ -504,7 +523,7 @@ const App: React.FC = () => {
                                     amplitude={2.5}
                                     speed={0.9}
                                 />
-                                <div className="container mx-auto px-4 py-8">
+                                <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
                                     <div className="max-w-2xl mx-auto">
                                         <PomodoroTimer />
                                     </div>

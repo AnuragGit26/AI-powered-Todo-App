@@ -18,7 +18,13 @@ import {
     Tag,
     Trash2,
     Wrench,
-    AlertCircle
+    AlertCircle,
+    Brain,
+    Target,
+    Zap,
+    Users,
+    TrendingUp,
+    RefreshCw
 } from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
 import { Todo } from "../types";
@@ -35,10 +41,11 @@ import useDebounce from "../hooks/useDebounce.ts";
 import { getUserRegion } from "../hooks/getUserRegion.ts";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
+import { useAIPriority } from "../hooks/useAIPriority";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
-    const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore } = useTodoStore();
+    const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore, calculatePriorityScore } = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +56,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [editedStatus, setEditedStatus] = useState(todo.status);
     const [analysisLoading, setAnalysisLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [priorityScoreLoading, setPriorityScoreLoading] = useState(false);
 
 
     const renderDueDate = (dueDate: Date | string | null) => {
@@ -64,6 +72,111 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
             return <span className="text-left">{`${daysLeft} days left`}</span>;
         }
+    };
+
+    const handleCalculatePriorityScore = async () => {
+        setPriorityScoreLoading(true);
+        try {
+            await calculatePriorityScore(todo.id);
+        } catch (error) {
+            console.error('Error calculating priority score:', error);
+        } finally {
+            setPriorityScoreLoading(false);
+        }
+    };
+
+    const renderPriorityScore = () => {
+        if (!todo.priorityScore) {
+            return (
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleCalculatePriorityScore}
+                    disabled={priorityScoreLoading}
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all duration-200"
+                >
+                    {priorityScoreLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                    ) : (
+                        <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    )}
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                        {priorityScoreLoading ? 'Calculating...' : 'Get AI Priority Score'}
+                    </span>
+                </motion.button>
+            );
+        }
+
+        const score = todo.priorityScore;
+        const isStale = new Date().getTime() - new Date(score.lastUpdated).getTime() > 3600000; // 1 hour
+
+        const getScoreColor = (overall: number) => {
+            if (overall >= 80) return 'from-red-500 to-pink-600';
+            if (overall >= 60) return 'from-orange-500 to-red-500';
+            if (overall >= 40) return 'from-yellow-500 to-orange-500';
+            if (overall >= 20) return 'from-green-500 to-yellow-500';
+            return 'from-gray-400 to-green-500';
+        };
+
+        const getScoreLabel = (overall: number) => {
+            if (overall >= 80) return 'Critical';
+            if (overall >= 60) return 'High';
+            if (overall >= 40) return 'Medium';
+            if (overall >= 20) return 'Low';
+            return 'Minimal';
+        };
+
+        return (
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className={`px-3 py-1.5 bg-gradient-to-r ${getScoreColor(score.overall)} text-white rounded-lg shadow-sm`}>
+                            <div className="flex items-center gap-1.5">
+                                <Brain className="w-4 h-4" />
+                                <span className="text-sm font-bold">{score.overall}</span>
+                                <span className="text-xs opacity-90">{getScoreLabel(score.overall)}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <span>Confidence: {score.confidence}%</span>
+                            {isStale && (
+                                <button
+                                    onClick={handleCalculatePriorityScore}
+                                    disabled={priorityScoreLoading}
+                                    className="ml-1 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    title="Score is older than 1 hour - click to refresh"
+                                >
+                                    <RefreshCw className={`w-3 h-3 ${priorityScoreLoading ? 'animate-spin' : ''}`} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded">
+                        <Target className="w-3 h-3 text-blue-600" />
+                        <span className="text-blue-700 dark:text-blue-300">Impact: {score.impactScore}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded">
+                        <Zap className="w-3 h-3 text-green-600" />
+                        <span className="text-green-700 dark:text-green-300">Effort: {score.effortScore}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded">
+                        <Clock className="w-3 h-3 text-red-600" />
+                        <span className="text-red-700 dark:text-red-300">Urgency: {score.urgencyScore}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 rounded">
+                        <Users className="w-3 h-3 text-purple-600" />
+                        <span className="text-purple-700 dark:text-purple-300">Deps: {score.dependencyScore}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 dark:bg-orange-900/20 rounded">
+                        <TrendingUp className="w-3 h-3 text-orange-600" />
+                        <span className="text-orange-700 dark:text-orange-300">Load: {score.workloadScore}</span>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const toggleInsights = (id: string) => {
@@ -97,13 +210,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
 
     const getStatusClasses = (status: string) => {
         if (status === "Not Started") {
-            return `cursor-pointer text-sm font-semibold bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-100 text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm border border-gray-300 dark:border-gray-500`;
+            return `cursor-pointer text-sm font-semibold bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-100 text-center rounded-full px-2 sm:px-3 py-1 shadow-sm border border-gray-300 dark:border-gray-500`;
         } else if (status === "In progress") {
-            return `cursor-pointer text-sm font-semibold theme-secondary-bg text-white text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
+            return `cursor-pointer text-sm font-semibold theme-secondary-bg text-white text-center rounded-full px-2 sm:px-3 py-1 shadow-sm`;
         } else if (status === "Completed") {
-            return `cursor-pointer text-sm font-semibold theme-accent-bg text-white text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
+            return `cursor-pointer text-sm font-semibold theme-accent-bg text-white text-center rounded-full px-2 sm:px-3 py-1 shadow-sm`;
         }
-        return `cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 truncate shadow-sm`;
+        return `cursor-pointer text-sm font-semibold text-center rounded-full px-2 sm:px-3 py-1 shadow-sm`;
     };
 
     const getPriorityColor = (priority: string) => {
@@ -388,7 +501,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         </div>
 
                         <div className="flex-1 min-w-[90px] flex items-center justify-center">
-                            <span onClick={toggleStatus} className={`task-status ${getStatusClasses(todo.status)} text-xs sm:text-sm w-24 sm:w-26 inline-block overflow-hidden whitespace-nowrap`}>
+                            <span onClick={toggleStatus} className={`task-status ${getStatusClasses(todo.status)} text-xs sm:text-sm inline-block`}>
                                 {todo.status}
                             </span>
                         </div>
@@ -400,6 +513,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                             <div className="flex-1 flex items-center justify-center text-xs sm:text-sm">
                                 {renderRecurrenceInfo()}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Row 3.5: AI Priority Score */}
+                    {!todo.completed && (
+                        <div className="mt-2">
+                            {renderPriorityScore()}
                         </div>
                     )}
 
@@ -800,11 +920,20 @@ const extractDifficultyExplanation = (difficultyText: string): string => {
 
 const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     const todos = useTodoStore((state) => state.todos);
-    const [sortCriteria, setSortCriteria] = useState<"date" | "priority">("date");
+    const { calculateAllPriorityScores, getSortedTodosByPriority, refreshPriorityScores } = useTodoStore();
+    const [sortCriteria, setSortCriteria] = useState<"date" | "priority" | "ai_priority">("date");
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'uncompleted'>('all');
+    const [priorityBatchLoading, setPriorityBatchLoading] = useState(false);
+
+    // Initialize AI Priority management
+    const { getPriorityRecommendations } = useAIPriority();
 
     const sortedTodos = useMemo(() => {
+        if (sortCriteria === "ai_priority") {
+            return getSortedTodosByPriority();
+        }
+
         return [...todos].sort((a, b) => {
             if (sortCriteria === "date") {
                 return (
@@ -817,7 +946,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
             }
             return 0;
         });
-    }, [todos, sortCriteria]);
+    }, [todos, sortCriteria, getSortedTodosByPriority]);
 
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -835,8 +964,91 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
         setSearchQuery(e.target.value);
     }, []);
 
+    const handleBatchPriorityCalculation = async () => {
+        setPriorityBatchLoading(true);
+        try {
+            await calculateAllPriorityScores();
+        } catch (error) {
+            console.error('Error calculating batch priority scores:', error);
+        } finally {
+            setPriorityBatchLoading(false);
+        }
+    };
+
+    const handleRefreshPriorityScores = async () => {
+        setPriorityBatchLoading(true);
+        try {
+            await refreshPriorityScores();
+        } catch (error) {
+            console.error('Error refreshing priority scores:', error);
+        } finally {
+            setPriorityBatchLoading(false);
+        }
+    };
+
+    // Get AI priority recommendations
+    const recommendations = useMemo(() => {
+        return getPriorityRecommendations();
+    }, [getPriorityRecommendations]);
+
+    const hasAIScores = useMemo(() => {
+        return todos.some(todo => todo.priorityScore);
+    }, [todos]);
+
     return (
-        <div className="flex flex-col h-full min-h-[calc(100vh-240px)] md:min-h-[60vh] lg:min-h-[70vh] md:mb-12 lg:mb-20 md:pb-8 lg:pb-12">
+        <div className="w-full space-y-4">
+            {/* AI Priority Recommendations */}
+            {hasAIScores && sortCriteria === "ai_priority" && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200 dark:border-purple-700/50"
+                >
+                    <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center gap-2">
+                        <Brain className="w-5 h-5" />
+                        AI Priority Insights
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                        {recommendations.topPriority.length > 0 && (
+                            <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 dark:border-red-800/30">
+                                <h4 className="font-medium text-red-800 dark:text-red-200 mb-1 flex items-center gap-1">
+                                    <Target className="w-4 h-4" />
+                                    Top Priority
+                                </h4>
+                                <p className="text-red-700 dark:text-red-300">{recommendations.topPriority[0]?.title}</p>
+                            </div>
+                        )}
+                        {recommendations.quickWins.length > 0 && (
+                            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-800/30">
+                                <h4 className="font-medium text-green-800 dark:text-green-200 mb-1 flex items-center gap-1">
+                                    <Zap className="w-4 h-4" />
+                                    Quick Win
+                                </h4>
+                                <p className="text-green-700 dark:text-green-300">{recommendations.quickWins[0]?.title}</p>
+                            </div>
+                        )}
+                        {recommendations.urgent.length > 0 && (
+                            <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-100 dark:border-orange-800/30">
+                                <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-1 flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    Most Urgent
+                                </h4>
+                                <p className="text-orange-700 dark:text-orange-300">{recommendations.urgent[0]?.title}</p>
+                            </div>
+                        )}
+                        {recommendations.blockers.length > 0 && (
+                            <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-800/30">
+                                <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-1 flex items-center gap-1">
+                                    <Users className="w-4 h-4" />
+                                    Unblocks Others
+                                </h4>
+                                <p className="text-purple-700 dark:text-purple-300">{recommendations.blockers[0]?.title}</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            )}
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -855,7 +1067,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                             />
                             <Search className="absolute top-2.5 left-3 w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </div>
-                        <div className="flex justify-start sm:justify-end gap-2">
+                        <div className="flex justify-start sm:justify-end gap-2 flex-wrap">
                             <Select
                                 value={filterStatus}
                                 onValueChange={(e) => setFilterStatus(e as 'all' | 'completed' | 'uncompleted')}
@@ -871,16 +1083,52 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                             </Select>
                             <Select
                                 value={sortCriteria}
-                                onValueChange={(e) => setSortCriteria(e as "date" | "priority")}
+                                onValueChange={(e) => setSortCriteria(e as "date" | "priority" | "ai_priority")}
                             >
-                                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                <SelectTrigger className="w-full sm:w-[200px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
                                     <SelectValue placeholder="Sort By" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="date">Sort by Date</SelectItem>
                                     <SelectItem value="priority">Sort by Priority</SelectItem>
+                                    <SelectItem value="ai_priority">Sort by AI Priority</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {/* AI Priority Actions */}
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleBatchPriorityCalculation}
+                                    disabled={priorityBatchLoading}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-700 dark:border-gray-500"
+                                    title="Calculate AI priority scores for all tasks"
+                                >
+                                    {priorityBatchLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Brain className="w-4 h-4" />
+                                    )}
+                                    <span className="whitespace-nowrap">AI Score All</span>
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleRefreshPriorityScores}
+                                    disabled={priorityBatchLoading}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-500 dark:border-gray-600"
+                                    title="Refresh stale AI priority scores"
+                                >
+                                    {priorityBatchLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="w-4 h-4" />
+                                    )}
+                                    <span className="whitespace-nowrap">Refresh Scores</span>
+                                </motion.button>
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -889,35 +1137,31 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                     </div>
                 )}
             </motion.div>
-            <div className="flex-grow relative overflow-hidden">
-                <div className="absolute inset-0 overflow-y-auto pr-2 pb-4 pl-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-                    <AnimatePresence>
-                        {isLoading ? (
-                            <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                                <div className="flex items-center space-x-2">
-                                    <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-                                    <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
-                                </div>
-                            </div>
+            <AnimatePresence>
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+                            <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {filteredTodos.length > 0 ? (
+                            filteredTodos.map((todo) => (
+                                <TodoItem key={todo.id} todo={todo} />
+                            ))
                         ) : (
-                            <div className="todo-list-scroll space-y-2 mb-4">
-                                {filteredTodos.length > 0 ? (
-                                    filteredTodos.map((todo) => (
-                                        <TodoItem key={todo.id} todo={todo} />
-                                    ))
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                                        <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            {searchQuery ? "Try a different search term" : "Create a task to get started"}
-                                        </p>
-                                    </div>
-                                )}
+                            <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                                <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
+                                <p className="text-gray-500 dark:text-gray-400">
+                                    {searchQuery ? "Try a different search term" : "Create a task to get started"}
+                                </p>
                             </div>
                         )}
-                    </AnimatePresence>
-                </div>
-            </div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

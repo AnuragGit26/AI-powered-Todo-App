@@ -29,6 +29,33 @@ export interface TodoAnalysis {
   resourceLinks?: ResourceLink[];
 }
 
+// AI Priority Scoring System
+export interface PriorityScore {
+  overall: number; // 0-100 overall priority score
+  impactScore: number; // 0-100 based on task importance and business value
+  effortScore: number; // 0-100 based on complexity and estimated time
+  urgencyScore: number; // 0-100 based on deadline proximity with buffer
+  dependencyScore: number; // 0-100 based on blocking relationships
+  workloadScore: number; // 0-100 based on current capacity
+  lastUpdated: Date;
+  confidence: number; // 0-100 AI confidence in the scoring
+}
+
+export interface TaskDependency {
+  taskId: string;
+  type: 'blocks' | 'blocked_by' | 'related_to';
+  createdAt: Date;
+}
+
+export interface HistoricalPattern {
+  averageCompletionTime: number; // in hours
+  successRate: number; // 0-1 percentage of completed tasks
+  timeOfDayPreference: number[]; // 0-23 hours when user is most productive
+  dayOfWeekPreference: number[]; // 0-6 days when user is most productive
+  similarTasksCompleted: number;
+  lastUpdated: Date;
+}
+
 export interface Todo {
   id: string;
   title: string;
@@ -45,6 +72,13 @@ export interface Todo {
   completedAt?: Date | null;
   recurrence?: RecurrenceConfig;
   lastRecurrenceDate?: Date | null;
+
+  // AI Priority System
+  priorityScore?: PriorityScore;
+  dependencies?: TaskDependency[];
+  impactLevel?: 'low' | 'medium' | 'high' | 'critical'; // Business impact
+  effortLevel?: 'low' | 'medium' | 'high' | 'very_high'; // Required effort
+  tags?: string[]; // For categorization and pattern recognition
 }
 
 export interface SubTodo {
@@ -59,6 +93,13 @@ export interface SubTodo {
   status: Status;
   estimatedTime?: string | null;
   completedAt?: Date | null;
+
+  // AI Priority System
+  priorityScore?: PriorityScore;
+  dependencies?: TaskDependency[];
+  impactLevel?: 'low' | 'medium' | 'high' | 'critical';
+  effortLevel?: 'low' | 'medium' | 'high' | 'very_high';
+  tags?: string[];
 }
 
 export interface ThemeConfig {
@@ -127,6 +168,13 @@ export interface TodoStore {
   syncPomodoroState: (userId: string) => Promise<void>;
   loadPomodoroState: (userId: string) => Promise<void>;
   subscribeToPomodoroSync: (userId: string) => any;
+
+  // AI Priority Scoring
+  calculatePriorityScore: (taskId: string) => Promise<void>;
+  calculateAllPriorityScores: () => Promise<void>;
+  updateTaskPriorityScore: (taskId: string, score: PriorityScore) => void;
+  getSortedTodosByPriority: () => Todo[];
+  refreshPriorityScores: () => Promise<void>;
 }
 
 export interface userData {

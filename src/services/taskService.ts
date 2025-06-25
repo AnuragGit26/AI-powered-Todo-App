@@ -83,6 +83,20 @@ export const createTask = async (task: Todo) => {
     const subtasks = taskToSave.subtasks;
     delete taskToSave.subtasks;
 
+    // Handle AI priority score serialization
+    if (taskToSave.priorityScore) {
+        try {
+            // Ensure priority score is properly formatted for database
+            taskToSave.priorityScore = {
+                ...taskToSave.priorityScore,
+                lastUpdated: new Date(taskToSave.priorityScore.lastUpdated)
+            };
+        } catch (err) {
+            console.warn("Error processing priority score data:", err);
+            delete taskToSave.priorityScore;
+        }
+    }
+
     // Ensure recurrence is properly formatted as JSONB for database
     if (taskToSave.recurrence) {
         try {
@@ -240,6 +254,19 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
     try {
         // Clone the updates to avoid modifying the original object
         const updatesToApply = { ...updates };
+
+        // Handle AI priority score serialization
+        if (updatesToApply.priorityScore) {
+            try {
+                updatesToApply.priorityScore = {
+                    ...updatesToApply.priorityScore,
+                    lastUpdated: new Date(updatesToApply.priorityScore.lastUpdated)
+                };
+            } catch (err) {
+                console.warn("Error processing priority score data during update:", err);
+                delete updatesToApply.priorityScore;
+            }
+        }
 
         const { error } = await supabase
             .from('tasks')
