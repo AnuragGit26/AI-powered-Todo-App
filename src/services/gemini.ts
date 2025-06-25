@@ -17,7 +17,7 @@ export async function analyzeTodo(
     resourceLinks?: { name: string, url: string, type: string }[];
 }> {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         let prompt = `Analyze this ${context.type} with title: "${title}".`;
 
         if (context.type === 'subtask' && context.parentTitle) {

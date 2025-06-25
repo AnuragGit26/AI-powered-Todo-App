@@ -74,7 +74,7 @@ export class AIPrioritizationEngine {
      */
     private async calculateImpactScore(task: Todo | SubTodo): Promise<number> {
         try {
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
             const prompt = `
         Analyze the business/personal impact of this task: "${task.title}"
@@ -117,7 +117,7 @@ export class AIPrioritizationEngine {
      */
     private async calculateEffortScore(task: Todo | SubTodo, historicalPattern?: HistoricalPattern): Promise<number> {
         try {
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
             const prompt = `
         Analyze the effort required for this task: "${task.title}"
@@ -257,7 +257,7 @@ export class AIPrioritizationEngine {
         historicalPattern?: HistoricalPattern;
     }): Promise<number> {
         try {
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
             const prompt = `
         Calculate the optimal priority score by intelligently weighting these factors for task: "${scoreData.task.title}"
