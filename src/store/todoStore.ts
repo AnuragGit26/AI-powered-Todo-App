@@ -392,7 +392,13 @@ export const useTodoStore = create<TodoStore>()(
                         const allTasks = todos.flatMap(todo => [todo, ...(todo.subtasks || [])]);
                         // Only calculate scores for incomplete tasks
                         const incompleteTasks = allTasks.filter(task => !task.completed);
-                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(incompleteTasks, userData.userId);
+
+                        // Progress callback for UI updates
+                        const onProgress = (completed: number, total: number) => {
+                            console.log(`AI Calculation Progress: ${completed}/${total} tasks (${Math.round(completed / total * 100)}%)`);
+                        };
+
+                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(incompleteTasks, userData.userId, onProgress);
 
                         set((state) => ({
                             todos: state.todos.map((todo) => {

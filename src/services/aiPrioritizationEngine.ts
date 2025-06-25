@@ -426,35 +426,97 @@ export class AIPrioritizationEngine {
     }
 
     /**
-     * Batch calculate priority scores for multiple tasks
+     * Batch calculate priority scores for multiple tasks with aggressive rate limiting
      */
     async calculateBatchPriorityScores(
         tasks: (Todo | SubTodo)[],
-        userId: string
+        userId: string,
+        onProgress?: (completed: number, total: number) => void
     ): Promise<Map<string, PriorityScore>> {
         const scores = new Map<string, PriorityScore>();
 
-        // Process in batches to avoid API rate limits
-        const batchSize = 5;
+        // Very conservative batching to avoid rate limits
+        const batchSize = 2; // Reduced from 5 to 2
+        const delayBetweenBatches = 2000; // Increased from 500ms to 2s
+        const delayBetweenTasks = 1000; // 1s delay between individual tasks
+
+        console.log(`Starting batch AI calculation for ${tasks.length} tasks...`);
+
         for (let i = 0; i < tasks.length; i += batchSize) {
             const batch = tasks.slice(i, i + batchSize);
-            const batchPromises = batch.map(async (task) => {
-                const score = await this.calculatePriorityScore(task, tasks, userId);
-                return { taskId: task.id, score };
-            });
 
-            const batchResults = await Promise.all(batchPromises);
-            batchResults.forEach(({ taskId, score }) => {
-                scores.set(taskId, score);
-            });
+            // Process tasks sequentially within batch to avoid overwhelming the API
+            for (const task of batch) {
+                try {
+                    const score = await this.calculatePriorityScoreWithRetry(task, tasks, userId);
+                    scores.set(task.id, score);
 
-            // Small delay between batches
+                    // Report progress
+                    if (onProgress) {
+                        onProgress(scores.size, tasks.length);
+                    }
+
+                    console.log(`✅ Calculated AI score for task: ${task.title.substring(0, 50)}...`);
+
+                    // Delay between individual tasks
+                    await new Promise(resolve => setTimeout(resolve, delayBetweenTasks));
+                } catch (error) {
+                    console.warn(`Failed to calculate score for task: ${task.title}`, error);
+                    // Use fallback score for failed tasks
+                    scores.set(task.id, this.getFallbackScore(task));
+                }
+            }
+
+            // Longer delay between batches
             if (i + batchSize < tasks.length) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+                console.log(`Batch ${Math.floor(i / batchSize) + 1} complete. Waiting before next batch...`);
+                await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
             }
         }
 
+        console.log(`Batch calculation complete! Processed ${scores.size} tasks.`);
         return scores;
+    }
+
+    /**
+     * Calculate priority score with retry logic for rate limits
+     */
+    private async calculatePriorityScoreWithRetry(
+        task: Todo | SubTodo,
+        allTasks: (Todo | SubTodo)[],
+        userId: string,
+        maxRetries: number = 3
+    ): Promise<PriorityScore> {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this.calculatePriorityScore(task, allTasks, userId);
+            } catch (error: unknown) {
+                // Check if it's a rate limit error
+                const isRateLimitError = (
+                    (error as { status?: number })?.status === 429 ||
+                    (error as { message?: string })?.message?.includes('429') ||
+                    (error as { message?: string })?.message?.includes('Too Many Requests')
+                );
+
+                if (isRateLimitError && attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt) * 2000; // Exponential backoff: 4s, 8s, 16s
+                    console.warn(`Rate limit hit for task: ${task.title}. Retrying in ${delay}ms... (Attempt ${attempt}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                } else {
+                    // Max retries reached or non-rate-limit error
+                    if (isRateLimitError) {
+                        console.error(`Rate limit exceeded after ${maxRetries} attempts for task: ${task.title}. Using fallback score.`);
+                    } else {
+                        console.warn(`API error for task: ${task.title}. Using fallback score.`, error);
+                    }
+                    return this.getFallbackScore(task);
+                }
+            }
+        }
+
+        // Fallback if all retries failed
+        return this.getFallbackScore(task);
     }
 
     /**
