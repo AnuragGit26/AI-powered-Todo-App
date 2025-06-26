@@ -16,14 +16,11 @@ import NotFound from "./components/NotFound";
 import Aurora from "./components/ui/AuroraBG.tsx";
 import UserProfile from "./components/UserProfile";
 import SplitText from "./components/ui/SplitText.jsx";
-import TaskAnalytics from "./components/TaskAnalytics.jsx";
-import ProductivityTrends from "./components/ProductivityTrends.tsx";
 import Footer from "./components/ui/Footer";
 import { useSessionRecording } from './hooks/useSessionRecording';
 import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
 import GradientText from "./components/ui/GradientText";
-import Logo from "./components/Logo.tsx";
 import NavBar from "./components/NavBar";
 import { initializeTheme } from "./lib/themeUtils";
 import { PomodoroTimer } from "./components/PomodoroTimer";
@@ -339,9 +336,9 @@ const App: React.FC = () => {
             />
 
             <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
-                <div className="max-w-4xl mx-auto space-y-6">
-                    {/* Create Task Button for All Screens */}
-                    <div className="w-full">
+                <div className="max-w-4xl mx-auto h-full flex flex-col">
+                    {/* Create Task Button for All Screens - Fixed at top */}
+                    <div className="w-full flex-shrink-0 mb-4">
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}
                             className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
@@ -362,7 +359,7 @@ const App: React.FC = () => {
                         </Button>
                     </div>
 
-                    {/* TodoForm - hidden initially, shown when button is clicked */}
+                    {/* TodoForm - positioned at top when shown */}
                     <AnimatePresence>
                         {showTodoForm && (
                             <motion.div
@@ -370,14 +367,17 @@ const App: React.FC = () => {
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
                                 transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
+                                className="flex-shrink-0 overflow-hidden mb-4"
                             >
                                 <TodoForm onSubmitSuccess={() => setShowTodoForm(false)} />
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <TodoList isLoading={!isDataLoaded} />
+                    {/* TodoList - scrollable container */}
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        <TodoList isLoading={!isDataLoaded} />
+                    </div>
                 </div>
             </div>
 

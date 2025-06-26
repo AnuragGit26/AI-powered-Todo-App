@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2, Repeat, ChevronDown, CalendarIcon } from 'lucide-react';
@@ -58,6 +58,22 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     const [formError, setFormError] = useState<string>('');
     const { addTodo } = useTodoStore();
     const { trackUsage, canUseFeature } = useBillingUsage();
+
+    // GSAP refs for form animations
+    const formRef = useRef<HTMLFormElement>(null);
+    const submitButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Animate form entrance
+    useEffect(() => {
+        if (formRef.current) {
+            GSAPAnimations.animateFormEntry(formRef.current);
+        }
+
+        // Cleanup function
+        return () => {
+            GSAPAnimations.cleanup();
+        };
+    }, []);
 
     const announceToScreenReader = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
         const liveRegion = document.createElement('div');
@@ -207,11 +223,10 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     };
 
     return (
-        <motion.form
+        <form
+            ref={formRef}
             onSubmit={handleSubmit}
-            className={`mb-1 sm:mb-2 space-y-4 ${parentId ? 'ml-2 sm:ml-4 md:ml-8 mt-2' : ''}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className={`space-y-4 ${parentId ? 'ml-2 sm:ml-4 md:ml-8 mt-2' : ''}`}
             role="form"
             aria-label={parentId ? "Create new subtask" : "Create new task"}
             noValidate
@@ -368,9 +383,13 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                         </div>
                     </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                    <button
+                        ref={submitButtonRef}
+                        onClick={(e) => {
+                            if (submitButtonRef.current) {
+                                GSAPAnimations.animateButtonPress(submitButtonRef.current);
+                            }
+                        }}
                         className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition duration-200 ease-in-out shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         type="submit"
                         disabled={isAnalyzing}
@@ -382,7 +401,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                         ) : (
                             <Plus className="w-5 h-5" aria-hidden="true" />
                         )}
-                    </motion.button>
+                    </button>
                     <div id="submit-button-help" className="sr-only">
                         Click to create the task with the current settings
                     </div>
@@ -654,7 +673,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                     )}
                 </fieldset>
             </fieldset>
-        </motion.form>
+        </form>
     );
 };
 

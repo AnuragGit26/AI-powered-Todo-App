@@ -1053,13 +1053,13 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     }, [todos]);
 
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full h-full flex flex-col">
             {/* AI Priority Recommendations */}
             {hasAIScores && sortCriteria === "ai_priority" && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200 dark:border-purple-700/50"
+                    className="flex-shrink-0 mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200 dark:border-purple-700/50"
                 >
                     <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center gap-2">
                         <Brain className="w-5 h-5" />
@@ -1110,7 +1110,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 sticky top-0 z-10 border border-gray-200 dark:border-gray-600"
+                className="flex-shrink-0 p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 border border-gray-200 dark:border-gray-600"
             >
                 {todos?.length !== 0 ? (
                     <div className="flex flex-col sm:flex-row justify-between mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
@@ -1194,31 +1194,33 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                     </div>
                 )}
             </motion.div>
-            <AnimatePresence>
-                {isLoading ? (
-                    <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-                            <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        {filteredTodos.length > 0 ? (
-                            filteredTodos.map((todo) => (
-                                <TodoItem key={todo.id} todo={todo} />
-                            ))
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-                                <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {searchQuery ? "Try a different search term" : "Create a task to get started"}
-                                </p>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                <AnimatePresence>
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+                                <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
                             </div>
-                        )}
-                    </div>
-                )}
-            </AnimatePresence>
+                        </div>
+                    ) : (
+                        <div className="space-y-2 pb-4">
+                            {filteredTodos.length > 0 ? (
+                                filteredTodos.map((todo) => (
+                                    <TodoItem key={todo.id} todo={todo} />
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+                                    <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">No tasks found</h3>
+                                    <p className="text-gray-500 dark:text-gray-400">
+                                        {searchQuery ? "Try a different search term" : "Create a task to get started"}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };
