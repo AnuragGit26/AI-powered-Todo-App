@@ -363,8 +363,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         userData.email.charAt(0).toUpperCase();
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-background/80 dark:from-background dark:to-background/40 p-4 md:p-8">
-            <div className="max-w-5xl mx-auto rounded-xl bg-white dark:bg-gray-900/20 shadow-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
+        <div className="min-h-screen flex items-center justify-center bg-transparent p-4 md:p-8">
+            <div className="max-w-5xl w-full mx-auto rounded-xl bg-white/10 dark:bg-gray-900/30 shadow-2xl border border-white/20 dark:border-gray-700/40 overflow-hidden backdrop-blur-xl flex flex-col">
                 {/* Header with gradient background */}
                 <div className="p-8 bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-purple-600/90 dark:from-blue-700/80 dark:via-indigo-700/80 dark:to-purple-700/80">
                     <div className="flex flex-col md:flex-row items-center gap-6">
