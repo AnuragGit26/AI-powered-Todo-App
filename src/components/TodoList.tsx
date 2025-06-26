@@ -1129,8 +1129,8 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                 value={filterStatus}
                                 onValueChange={(e) => setFilterStatus(e as 'all' | 'completed' | 'uncompleted')}
                             >
-                                <SelectTrigger className="w-full sm:w-[160px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
-                                    <SelectValue placeholder="Filter Tasks" />
+                                <SelectTrigger className="w-auto min-w-[120px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                    <SelectValue placeholder="Filter Tasks" className="text-center" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Tasks</SelectItem>
@@ -1142,8 +1142,8 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                 value={sortCriteria}
                                 onValueChange={(e) => setSortCriteria(e as "date" | "priority" | "ai_priority")}
                             >
-                                <SelectTrigger className="w-full sm:w-[200px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
-                                    <SelectValue placeholder="Sort By" />
+                                <SelectTrigger className="w-auto min-w-[120px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                    <SelectValue placeholder="Sort By" className="text-center" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="date">Sort by Date</SelectItem>
