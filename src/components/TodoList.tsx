@@ -980,7 +980,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     const { calculateAllPriorityScores, getSortedTodosByPriority, refreshPriorityScores } = useTodoStore();
     const [sortCriteria, setSortCriteria] = useState<"date" | "priority" | "ai_priority">("date");
     const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'uncompleted'>('all');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'uncompleted'>('uncompleted');
     const [priorityBatchLoading, setPriorityBatchLoading] = useState(false);
 
     // Initialize AI Priority management
@@ -1134,8 +1134,8 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Tasks</SelectItem>
-                                    <SelectItem value="completed">Completed Tasks</SelectItem>
                                     <SelectItem value="uncompleted">Uncompleted Tasks</SelectItem>
+                                    <SelectItem value="completed">Completed Tasks</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Select
