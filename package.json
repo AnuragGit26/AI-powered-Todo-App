@@ -1,6 +1,6 @@
 {
   "name": "todo-ai-app",
-  "version": "1.9.5",
+  "version": "1.9.8",
   "private": "true",
   "description": "A Task Management & Productivity AI App",
   "type": "module",

@@ -26,6 +26,9 @@ export interface TodoAnalysis {
   resources: string;
   potentialBlockers: string;
   nextSteps: string;
+  industryInsights?: string;
+  marketTrends?: string;
+  researchBacked?: string;
   resourceLinks?: ResourceLink[];
 }
 
@@ -167,7 +170,7 @@ export interface TodoStore {
   togglePomodoroTimer: () => void;
   syncPomodoroState: (userId: string) => Promise<void>;
   loadPomodoroState: (userId: string) => Promise<void>;
-  subscribeToPomodoroSync: (userId: string) => any;
+  subscribeToPomodoroSync: (userId: string) => (() => void) | null;
 
   // AI Priority Scoring
   calculatePriorityScore: (taskId: string) => Promise<void>;

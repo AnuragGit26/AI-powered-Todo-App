@@ -822,6 +822,63 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Enhanced AI Analysis Section */}
+                            {(todo.analysis?.industryInsights || todo.analysis?.marketTrends || todo.analysis?.researchBacked) && (
+                                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <TrendingUp className="w-4 h-4" />
+                                        Advanced Research Insights
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        {/* Industry Insights */}
+                                        {todo.analysis?.industryInsights && (
+                                            <div className="flex flex-col gap-2">
+                                                <h4 className="text-xs font-semibold text-cyan-800 dark:text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+                                                    <TrendingUp className="w-3.5 h-3.5" />
+                                                    Industry Insights
+                                                </h4>
+                                                <div className="p-3 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800/30 rounded-lg">
+                                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                        {todo.analysis.industryInsights}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Market Trends */}
+                                        {todo.analysis?.marketTrends && (
+                                            <div className="flex flex-col gap-2">
+                                                <h4 className="text-xs font-semibold text-purple-800 dark:text-purple-300 uppercase tracking-wider flex items-center gap-2">
+                                                    <TrendingUp className="w-3.5 h-3.5" />
+                                                    Market Trends
+                                                </h4>
+                                                <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800/30 rounded-lg">
+                                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                        {todo.analysis.marketTrends}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Research-Backed Recommendations */}
+                                        {todo.analysis?.researchBacked && (
+                                            <div className="flex flex-col gap-2">
+                                                <h4 className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                                                    <Brain className="w-3.5 h-3.5" />
+                                                    Research-Backed Recommendations
+                                                </h4>
+                                                <div className="p-3 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg">
+                                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                        {todo.analysis.researchBacked}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}
