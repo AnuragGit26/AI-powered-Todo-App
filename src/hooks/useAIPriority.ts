@@ -1,75 +1,62 @@
 import { useEffect, useCallback } from 'react';
 import { useTodoStore } from '../store/todoStore';
+import { aiPrioritizationEngine } from '../services/aiPrioritizationEngine';
+import { AIPriorityCache } from '../lib/cacheUtils';
+import type { Todo } from '../types';
 
 export const useAIPriority = () => {
     const {
         todos,
-        userData,
+        updateTodo,
         refreshPriorityScores,
         calculateAllPriorityScores
     } = useTodoStore();
 
-    // Auto-refresh stale priority scores when component mounts or todos change
-    const autoRefreshScores = useCallback(async () => {
-        if (!userData?.userId || todos.length === 0) return;
+    // Auto-populate cached scores on tasks when they load
+    const populateCachedScores = useCallback(() => {
+        if (!todos.length) return;
 
-        // Check if any tasks have stale or missing priority scores
-        const now = new Date();
-        const oneHourAgo = new Date(now.getTime() - 3600000); // 1 hour ago
+        todos.forEach(todo => {
+            // Check main task for cached score
+            if (!todo.priorityScore) {
+                const cachedScore = AIPriorityCache.get(todo.id);
+                if (cachedScore) {
+                    updateTodo(todo.id, { ...todo, priorityScore: cachedScore });
+                    return;
+                }
+            }
 
-        // Only consider incomplete tasks for scoring
-        const incompleteTodos = todos.filter(todo => !todo.completed);
-
-        const tasksNeedingScores = incompleteTodos.filter(todo =>
-            !todo.priorityScore ||
-            new Date(todo.priorityScore.lastUpdated) < oneHourAgo
-        );
-
-        const totalTasksNeedingScores = tasksNeedingScores.reduce((count, todo) => {
-            let taskCount = 1; // Main task
+            // Check subtasks for cached scores
             if (todo.subtasks) {
-                taskCount += todo.subtasks.filter(subtask =>
-                    !subtask.completed && (
-                        !subtask.priorityScore ||
-                        new Date(subtask.priorityScore.lastUpdated) < oneHourAgo
-                    )
-                ).length;
-            }
-            return count + taskCount;
-        }, 0);
+                const updatedSubtasks = todo.subtasks.map(subtask => {
+                    if (!subtask.priorityScore) {
+                        const cachedScore = AIPriorityCache.get(subtask.id);
+                        if (cachedScore) {
+                            return { ...subtask, priorityScore: cachedScore };
+                        }
+                    }
+                    return subtask;
+                });
 
-        // If more than 50% of incomplete tasks need scoring, run a batch calculation
-        const totalIncompleteTasks = incompleteTodos.reduce((count, todo) => {
-            const incompleteSubtasks = todo.subtasks?.filter(subtask => !subtask.completed).length || 0;
-            return count + 1 + incompleteSubtasks;
-        }, 0);
+                // Update todo if any subtasks were updated
+                const hasSubtaskUpdates = updatedSubtasks.some((subtask, index) =>
+                    subtask !== todo.subtasks![index]
+                );
 
-        if (totalTasksNeedingScores > totalIncompleteTasks * 0.5) {
-            try {
-                await calculateAllPriorityScores();
-            } catch {
-                // Silent fail for auto-calculation
+                if (hasSubtaskUpdates) {
+                    updateTodo(todo.id, { ...todo, subtasks: updatedSubtasks });
+                }
             }
-        } else if (totalTasksNeedingScores > 0) {
-            try {
-                await refreshPriorityScores();
-            } catch {
-                // Silent fail for auto-refresh
-            }
-        }
-    }, [todos, userData, refreshPriorityScores, calculateAllPriorityScores]);
+        });
+    }, [todos, updateTodo]);
 
-    // Auto-refresh on mount and when todos change (with debouncing)
+    // Auto-populate cached scores when todos change
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            autoRefreshScores();
-        }, 2000); // 2 second delay to avoid excessive API calls
-
-        return () => clearTimeout(timeoutId);
-    }, [autoRefreshScores]);
+        populateCachedScores();
+    }, [populateCachedScores]);
 
     // Smart priority score calculation based on task characteristics
-    const shouldCalculatePriorityScore = useCallback((todo: any) => {
+    const shouldCalculatePriorityScore = useCallback((todo: Todo) => {
         if (!todo) return false;
 
         // Always calculate for high priority tasks
@@ -88,7 +75,7 @@ export const useAIPriority = () => {
     }, []);
 
     // Get priority score status for a task
-    const getPriorityScoreStatus = useCallback((todo: any) => {
+    const getPriorityScoreStatus = useCallback((todo: Todo) => {
         if (!todo.priorityScore) {
             return {
                 status: 'missing',
@@ -151,10 +138,18 @@ export const useAIPriority = () => {
         };
     }, [todos]);
 
+    // Clear expired cache entries
+    const clearExpiredCache = useCallback(() => {
+        aiPrioritizationEngine.clearExpiredCache();
+    }, []);
+
     return {
-        autoRefreshScores,
         shouldCalculatePriorityScore,
         getPriorityScoreStatus,
-        getPriorityRecommendations
+        getPriorityRecommendations,
+        clearExpiredCache,
+        // Manual calculation functions (user-triggered only)
+        calculateAllPriorityScores,
+        refreshPriorityScores
     };
 }; 

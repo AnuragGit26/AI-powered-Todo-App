@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Todo, SubTodo, PriorityScore, HistoricalPattern } from '../types';
+import { AIPriorityCache } from '../lib/cacheUtils';
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
@@ -23,6 +24,12 @@ export class AIPrioritizationEngine {
         userId: string
     ): Promise<PriorityScore> {
         try {
+            // Check cache first
+            const cachedScore = AIPriorityCache.get(task.id);
+            if (cachedScore) {
+                return cachedScore;
+            }
+
             // Check if Gemini API key is available
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -53,7 +60,7 @@ export class AIPrioritizationEngine {
 
             const confidence = this.calculateConfidence(task, historicalPattern);
 
-            return {
+            const priorityScore: PriorityScore = {
                 overall,
                 impactScore,
                 effortScore,
@@ -63,6 +70,11 @@ export class AIPrioritizationEngine {
                 lastUpdated: new Date(),
                 confidence
             };
+
+            // Cache the calculated score
+            AIPriorityCache.set(task.id, priorityScore);
+
+            return priorityScore;
         } catch {
             // Fallback to basic scoring
             return this.getFallbackScore(task);
@@ -296,8 +308,8 @@ export class AIPrioritizationEngine {
     }
 
     /**
-     * Get or create historical pattern for user
-     */
+ * Get or create historical pattern for user
+ */
     private async getHistoricalPattern(userId: string): Promise<HistoricalPattern> {
         const existingPattern = this.historicalData.get(userId);
 
@@ -426,8 +438,8 @@ export class AIPrioritizationEngine {
     }
 
     /**
-     * Batch calculate priority scores for multiple tasks with aggressive rate limiting
-     */
+ * Batch calculate priority scores for multiple tasks with aggressive rate limiting
+ */
     async calculateBatchPriorityScores(
         tasks: (Todo | SubTodo)[],
         userId: string,
@@ -435,15 +447,33 @@ export class AIPrioritizationEngine {
     ): Promise<Map<string, PriorityScore>> {
         const scores = new Map<string, PriorityScore>();
 
+        // Check individual cached scores first
+        const tasksNeedingCalculation: (Todo | SubTodo)[] = [];
+        for (const task of tasks) {
+            const cachedScore = AIPriorityCache.get(task.id);
+            if (cachedScore) {
+                scores.set(task.id, cachedScore);
+            } else {
+                tasksNeedingCalculation.push(task);
+            }
+        }
+
+        // Report progress for cached scores
+        if (onProgress) {
+            onProgress(scores.size, tasks.length);
+        }
+
+        if (tasksNeedingCalculation.length === 0) {
+            return scores;
+        }
+
         // Very conservative batching to avoid rate limits
-        const batchSize = 2; // Reduced from 5 to 2
-        const delayBetweenBatches = 2000; // Increased from 500ms to 2s
-        const delayBetweenTasks = 1000; // 1s delay between individual tasks
+        const batchSize = 2;
+        const delayBetweenBatches = 2000;
+        const delayBetweenTasks = 1000;
 
-        console.log(`Starting batch AI calculation for ${tasks.length} tasks...`);
-
-        for (let i = 0; i < tasks.length; i += batchSize) {
-            const batch = tasks.slice(i, i + batchSize);
+        for (let i = 0; i < tasksNeedingCalculation.length; i += batchSize) {
+            const batch = tasksNeedingCalculation.slice(i, i + batchSize);
 
             // Process tasks sequentially within batch to avoid overwhelming the API
             for (const task of batch) {
@@ -456,8 +486,6 @@ export class AIPrioritizationEngine {
                         onProgress(scores.size, tasks.length);
                     }
 
-                    console.log(`✅ Calculated AI score for task: ${task.title.substring(0, 50)}...`);
-
                     // Delay between individual tasks
                     await new Promise(resolve => setTimeout(resolve, delayBetweenTasks));
                 } catch (error) {
@@ -468,13 +496,11 @@ export class AIPrioritizationEngine {
             }
 
             // Longer delay between batches
-            if (i + batchSize < tasks.length) {
-                console.log(`Batch ${Math.floor(i / batchSize) + 1} complete. Waiting before next batch...`);
+            if (i + batchSize < tasksNeedingCalculation.length) {
                 await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
             }
         }
 
-        console.log(`Batch calculation complete! Processed ${scores.size} tasks.`);
         return scores;
     }
 
@@ -520,8 +546,8 @@ export class AIPrioritizationEngine {
     }
 
     /**
-     * Update historical patterns based on task completion
-     */
+ * Update historical patterns based on task completion
+ */
     updateHistoricalPattern(userId: string, completedTask: Todo | SubTodo, actualCompletionTime: number): void {
         const pattern = this.historicalData.get(userId) || {
             averageCompletionTime: actualCompletionTime,
@@ -551,6 +577,13 @@ export class AIPrioritizationEngine {
         }
 
         this.historicalData.set(userId, pattern);
+    }
+
+    /**
+     * Clear expired cache entries
+     */
+    clearExpiredCache(): void {
+        AIPriorityCache.clearExpired();
     }
 }
 
