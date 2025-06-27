@@ -34,14 +34,13 @@ import { useBillingStore, initializeFreeTierSubscription } from "./store/billing
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
-    const { theme, setTodos, setUserToken, setTheme, calculateAllPriorityScores, setUserData } = useTodoStore();
+    const { theme, setTodos, setUserToken, setTheme,userData } = useTodoStore();
     const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
-    const [isAutoCalculating, setIsAutoCalculating] = useState(false);
     const { toast } = useToast();
 
     // Initialize theme on first load and whenever theme changes

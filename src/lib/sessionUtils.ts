@@ -156,6 +156,8 @@ export async function recordSession(): Promise<void> {
                     last_seen_at: new Date().toISOString(),
                     user_agent: userAgent,
                     device_type: deviceType,
+                    ip: await getUserIP(),
+                    location: (await getUserRegion()).location,
                     user_id: userId // Update user_id in case it changed
                 })
                 .eq('id', existingSession.id);
@@ -180,6 +182,8 @@ export async function recordSession(): Promise<void> {
             user_id: userId,
             created_at: new Date().toISOString(),
             last_seen_at: new Date().toISOString(),
+            ip: await getUserIP(),
+            location: (await getUserRegion()).location,
             user_agent: userAgent,
             device_type: deviceType,
             device_fingerprint: deviceFingerprint

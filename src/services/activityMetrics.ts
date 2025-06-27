@@ -47,5 +47,5 @@ export const updateUsageMetrics = async (
     if (error) {
         console.error('Error updating usage metrics:', error);
     }
-    return { data, error };
+    return { data, error};
 };
