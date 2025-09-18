@@ -1,13 +1,20 @@
 import { test, expect } from '@playwright/test';
-import { setupSignupMock } from './helpers/supabase-mocks';
+import { setupSignupMock, setupSignInMock, setupAuthUserMock, setupSupabaseRestMocks, setupIpifyMock } from './helpers/supabase-mocks';
 
 test.describe('Authentication', () => {
+    test.beforeEach(async ({ page }) => {
+        await setupAuthUserMock(page);
+        await setupSupabaseRestMocks(page);
+        await setupIpifyMock(page);
+    });
     test('should navigate to the home page', async ({ page }) => {
         await page.goto('http://localhost:5175/');
         await expect(page).toHaveTitle('TaskMind AI');
     });
 
     test('check login functions', async ({ page }) => {
+        // Mock Supabase password grant sign-in to avoid real network calls on CI
+        await setupSignInMock(page, 'signInSuccess');
         await page.goto('http://localhost:5175/login');
         await expect(page.getByLabel('Email')).toBeVisible();
         await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
