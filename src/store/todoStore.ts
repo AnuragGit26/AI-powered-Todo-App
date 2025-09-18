@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, PomodoroState, PriorityScore } from '../types';
 import { pomodoroService } from '../services/pomodoroService';
 import { aiPrioritizationEngine } from '../services/aiPrioritizationEngine';
+import { AIPriorityCache } from '../lib/cacheUtils';
 
 // Helper function to determine initial theme based on system preference
 const getInitialTheme = (): ThemeConfig => {
@@ -363,17 +364,22 @@ export const useTodoStore = create<TodoStore>()(
                     try {
                         const allTasks = todos.flatMap(todo => [todo, ...(todo.subtasks || [])]);
                         const score = await aiPrioritizationEngine.calculatePriorityScore(targetTask, allTasks, userId);
+                        // Ensure we attach a timestamp and write into the AI cache so UI can read the authoritative value
+                        const scoreWithTimestamp = { ...score, lastUpdated: new Date() };
+                        AIPriorityCache.set(taskId, scoreWithTimestamp);
+
+                        // Pull from cache (authoritative) and update store
+                        const cachedScore = AIPriorityCache.get(taskId) || scoreWithTimestamp;
 
                         set((state) => ({
                             todos: state.todos.map((todo) => {
                                 if (todo.id === taskId) {
-                                    return { ...todo, priorityScore: score };
+                                    return { ...todo, priorityScore: cachedScore };
                                 }
-                                // Check subtasks
                                 return {
                                     ...todo,
                                     subtasks: todo.subtasks?.map(subtask =>
-                                        subtask.id === taskId ? { ...subtask, priorityScore: score } : subtask
+                                        subtask.id === taskId ? { ...subtask, priorityScore: cachedScore } : subtask
                                     )
                                 };
                             })
@@ -386,7 +392,17 @@ export const useTodoStore = create<TodoStore>()(
 
                 calculateAllPriorityScores: async () => {
                     const { todos, userData } = get();
-                    if (!userData?.userId) return;
+                    // Try to get userId from multiple sources (mirror single-task calc)
+                    let userId = userData?.userId;
+                    if (!userId) {
+                        const storedUserId = localStorage.getItem('userId');
+                        userId = storedUserId || undefined;
+                    }
+
+                    if (!userId) {
+                        alert('Please log in to use AI priority scoring');
+                        return;
+                    }
 
                     try {
                         const allTasks = todos.flatMap(todo => [todo, ...(todo.subtasks || [])]);
@@ -398,23 +414,38 @@ export const useTodoStore = create<TodoStore>()(
                             console.log(`AI Calculation Progress: ${completed}/${total} tasks (${Math.round(completed / total * 100)}%)`);
                         };
 
-                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(incompleteTasks, userData.userId, onProgress);
+                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(incompleteTasks, userId, onProgress);
+                        const now = new Date();
+
+                        // Persist each returned score into the AIPriorityCache with a timestamp so the store can pull authoritative values
+                        if (scores && typeof scores.forEach === 'function') {
+                            scores.forEach((s, id) => {
+                                try {
+                                    AIPriorityCache.set(id, { ...s, lastUpdated: now });
+                                } catch (e) {
+                                    // ignore cache set failures
+                                    console.warn('Failed to set AIPriorityCache for', id, e);
+                                }
+                            });
+                        }
 
                         set((state) => ({
                             todos: state.todos.map((todo) => {
                                 const updatedTodo = { ...todo };
 
-                                // Update main task score
-                                const todoScore = scores.get(todo.id);
+                                // Prefer cached score (authoritative), fall back to scores map if needed
+                                const todoScore = AIPriorityCache.get(todo.id) || (scores ? scores.get(todo.id) : undefined);
                                 if (todoScore) {
-                                    updatedTodo.priorityScore = todoScore;
+                                    updatedTodo.priorityScore = { ...todoScore, lastUpdated: now };
                                 }
 
-                                // Update subtask scores
+                                // Update subtask scores (use cache first)
                                 if (updatedTodo.subtasks) {
                                     updatedTodo.subtasks = updatedTodo.subtasks.map(subtask => {
-                                        const subtaskScore = scores.get(subtask.id);
-                                        return subtaskScore ? { ...subtask, priorityScore: subtaskScore } : subtask;
+                                        const subtaskScore = AIPriorityCache.get(subtask.id) || (scores ? scores.get(subtask.id) : undefined);
+                                        return subtaskScore
+                                            ? { ...subtask, priorityScore: { ...subtaskScore, lastUpdated: now } }
+                                            : subtask;
                                     });
                                 }
 
@@ -461,7 +492,17 @@ export const useTodoStore = create<TodoStore>()(
 
                 refreshPriorityScores: async () => {
                     const { todos, userData } = get();
-                    if (!userData?.userId) return;
+                    // Fallback to localStorage if userData is not set
+                    let userId = userData?.userId;
+                    if (!userId) {
+                        const storedUserId = localStorage.getItem('userId');
+                        userId = storedUserId || undefined;
+                    }
+
+                    if (!userId) {
+                        alert('Please log in to refresh AI priority scores');
+                        return;
+                    }
 
                     // Only refresh scores that are older than 1 hour for incomplete tasks
                     const oneHourAgo = new Date();

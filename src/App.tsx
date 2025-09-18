@@ -34,7 +34,7 @@ import { useBillingStore, initializeFreeTierSubscription } from "./store/billing
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
-    const { theme, setTodos, setUserToken, setTheme,userData } = useTodoStore();
+    const { theme, setTodos, setUserToken, setTheme, userData } = useTodoStore();
     const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -334,9 +334,8 @@ const App: React.FC = () => {
                 speed={0.9}
             />
 
-            <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+            <div className="pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
                 <div className="max-w-4xl mx-auto h-full flex flex-col">
-                    {/* Create Task Button for All Screens - Fixed at top */}
                     <div className="w-full flex-shrink-0 mb-4">
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}

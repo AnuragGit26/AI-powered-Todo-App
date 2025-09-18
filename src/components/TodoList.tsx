@@ -1110,11 +1110,11 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="flex-shrink-0 p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 border border-gray-200 dark:border-gray-600"
+                className="flex-shrink-1 p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 border border-gray-200 dark:border-gray-600"
             >
                 {todos?.length !== 0 ? (
-                    <div className="flex flex-col sm:flex-row justify-between mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
-                        <div className="relative w-full sm:w-3/5 mb-2 sm:mb-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
+                        <div className="relative col-span-1 sm:col-span-2 lg:col-span-2">
                             <Input
                                 type="text"
                                 value={searchQuery}
@@ -1124,12 +1124,12 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                             />
                             <Search className="absolute top-2.5 left-3 w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </div>
-                        <div className="flex justify-start sm:justify-end gap-2 flex-wrap">
+                        <div className="col-span-1">
                             <Select
                                 value={filterStatus}
                                 onValueChange={(e) => setFilterStatus(e as 'all' | 'completed' | 'uncompleted')}
                             >
-                                <SelectTrigger className="w-auto min-w-[120px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
                                     <SelectValue placeholder="Filter Tasks" className="text-center" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1138,11 +1138,13 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                     <SelectItem value="completed">Completed Tasks</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="col-span-1">
                             <Select
                                 value={sortCriteria}
                                 onValueChange={(e) => setSortCriteria(e as "date" | "priority" | "ai_priority")}
                             >
-                                <SelectTrigger className="w-auto min-w-[120px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
+                                <SelectTrigger className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
                                     <SelectValue placeholder="Sort By" className="text-center" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1151,41 +1153,41 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                     <SelectItem value="ai_priority">Sort by AI Priority</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
 
-                            {/* AI Priority Actions */}
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleBatchPriorityCalculation}
-                                    disabled={priorityBatchLoading}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-700 dark:border-gray-500"
-                                    title="Calculate AI priority scores for all tasks"
-                                >
-                                    {priorityBatchLoading ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Brain className="w-4 h-4" />
-                                    )}
-                                    <span className="whitespace-nowrap">AI Score All</span>
-                                </motion.button>
+                        {/* AI Priority Actions */}
+                        <div className="col-span-1 flex gap-2">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleBatchPriorityCalculation}
+                                disabled={priorityBatchLoading}
+                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-700 dark:border-gray-500"
+                                title="Calculate AI priority scores for all tasks"
+                            >
+                                {priorityBatchLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Brain className="w-4 h-4" />
+                                )}
+                                <span className="whitespace-nowrap">AI Score All</span>
+                            </motion.button>
 
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleRefreshPriorityScores}
-                                    disabled={priorityBatchLoading}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-500 dark:border-gray-600"
-                                    title="Refresh stale AI priority scores"
-                                >
-                                    {priorityBatchLoading ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <RefreshCw className="w-4 h-4" />
-                                    )}
-                                    <span className="whitespace-nowrap">Refresh Scores</span>
-                                </motion.button>
-                            </div>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleRefreshPriorityScores}
+                                disabled={priorityBatchLoading}
+                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-500 dark:border-gray-600"
+                                title="Refresh stale AI priority scores"
+                            >
+                                {priorityBatchLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="w-4 h-4" />
+                                )}
+                                <span className="whitespace-nowrap">Refresh Scores</span>
+                            </motion.button>
                         </div>
                     </div>
                 ) : (

@@ -31,3 +31,9 @@ dist-ssr
 
 # Netlify
 .netlify/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

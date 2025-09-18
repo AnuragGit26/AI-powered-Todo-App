@@ -1,3 +1,5 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
+
 export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'Not Started' | 'In progress' | 'Completed';
 
@@ -170,7 +172,7 @@ export interface TodoStore {
   togglePomodoroTimer: () => void;
   syncPomodoroState: (userId: string) => Promise<void>;
   loadPomodoroState: (userId: string) => Promise<void>;
-  subscribeToPomodoroSync: (userId: string) => (() => void) | null;
+  subscribeToPomodoroSync: (userId: string) => RealtimeChannel | null;
 
   // AI Priority Scoring
   calculatePriorityScore: (taskId: string) => Promise<void>;

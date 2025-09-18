@@ -20,7 +20,7 @@ export async function analyzeTodo(
     resourceLinks?: { name: string, url: string, type: string }[];
 }> {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
         let prompt = `You are an expert productivity consultant with access to the latest industry research, market trends, and best practices. Analyze this ${context.type} with title: "${title}".`;
 
         if (context.type === 'subtask' && context.parentTitle) {

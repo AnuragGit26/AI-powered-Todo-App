@@ -52,9 +52,15 @@ export function SignUpForm() {
             setEmailError("Email is required");
             return false;
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // More comprehensive email validation that matches Supabase's requirements
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(value)) {
             setEmailError("Please enter a valid email address");
+            return false;
+        }
+        // Additional check for common invalid patterns
+        if (value.includes('+') && !value.includes('@')) {
+            setEmailError("Email address with '+' must include a domain (e.g., user+tag@example.com)");
             return false;
         }
         setEmailError(null);
@@ -137,7 +143,16 @@ export function SignUpForm() {
 
             if (error) {
                 console.error("Signup error details:", error);
-                setError(error.message);
+
+                if (error.message.includes('already registered')) {
+                    setError('This email is already registered. Please try logging in or use a different email.');
+                } else if (error.message.includes('invalid email')) {
+                    setError('Please enter a valid email address (e.g., user@example.com)');
+                } else if (error.message.includes('password')) {
+                    setError('Password does not meet requirements. Please ensure it has at least 8 characters, including uppercase, lowercase, and numbers.');
+                } else {
+                    setError(error.message);
+                }
                 return;
             }
 
@@ -147,12 +162,13 @@ export function SignUpForm() {
                 return;
             }
 
-            console.log("Sign up successful", data);
             setSuccess("Registration successful! Please check your email to confirm your account.");
-            // Wait a bit before redirecting to login
-            setTimeout(() => {
-                navigate("/login");
-            }, 3000);
+            console.log("Sign up successful", data);
+            if (import.meta.env.MODE !== 'test') {
+                setTimeout(() => {
+                    navigate("/login");
+                }, 1000);
+            }
 
         } catch (err: Error | unknown) {
             console.error("Unexpected signup error:", err);
@@ -230,7 +246,7 @@ export function SignUpForm() {
                                         </Alert>
                                     )}
                                     {success && (
-                                        <Alert className="text-green-500 border-green-500 bg-green-100 dark:bg-green-900/40 dark:text-green-300">
+                                        <Alert data-testid="success-message" className="text-green-500 border-green-500 bg-green-100 dark:bg-green-900/40 dark:text-green-300">
                                             <Check className="h-4 w-4" />
                                             <AlertTitle>Success</AlertTitle>
                                             <AlertDescription>{success}</AlertDescription>
