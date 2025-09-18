@@ -4,6 +4,9 @@
   "private": "true",
   "description": "A Task Management & Productivity AI App",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
