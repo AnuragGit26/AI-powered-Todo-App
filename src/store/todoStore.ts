@@ -4,6 +4,7 @@ import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, Pomo
 import { pomodoroService } from '../services/pomodoroService';
 import { aiPrioritizationEngine } from '../services/aiPrioritizationEngine';
 import { AIPriorityCache } from '../lib/cacheUtils';
+import { useBillingStore } from './billingStore';
 
 // Helper function to determine initial theme based on system preference
 const getInitialTheme = (): ThemeConfig => {
@@ -234,6 +235,23 @@ export const useTodoStore = create<TodoStore>()(
                         newState.isPaused = false;
                     } else {
                         // Currently stopped, so start it
+                        // Billing: enforce pomodoro session limits before starting
+                        try {
+                            const billing = useBillingStore.getState();
+                            if (billing?.subscription) {
+                                const canStart = billing.checkUsageLimits('maxPomodoroSessions');
+                                if (!canStart) {
+                                    alert("You've reached your Pomodoro sessions limit for your current plan. Please upgrade to continue.");
+                                    return; // Abort start
+                                }
+                                // Increment pomodoro session usage on start
+                                billing.incrementUsage('pomodoroSessions');
+                            }
+                        } catch (e) {
+                            // Non-fatal if billing store is unavailable
+                            console.warn('Pomodoro billing check failed', e);
+                        }
+
                         newState.isActive = true;
                         newState.isPaused = false;
                     }
@@ -343,6 +361,18 @@ export const useTodoStore = create<TodoStore>()(
                         return;
                     }
 
+                    // Billing: check AI analysis limit before computing
+                    const billing = useBillingStore.getState();
+                    if (!billing.subscription) {
+                        alert('Subscription not initialized. Please visit Billing to set up your plan.');
+                        return;
+                    }
+                    const canAnalyze = billing.checkUsageLimits('maxAiAnalysis');
+                    if (!canAnalyze) {
+                        alert("You've reached your AI analysis limit for your current plan. Please upgrade to continue.");
+                        return;
+                    }
+
                     // Find the task (could be main task or subtask)
                     let targetTask: Todo | SubTodo | undefined = todos.find(t => t.id === taskId);
 
@@ -384,6 +414,12 @@ export const useTodoStore = create<TodoStore>()(
                                 };
                             })
                         }));
+
+                        try {
+                            billing.incrementUsage('aiAnalysisUsed');
+                        } catch (e) {
+                            console.warn('Failed to increment AI analysis usage', e);
+                        }
                     } catch (error) {
                         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
                         alert(`Error calculating priority score: ${errorMessage}`);
@@ -404,17 +440,36 @@ export const useTodoStore = create<TodoStore>()(
                         return;
                     }
 
+                    // Billing: determine remaining AI analyses available
+                    const billing = useBillingStore.getState();
+                    if (!billing.subscription) {
+                        alert('Subscription not initialized. Please visit Billing to set up your plan.');
+                        return;
+                    }
+                    const { usage, limits } = billing.subscription;
+                    const maxAi = limits.maxAiAnalysis;
+                    const remainingAi = maxAi === -1 ? Number.POSITIVE_INFINITY : Math.max(0, maxAi - usage.aiAnalysisUsed);
+                    if (remainingAi === 0) {
+                        alert("You've reached your AI analysis limit for your current plan. Please upgrade to continue.");
+                        return;
+                    }
+
                     try {
                         const allTasks = todos.flatMap(todo => [todo, ...(todo.subtasks || [])]);
                         // Only calculate scores for incomplete tasks
                         const incompleteTasks = allTasks.filter(task => !task.completed);
+
+                        // Respect remaining AI allowance
+                        const tasksToProcess = Number.isFinite(remainingAi)
+                            ? incompleteTasks.slice(0, remainingAi as number)
+                            : incompleteTasks;
 
                         // Progress callback for UI updates
                         const onProgress = (completed: number, total: number) => {
                             console.log(`AI Calculation Progress: ${completed}/${total} tasks (${Math.round(completed / total * 100)}%)`);
                         };
 
-                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(incompleteTasks, userId, onProgress);
+                        const scores = await aiPrioritizationEngine.calculateBatchPriorityScores(tasksToProcess, userId, onProgress);
                         const now = new Date();
 
                         // Persist each returned score into the AIPriorityCache with a timestamp so the store can pull authoritative values
@@ -452,6 +507,18 @@ export const useTodoStore = create<TodoStore>()(
                                 return updatedTodo;
                             })
                         }));
+
+                        // Billing: increment usage by number of processed tasks (skip if unlimited)
+                        if (Number.isFinite(remainingAi)) {
+                            const processedCount = tasksToProcess.length;
+                            for (let i = 0; i < processedCount; i++) {
+                                try {
+                                    billing.incrementUsage('aiAnalysisUsed');
+                                } catch (e) {
+                                    console.warn('Failed to increment AI analysis usage (batch)', e);
+                                }
+                            }
+                        }
                     } catch (error) {
                         console.error('Error calculating all priority scores:', error);
                     }
@@ -480,10 +547,43 @@ export const useTodoStore = create<TodoStore>()(
                     const incompleteTodos = todos.filter(todo => !todo.completed);
                     const completedTodos = todos.filter(todo => todo.completed);
 
+                    const parseDate = (d?: Date | string | null): number => {
+                        if (!d) return Number.POSITIVE_INFINITY; // put undated tasks later
+                        const dt = d instanceof Date ? d : new Date(d);
+                        const t = dt.getTime();
+                        return isNaN(t) ? Number.POSITIVE_INFINITY : t;
+                    };
+
+                    const getOrZero = (n?: number): number => (typeof n === 'number' ? n : 0);
+
                     const sortedIncomplete = [...incompleteTodos].sort((a, b) => {
-                        const scoreA = a.priorityScore?.overall || 0;
-                        const scoreB = b.priorityScore?.overall || 0;
-                        return scoreB - scoreA; // Descending order (highest priority first)
+                        // 1) Primary: overall descending
+                        const scoreA = getOrZero(a.priorityScore?.overall);
+                        const scoreB = getOrZero(b.priorityScore?.overall);
+                        if (scoreB !== scoreA) return scoreB - scoreA;
+
+                        // 2) Earlier due date first
+                        const dueA = parseDate(a.dueDate);
+                        const dueB = parseDate(b.dueDate);
+                        if (dueA !== dueB) return dueA - dueB;
+
+                        // 3) Higher impact first
+                        const impactA = getOrZero(a.priorityScore?.impactScore);
+                        const impactB = getOrZero(b.priorityScore?.impactScore);
+                        if (impactB !== impactA) return impactB - impactA;
+
+                        // 4) Lower effort first
+                        const effortA = getOrZero(a.priorityScore?.effortScore);
+                        const effortB = getOrZero(b.priorityScore?.effortScore);
+                        if (effortA !== effortB) return effortA - effortB;
+
+                        // 5) Earlier creation first
+                        const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        if (createdA !== createdB) return createdA - createdB;
+
+                        // 6) Final stable tiebreaker: id lexical
+                        return a.id.localeCompare(b.id);
                     });
 
                     // Return incomplete tasks first (sorted by priority), then completed tasks

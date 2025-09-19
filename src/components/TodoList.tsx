@@ -36,12 +36,13 @@ import { Input } from "./ui/input.tsx";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip.tsx";
 import TodoForm from "./TodoForm";
-import type { Priority, Status } from "../types";
+import type { Priority, Status, TodoAnalysis } from "../types";
 import useDebounce from "../hooks/useDebounce.ts";
 import { getUserRegion } from "../hooks/getUserRegion.ts";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { useAIPriority } from "../hooks/useAIPriority";
+import { useBillingUsage } from "../hooks/useBillingUsage";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -57,6 +58,9 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [analysisLoading, setAnalysisLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [priorityScoreLoading, setPriorityScoreLoading] = useState(false);
+
+
+    const { canUseFeature, trackUsage } = useBillingUsage();
 
 
     const renderDueDate = (dueDate: Date | string | null) => {
@@ -250,13 +254,29 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
         } catch (error) {
             console.error("Error getting geolocation:", error);
         }
-        const analysis = todo.parentId
-            ? await analyzeTodo(editedTitle, {
-                type: "subtask",
-                parentTitle: getParentTitle(todo.parentId),
-                region: region,
-            })
-            : await analyzeTodo(editedTitle, { type: "task", region: region });
+        let analysis: TodoAnalysis;
+        if (canUseFeature('maxAiAnalysis')) {
+            analysis = todo.parentId
+                ? await analyzeTodo(editedTitle, {
+                    type: "subtask",
+                    parentTitle: getParentTitle(todo.parentId),
+                    region: region,
+                })
+                : await analyzeTodo(editedTitle, { type: "task", region: region });
+            // track successful AI usage without extra toast
+            trackUsage('maxAiAnalysis', false);
+        } else {
+            // Fallback basic analysis without AI
+            analysis = {
+                category: "General",
+                howTo: "Complete this task step by step",
+                estimatedTime: "30 minutes",
+                difficulty: "Medium",
+                resources: "No specific resources required",
+                potentialBlockers: "None identified",
+                nextSteps: "Start working on the task"
+            };
+        }
 
         if (todo.parentId) {
             updateSubtaskStore(todo.parentId, todo.id, {
@@ -560,8 +580,16 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                                         <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span className="font-medium">Time</span>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" sideOffset={5} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
-                                        <p className="text-sm font-medium">{todo.estimatedTime}</p>
+                                    <TooltipContent
+                                        side="top"
+                                        align="start"
+                                        sideOffset={5}
+                                        avoidCollisions
+                                        collisionPadding={12}
+                                        className="max-w-[90vw] sm:max-w-[70vw] md:max-w-[50vw] lg:max-w-[36rem] max-h-[50vh] overflow-y-auto bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 backdrop-blur-sm whitespace-pre-wrap break-all overflow-x-hidden text-left leading-snug [text-wrap:pretty]"
+                                        style={{ maxWidth: "min(90vw, 36rem)", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                                    >
+                                        <p className="text-sm font-medium break-all [overflow-wrap:anywhere]">{todo.estimatedTime}</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>

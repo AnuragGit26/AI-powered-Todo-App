@@ -3,45 +3,65 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Mic, MicOff, Waveform, Crown, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useBillingStore } from '../store/billingStore';
+import { Mic, MicOff, Crown, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useBillingUsage } from '../hooks/useBillingUsage';
 
 interface VoiceToTaskProps {
     onTaskCreate?: (task: { title: string; description: string; priority: string; estimatedTime: string }) => void;
 }
 
+interface VoiceTask {
+    title: string;
+    description: string;
+    priority: string;
+    estimatedTime: string;
+}
+
+interface SimpleSpeechRecognition {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onresult?: (event: unknown) => void;
+    onerror?: (event: unknown) => void;
+}
+
 const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
-    const { subscription, checkUsageLimits } = useBillingStore();
+    const { isFeatureAvailable, showUpgradePrompt, trackUsage } = useBillingUsage();
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const [analyzedTask, setAnalyzedTask] = useState<any>(null);
+    const [analyzedTask, setAnalyzedTask] = useState<VoiceTask | null>(null);
     const [audioLevel, setAudioLevel] = useState(0);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const recognitionRef = useRef<any>(null);
+    const recognitionRef = useRef<SimpleSpeechRecognition | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number>();
 
-    // Check if feature is available
-    const isFeatureAvailable = subscription?.limits.voiceToTask || false;
+    // Check if feature is available on current plan
+    const voiceToTaskAvailable = isFeatureAvailable('voiceToTask');
 
     useEffect(() => {
         // Initialize Speech Recognition if available
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-            recognitionRef.current = new SpeechRecognition();
+            type WindowSR = { webkitSpeechRecognition?: new () => SimpleSpeechRecognition; SpeechRecognition?: new () => SimpleSpeechRecognition };
+            const w = window as unknown as WindowSR;
+            const SRConstructor = w.webkitSpeechRecognition || w.SpeechRecognition;
+            if (!SRConstructor) return;
+            recognitionRef.current = new SRConstructor();
             recognitionRef.current.continuous = true;
             recognitionRef.current.interimResults = true;
             recognitionRef.current.lang = 'en-US';
 
-            recognitionRef.current.onresult = (event: any) => {
-                const results = Array.from(event.results);
-                const transcript = results
-                    .map((result: any) => result[0].transcript)
-                    .join('');
+            recognitionRef.current.onresult = (event: unknown) => {
+                type ResultItem = { 0: { transcript: string } };
+                type ResultList = { length: number; [index: number]: ResultItem };
+                const results = Array.from((event as { results: ResultList }).results);
+                const transcript = results.map((result: ResultItem) => result[0].transcript).join('');
                 setTranscript(transcript);
             };
 
@@ -59,8 +79,8 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
     }, []);
 
     const startRecording = async () => {
-        if (!isFeatureAvailable) {
-            toast.error('Voice-to-Task is a Premium feature. Upgrade to unlock!');
+        if (!voiceToTaskAvailable) {
+            showUpgradePrompt('voiceToTask', 'Voice-to-Task is a Premium feature. Upgrade to unlock!');
             return;
         }
 
@@ -91,7 +111,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
             monitorAudioLevel();
 
             toast.success('Recording started! Speak your task...');
-        } catch (error) {
+        } catch {
             toast.error('Failed to access microphone');
         }
     };
@@ -143,7 +163,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
             setAnalyzedTask(analysisResult);
 
             toast.success('Voice converted to task successfully!');
-        } catch (error) {
+        } catch {
             toast.error('Failed to process voice input');
         } finally {
             setIsProcessing(false);
@@ -187,12 +207,19 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
     };
 
     const createTaskFromVoice = () => {
-        if (analyzedTask && onTaskCreate) {
-            onTaskCreate(analyzedTask);
-            setTranscript('');
-            setAnalyzedTask(null);
-            toast.success('Task created successfully!');
+        if (!analyzedTask || !onTaskCreate) return;
+
+        // Enforce task creation limits
+        const allowed = trackUsage('maxTasks');
+        if (!allowed) {
+            showUpgradePrompt('maxTasks', "You've reached your task limit. Upgrade to create more tasks.");
+            return;
         }
+
+        onTaskCreate(analyzedTask);
+        setTranscript('');
+        setAnalyzedTask(null);
+        toast.success('Task created successfully!');
     };
 
     return (
@@ -213,14 +240,14 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
                             </CardDescription>
                         </div>
                     </div>
-                    {!isFeatureAvailable && (
+                    {!voiceToTaskAvailable && (
                         <Badge variant="secondary">Premium Feature</Badge>
                     )}
                 </div>
             </CardHeader>
 
             <CardContent className="space-y-6">
-                {!isFeatureAvailable && (
+                {!voiceToTaskAvailable && (
                     <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                         <div className="flex items-center gap-3">
                             <Crown className="h-5 w-5 text-yellow-600" />
@@ -253,7 +280,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
                                         animate={{ scale: [1, 1.1, 1] }}
                                         transition={{ duration: 1, repeat: Infinity }}
                                     >
-                                        <Waveform className="h-8 w-8 text-white" />
+                                        <Mic className="h-8 w-8 text-white" />
                                     </motion.div>
 
                                     {/* Audio Level Visualization */}
@@ -301,7 +328,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
 
                                 <Button
                                     onClick={startRecording}
-                                    disabled={!isFeatureAvailable || isProcessing}
+                                    disabled={!voiceToTaskAvailable || isProcessing}
                                     size="lg"
                                     className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                                 >

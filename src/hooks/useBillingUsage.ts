@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useBillingStore } from '../store/billingStore';
 import { toast } from 'react-hot-toast';
-import { SubscriptionLimits } from '../types';
+import { SubscriptionLimits, SubscriptionUsage } from '../types';
 
 interface UsageCheckResult {
     allowed: boolean;
@@ -12,7 +12,24 @@ interface UsageCheckResult {
 }
 
 export const useBillingUsage = () => {
-    const { subscription, checkUsageLimits, incrementUsage } = useBillingStore();
+    const { subscription, incrementUsage } = useBillingStore();
+
+    const getUsageField = (feature: keyof SubscriptionLimits): keyof SubscriptionUsage | null => {
+        switch (feature) {
+            case 'maxTasks':
+                return 'tasksCreated';
+            case 'maxAiAnalysis':
+                return 'aiAnalysisUsed';
+            case 'maxPomodoroSessions':
+                return 'pomodoroSessions';
+            case 'maxIntegrations':
+                return 'integrationsSynced';
+            case 'maxTeamMembers':
+                return 'teamMembersInvited';
+            default:
+                return null;
+        }
+    };
 
     const checkFeatureAccess = useCallback((feature: keyof SubscriptionLimits): UsageCheckResult => {
         if (!subscription) {
@@ -27,7 +44,7 @@ export const useBillingUsage = () => {
 
         const { usage, limits } = subscription;
         const limit = limits[feature];
-        
+
         // Handle boolean features (premium features)
         if (typeof limit === 'boolean') {
             return {
@@ -94,7 +111,7 @@ export const useBillingUsage = () => {
 
     const trackUsage = useCallback((feature: keyof SubscriptionLimits, showToast = true): boolean => {
         const check = checkFeatureAccess(feature);
-        
+
         if (!check.allowed) {
             if (showToast) {
                 toast.error(check.upgradeMessage || 'Feature not available on your current plan');
@@ -120,23 +137,6 @@ export const useBillingUsage = () => {
 
         return true;
     }, [subscription, checkFeatureAccess, incrementUsage]);
-
-    const getUsageField = (feature: keyof SubscriptionLimits): keyof typeof subscription.usage | null => {
-        switch (feature) {
-            case 'maxTasks':
-                return 'tasksCreated';
-            case 'maxAiAnalysis':
-                return 'aiAnalysisUsed';
-            case 'maxPomodoroSessions':
-                return 'pomodoroSessions';
-            case 'maxIntegrations':
-                return 'integrationsSynced';
-            case 'maxTeamMembers':
-                return 'teamMembersInvited';
-            default:
-                return null;
-        }
-    };
 
     const getUpgradeRecommendation = useCallback(() => {
         if (!subscription) return null;
@@ -173,20 +173,18 @@ export const useBillingUsage = () => {
         return checkFeatureAccess(feature);
     }, [checkFeatureAccess]);
 
+    // Convenience alias for UI components to check if a feature is available on current plan
+    const isFeatureAvailable = useCallback((feature: keyof SubscriptionLimits): boolean => {
+        return canUseFeature(feature);
+    }, [canUseFeature]);
+
     const showUpgradePrompt = useCallback((feature: keyof SubscriptionLimits, customMessage?: string) => {
         const check = checkFeatureAccess(feature);
         const message = customMessage || check.upgradeMessage || 'Upgrade to unlock this feature';
-        
-        toast.error(message, {
-            duration: 5000,
-            action: {
-                label: 'Upgrade',
-                onClick: () => {
-                    // Trigger upgrade modal or redirect
-                    window.dispatchEvent(new CustomEvent('showUpgradeModal'));
-                }
-            }
-        });
+
+        toast.error(message, { duration: 5000 });
+        // Trigger upgrade modal for a smoother UX
+        window.dispatchEvent(new CustomEvent('showUpgradeModal'));
     }, [checkFeatureAccess]);
 
     return {
@@ -194,6 +192,7 @@ export const useBillingUsage = () => {
         checkFeatureAccess,
         trackUsage,
         canUseFeature,
+        isFeatureAvailable,
         getFeatureStatus,
         getUpgradeRecommendation,
         showUpgradePrompt,

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useTodoStore } from '../store/todoStore';
-import { Timer, Bell, Play, Pause, RotateCcw } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
-import useSound from 'use-sound';
 import notifySound from '../assets/notify.wav';
 import { useToast } from '../hooks/use-toast';
 
@@ -11,13 +10,9 @@ export const MiniPomodoro: React.FC = () => {
     const theme = useTodoStore((state) => state.theme);
     const { toast } = useToast();
     const notificationRef = useRef<HTMLAudioElement | null>(null);
-    const syncSubscriptionRef = useRef<any>(null);
+    const syncSubscriptionRef = useRef<unknown>(null);
 
-    // Initialize sound with useSound hook
-    const [playSound] = useSound(notifySound, {
-        volume: pomodoro.notificationVolume,
-        soundEnabled: pomodoro.notificationEnabled,
-    });
+    // Use HTML5 Audio element for notifications to avoid Web Audio autoplay restrictions
 
     // Timer ticker effect - updates the timer countdown
     useEffect(() => {
@@ -28,7 +23,7 @@ export const MiniPomodoro: React.FC = () => {
                 const elapsedSeconds = Math.floor((now - pomodoro.lastUpdatedAt) / 1000);
 
                 if (elapsedSeconds > 0) {
-                    let newTimeLeft = pomodoro.timeLeft - elapsedSeconds;
+                    const newTimeLeft = pomodoro.timeLeft - elapsedSeconds;
 
                     // Handle timer completion if it went below zero while invisible
                     if (newTimeLeft <= 0) {
@@ -64,7 +59,7 @@ export const MiniPomodoro: React.FC = () => {
             if (interval) clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [pomodoro.isActive, pomodoro.isPaused, pomodoro.timeLeft, pomodoro.lastUpdatedAt]);
+    }, [pomodoro.isActive, pomodoro.isPaused, pomodoro.timeLeft, pomodoro.lastUpdatedAt, updatePomodoroState]);
 
     // Load and sync pomodoro state when user changes + set up real-time sync
     useEffect(() => {
@@ -79,10 +74,11 @@ export const MiniPomodoro: React.FC = () => {
 
         // Cleanup subscription on unmount or user change
         return () => {
-            if (syncSubscriptionRef.current) {
-                syncSubscriptionRef.current.unsubscribe();
-                syncSubscriptionRef.current = null;
+            const sub = syncSubscriptionRef.current as { unsubscribe?: () => void } | null;
+            if (sub && typeof sub.unsubscribe === 'function') {
+                sub.unsubscribe();
             }
+            syncSubscriptionRef.current = null;
         };
     }, [loadPomodoroState, subscribeToPomodoroSync]);
 
@@ -128,18 +124,17 @@ export const MiniPomodoro: React.FC = () => {
                 notificationRef.current = null;
             }
         };
-    }, []);
+    }, [pomodoro.notificationVolume]);
 
     const handleTimerComplete = () => {
         // Play notification sound
         if (pomodoro.notificationEnabled) {
             try {
                 if (notificationRef.current) {
+                    // Attempt to play; if blocked, user likely hasn't interacted; sound remains off silently
                     notificationRef.current.play().catch(err => {
                         console.error("Error playing notification:", err);
                     });
-                } else {
-                    playSound();
                 }
 
                 // Show browser notification if allowed
@@ -167,7 +162,7 @@ export const MiniPomodoro: React.FC = () => {
 
         // Record session to history
         const newSession = {
-            type: pomodoro.isWorkTime ? 'work' : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak'),
+            type: (pomodoro.isWorkTime ? 'work' : (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak')) as 'work' | 'longBreak' | 'shortBreak',
             duration: pomodoro.isWorkTime ?
                 pomodoro.settings.workTime :
                 (pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ?

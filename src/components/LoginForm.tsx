@@ -13,13 +13,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logActivity, updateUsageMetrics } from "../services/activityMetrics.ts";
 import { getUserIP } from "../services/ipService.ts";
-import Aurora from "./ui/AuroraBG.tsx";
+import LaserFlow from "./ui/LaserFlow.tsx";
 import { TodoAIIntro } from "./TodoAIIntro";
 import { motion } from "framer-motion";
 import { recordSession } from '../lib/sessionUtils';
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
 import { Loader } from "lucide-react";
-import Logo from "./Logo";
 import {
     Mail,
     Lock,
@@ -28,6 +27,7 @@ import {
     Info
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import useIsMobile from "../hooks/useIsMobile";
 
 const ModernFooter = () => {
     return (
@@ -119,6 +119,7 @@ export function LoginForm({
     const [passwordError, setPasswordError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
 
     const validateEmail = (value: string) => {
         if (!value.trim()) {
@@ -219,15 +220,48 @@ export function LoginForm({
         console.log('All letters have animated!');
     };
 
+    // LaserFlow parameters: lighter on mobile for readability and performance
+    const laserProps = isMobile
+        ? {
+            dpr: 1,
+            flowSpeed: 0.26,
+            horizontalBeamOffset: 0.16,
+            verticalBeamOffset: 0.0,
+            verticalSizing: 2.0,
+            horizontalSizing: 0.55,
+            fogIntensity: 0.5,
+            fogScale: 0.4,
+            wispDensity: 1.0,
+            wispSpeed: 12.0,
+            wispIntensity: 4.0,
+            flowStrength: 0.25,
+        }
+        : {
+            flowSpeed: 0.28,
+            horizontalBeamOffset: 0.18,
+            verticalBeamOffset: 0.0,
+            verticalSizing: 2.4,
+            horizontalSizing: 0.7,
+            fogIntensity: 0.75,
+            fogScale: 0.32,
+            wispDensity: 1.4,
+            wispSpeed: 16.0,
+            wispIntensity: 6.5,
+            flowStrength: 0.35,
+        };
+
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-white dark:bg-gray-950">
-            <Aurora
-                colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-                blend={0.8}
-                amplitude={2.5}
-                speed={0.7}
-            />
-
+            <div className="absolute inset-y-0 right-0 w-full md:w-3/4 pointer-events-none" aria-hidden="true">
+                <LaserFlow
+                    color="#7C3AED"
+                    {...laserProps}
+                    decay={1.1}
+                    falloffStart={1.2}
+                    fogFallSpeed={0.6}
+                    className="w-full h-full mix-blend-screen"
+                />
+            </div>
 
             <div className={cn("flex-1 py-12 overflow-y-auto z-50", className)} {...props}>
                 <div className="container max-w-6xl mx-auto px-4">

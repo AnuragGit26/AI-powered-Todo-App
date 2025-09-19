@@ -24,28 +24,31 @@ export class AIPrioritizationEngine {
         userId: string
     ): Promise<PriorityScore> {
         try {
-            // Check cache first
+            // Check cache first (treat >1h old as stale so refresh works)
             const cachedScore = AIPriorityCache.get(task.id);
             if (cachedScore) {
-                return cachedScore;
+                const ageMs = Date.now() - new Date(cachedScore.lastUpdated).getTime();
+                const oneHour = 3600000;
+                if (ageMs <= oneHour) {
+                    return cachedScore;
+                }
+                // else fall-through to recompute a fresh score
             }
 
             // Check if Gemini API key is available
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            const hasApi = !!apiKey;
 
-            if (!apiKey) {
-                return this.getFallbackScore(task);
-            }
-
-            // Get historical patterns for this user
+            // Get historical patterns for this user (used for confidence and optional effort weighting)
             const historicalPattern = await this.getHistoricalPattern(userId);
 
             // Calculate individual scoring components
-            const impactScore = await this.calculateImpactScore(task);
-            const effortScore = await this.calculateEffortScore(
-                task,
-                historicalPattern
-            );
+            const impactScore = hasApi
+                ? await this.calculateImpactScore(task)
+                : this.getBasicImpactScore(task);
+            const effortScore = hasApi
+                ? await this.calculateEffortScore(task, historicalPattern)
+                : this.getBasicEffortScore(task);
             const urgencyScore = this.calculateUrgencyScore(task);
             const dependencyScore = this.calculateDependencyScore(task, allTasks);
             const workloadScore = this.calculateWorkloadScore(allTasks, userId);
@@ -180,13 +183,15 @@ Return only the number (0–100).
 
         const effectiveDaysLeft = daysUntilDue - bufferDays;
 
-        // Urgency scoring with buffer consideration
-        if (effectiveDaysLeft < 0) return 100; // Past due or within buffer zone
-        if (effectiveDaysLeft < 1) return 85; // Critical (less than 1 day after buffer)
-        if (effectiveDaysLeft < 3) return 70; // High urgency
-        if (effectiveDaysLeft < 7) return 50; // Medium urgency
-        if (effectiveDaysLeft < 14) return 30; // Low urgency
-        return 15; // Very low urgency
+        // Continuous urgency scoring with buffer consideration
+        // <= 0 days after buffer -> 100 (critical)
+        if (effectiveDaysLeft <= 0) return 100;
+        // >= 14 days after buffer -> 15 (very low)
+        if (effectiveDaysLeft >= 14) return 15;
+        // Linearly interpolate between 100 (at 0) to 15 (at 14)
+        const t = effectiveDaysLeft / 14; // 0..1
+        const score = 15 + (1 - t) * 85; // 15..100
+        return Math.round(Math.max(0, Math.min(100, score)));
     }
 
     /**
@@ -274,37 +279,10 @@ Return only the number (0–100).
         task: Todo | SubTodo;
         historicalPattern?: HistoricalPattern;
     }): Promise<number> {
+        // Deterministic weighted score to avoid LLM-induced rounding collisions
+        // and ensure small differences in component scores are reflected.
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-            const prompt = `
-Task: "${scoreData.task.title}"
-Scores:
-- Impact: ${scoreData.impactScore}
-- Effort: ${scoreData.effortScore}
-- Urgency: ${scoreData.urgencyScore}
-- Dependency: ${scoreData.dependencyScore}
-- Workload: ${scoreData.workloadScore}
-Context:
-- Priority: ${scoreData.task.priority}
-- Status: ${scoreData.task.status}
-- Success rate: ${scoreData.historicalPattern?.successRate ? (scoreData.historicalPattern.successRate * 100).toFixed(1) + "%" : "No data"}
-- Avg. completion: ${scoreData.historicalPattern?.averageCompletionTime || "Unknown"} hours
-- Similar completed: ${scoreData.historicalPattern?.similarTasksCompleted || 0}
-
-Weighting rules:
-- Boost if (impact > 70 && effort < 40): 1.3x
-- Boost if (impact > 70 && urgency > 70): 1.25x
-- Boost if (dependency unblocks 3+): 1.4x
-- Lower if (effort > 80 && workload > 80): 0.8x
-- Consider historical success rate
-
-Return only the final weighted priority score (0–100), as a number.
-`;
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            const scoreText = response.text().trim();
-            const score = parseInt(scoreText.match(/\d+/)?.[0] || "50");
-            return Math.max(0, Math.min(100, score));
+            return this.getBasicWeightedScore(scoreData);
         } catch {
             return this.getBasicWeightedScore(scoreData);
         }
@@ -463,7 +441,13 @@ Return only the final weighted priority score (0–100), as a number.
         for (const task of tasks) {
             const cachedScore = AIPriorityCache.get(task.id);
             if (cachedScore) {
-                scores.set(task.id, cachedScore);
+                const ageMs = Date.now() - new Date(cachedScore.lastUpdated).getTime();
+                const oneHour = 3600000;
+                if (ageMs <= oneHour) {
+                    scores.set(task.id, cachedScore);
+                } else {
+                    tasksNeedingCalculation.push(task);
+                }
             } else {
                 tasksNeedingCalculation.push(task);
             }
@@ -580,7 +564,7 @@ Return only the final weighted priority score (0–100), as a number.
      */
     updateHistoricalPattern(
         userId: string,
-        completedTask: Todo | SubTodo,
+        _completedTask: Todo | SubTodo,
         actualCompletionTime: number
     ): void {
         const pattern = this.historicalData.get(userId) || {

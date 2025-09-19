@@ -7,8 +7,6 @@ import { TimerAlert } from './ui/TimerAlert';
 import { Input } from './ui/input';
 import { Switch } from './ui/switch';
 import { History, Tag } from 'lucide-react';
-import useSound from 'use-sound';
-import notifySound from '../assets/notify.wav';
 import { useTodoStore } from '../store/todoStore';
 import { useBillingUsage } from '../hooks/useBillingUsage';
 
@@ -73,11 +71,7 @@ export const PomodoroTimer: React.FC = () => {
 
     const [showHistory, setShowHistory] = useState(false);
 
-    // Initialize sound with useSound hook
-    const [playSound] = useSound(notifySound, {
-        volume: pomodoro.notificationVolume,
-        soundEnabled: pomodoro.notificationEnabled,
-    });
+    // Audio notifications are handled by MiniPomodoro via HTML5 Audio to comply with autoplay policy
 
     const announceToScreenReader = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
         const liveRegion = document.createElement('div');
