@@ -89,8 +89,22 @@ jobs:
         name: build
         path: .
     
+    - name: Determine deploy gating
+      shell: bash
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        if [[ -n "$VERCEL_TOKEN" && -n "$VERCEL_ORG_ID" && -n "$VERCEL_PROJECT_ID" ]]; then
+          echo "VERCEL_SHOULD_DEPLOY=true" >> $GITHUB_ENV
+        else
+          echo "VERCEL_SHOULD_DEPLOY=false" >> $GITHUB_ENV
+          echo "Skipping Vercel deploy: missing Vercel secrets."
+        fi
+
     - name: Deploy to Vercel
-      if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
+      if: env.VERCEL_SHOULD_DEPLOY == 'true'
       uses: amondnet/vercel-action@v20
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
