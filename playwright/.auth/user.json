@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5175",
+      "localStorage": [
+        {
+          "name": "sb-ucydvtvzqdmvfjpcqzxn-auth-token",
+          "value": "{\"access_token\":\"mock-access-token-123\",\"token_type\":\"bearer\",\"expires_in\":3600,\"refresh_token\":\"mock-refresh-token-123\",\"user\":{\"id\":\"test-user-id-123\",\"email\":\"test_user@gmail.com\",\"user_metadata\":{\"username\":\"test_user\"},\"created_at\":\"2025-09-20T09:09:54.952Z\",\"updated_at\":\"2025-09-20T09:09:54.952Z\"},\"expires_at\":1758362999}"
+        },
+        {
+          "name": "todo-storage",
+          "value": "{\"state\":{\"theme\":{\"mode\":\"light\",\"primaryColor\":\"#53c9d9\",\"secondaryColor\":\"#5f4ae8\"},\"pomodoro\":{\"isActive\":false,\"isPaused\":false,\"isWorkTime\":true,\"timeLeft\":1500,\"completedSessions\":0,\"settings\":{\"workTime\":25,\"shortBreak\":5,\"longBreak\":15,\"longBreakInterval\":4},\"sessionHistory\":[],\"currentLabel\":\"\",\"autoStartNext\":false,\"notificationEnabled\":true,\"notificationVolume\":0.5,\"lastUpdatedAt\":1758359396454,\"syncedAt\":1758359396454,\"deviceId\":\"e885b6db-2a00-4c4a-ad54-44df13bc3866\"}},\"version\":0}"
+        },
+        {
+          "name": "app_theme_settings",
+          "value": "{\"mode\":\"light\",\"primaryColor\":\"#53c9d9\",\"secondaryColor\":\"#5f4ae8\",\"fontFamily\":\"Inter\",\"fontSize\":\"text-base\",\"enableAnimations\":true}"
+        }
+      ]
+    }
+  ]
+}

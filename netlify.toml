@@ -9,4 +9,4 @@
 
 [build.environment]
   # Add any build-time environment variables that are not sensitive
-  NODE_VERSION = "18"
+  NODE_VERSION = "22"

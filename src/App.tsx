@@ -340,6 +340,7 @@ const App: React.FC = () => {
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}
                             className={`w-full py-3 flex items-center justify-center gap-2 bg-black text-white rounded-lg shadow-md transition-all duration-300 ${showTodoForm ? 'bg-gray-500 hover:bg-gray-600' : ''}`}
+                            aria-label="Create a Task"
                         >
                             {showTodoForm ? (
                                 <>
