@@ -52,7 +52,7 @@ export const NavBar: React.FC = () => {
         <>
             {/* Desktop Navigation */}
             <nav
-                className="fixed top-0 left-0 right-0 z-30 hidden sm:flex items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm"
+                className="fixed top-0 left-0 right-0 z-50 hidden sm:flex items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm"
                 style={{
                     "--primary-color": theme.primaryColor,
                     "--secondary-color": theme.secondaryColor,
@@ -117,7 +117,7 @@ export const NavBar: React.FC = () => {
 
             {/* Mobile Navigation */}
             <nav
-                className="fixed top-0 left-0 right-0 z-30 flex sm:hidden items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm"
+                className="fixed top-0 left-0 right-0 z-50 flex sm:hidden items-center justify-between px-4 py-2 backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200 dark:border-gray-800 shadow-sm"
                 role="navigation"
                 aria-label="Mobile navigation"
             >
@@ -160,7 +160,7 @@ export const NavBar: React.FC = () => {
                 {showMobileMenu && (
                     <motion.div
                         id="mobile-navigation-menu"
-                        className="fixed top-12 left-0 right-0 z-20 sm:hidden flex flex-col p-4 backdrop-blur-md bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 shadow-md"
+                        className="fixed top-12 left-0 right-0 z-40 sm:hidden flex flex-col p-4 backdrop-blur-md bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 shadow-md"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
