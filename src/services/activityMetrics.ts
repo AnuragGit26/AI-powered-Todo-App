@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '../lib/supabaseClient';
 export const logActivity = async (userId: string, activity: string) => {
     const timestamp = new Date();
     const id = crypto.randomUUID();

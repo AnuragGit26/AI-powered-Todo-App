@@ -18,10 +18,11 @@ import UserProfile from "./components/UserProfile";
 import SplitText from "./components/ui/SplitText.jsx";
 import Footer from "./components/ui/Footer";
 import { useSessionRecording } from './hooks/useSessionRecording';
-import { checkExistingSession, cleanupDuplicateSessions } from './lib/sessionUtils';
+import { checkExistingSession, cleanupDuplicateSessions, subscribeToSessionRevocation, signOutAndCleanup } from './lib/sessionUtils';
 import { Button } from "./components/ui/button.tsx";
 import GradientText from "./components/ui/GradientText";
 import NavBar from "./components/NavBar";
+import { IdleTimeoutGuard } from "./components/IdleTimeoutGuard";
 import { initializeTheme } from "./lib/themeUtils";
 import { PomodoroTimer } from "./components/PomodoroTimer";
 import { supabase } from "./lib/supabaseClient";
@@ -34,7 +35,7 @@ import { useBillingStore, initializeFreeTierSubscription } from "./store/billing
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
-    const { theme, setTodos, setUserToken, setTheme, userData } = useTodoStore();
+    const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
     const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -99,7 +100,7 @@ const App: React.FC = () => {
 
     // Auth state listener - separated from data loading for performance
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             setSession(session);
 
             if (session) {
@@ -121,6 +122,8 @@ const App: React.FC = () => {
                         console.warn('Session initialization background task:', error);
                     }
                 });
+            } else {
+                await signOutAndCleanup({ scope: 'local' });
             }
 
             // Mark auth check as complete
@@ -164,6 +167,15 @@ const App: React.FC = () => {
         Promise.all([fetchUser(), fetchProfileImage()])
             .catch(error => console.error("Error fetching user data:", error));
 
+    }, [session]);
+
+    // Subscribe to realtime session revocation for this device
+    useEffect(() => {
+        if (!session) return;
+        const unsubscribe = subscribeToSessionRevocation();
+        return () => {
+            try { unsubscribe(); } catch { /* noop */ }
+        };
     }, [session]);
 
     // Data loading - separate effect to avoid blocking UI
@@ -437,6 +449,7 @@ const App: React.FC = () => {
     return (
         <>
             <NavBar />
+            {session && <IdleTimeoutGuard idleMs={30 * 60 * 1000} warningMs={60 * 1000} />}
             <Toaster />
             <Routes>
                 <Route

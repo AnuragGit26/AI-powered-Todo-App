@@ -78,9 +78,9 @@ export const useTodoStore = create<TodoStore>()(
                             ...state.todos,
                             {
                                 ...todo,
-                                id: crypto.randomUUID(),
-                                createdAt: new Date(),
-                                subtasks: [],
+                                id: todo.id || crypto.randomUUID(),
+                                createdAt: todo.createdAt || new Date(),
+                                subtasks: todo.subtasks || [],
                                 title: todo.title || '',
                                 status: todo.status || 'Not Started',
                                 completed: todo.completed || false,

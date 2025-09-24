@@ -165,9 +165,19 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         if (parentId) {
             const parentTask = getTaskById(parentId);
             if (parentTask && parentTask.id === parentId) {
+                // Build a subtask object with only fields that exist in the 'subtasks' table
                 const newSubtask: SubTodo = {
-                    ...newTodo,
+                    id: newTodo.id,
+                    title: newTodo.title,
+                    completed: newTodo.completed,
+                    createdAt: newTodo.createdAt,
+                    dueDate: newTodo.dueDate,
+                    priority: newTodo.priority,
+                    analysis: newTodo.analysis,
                     parentId,
+                    status: newTodo.status,
+                    estimatedTime: newTodo.estimatedTime,
+                    completedAt: null,
                 };
                 useTodoStore.getState().createSubtaskStore(parentId, newSubtask);
                 await createSubtask(newSubtask);

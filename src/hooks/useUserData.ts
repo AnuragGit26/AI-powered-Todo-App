@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabaseClient';
+import { queryClient } from '../lib/queryClient';
+import { useEffect } from 'react';
 
 export interface UserData {
     id: string;
@@ -38,7 +35,7 @@ async function getProfilePictureUrl(userId: string): Promise<string> {
  */
 async function fetchUserData(): Promise<UserData> {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
         throw new Error('User not found');
     }
@@ -70,27 +67,27 @@ async function fetchUserData(): Promise<UserData> {
 }
 
 export const useUserData = () => {
-    const queryClient = useQueryClient();
-
-    return useQuery<UserData>({
+    const query = useQuery<UserData>({
         queryKey: ['userData'],
         queryFn: fetchUserData,
         staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-        cacheTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+        gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
         retry: 2,
-        onSuccess: (data) => {
-            // Update localStorage with fresh data
-            if (data) {
-                localStorage.setItem('userId', data.id);
-                localStorage.setItem('username', data.username);
-                localStorage.setItem('profilePicture', data.profilePicture);
-            }
-        }
     });
+
+    useEffect(() => {
+        const data = query.data;
+        if (data) {
+            try { localStorage.setItem('userId', data.id); } catch { /* noop */ }
+            try { localStorage.setItem('username', data.username); } catch { /* noop */ }
+            try { localStorage.setItem('profilePicture', data.profilePicture); } catch { /* noop */ }
+        }
+    }, [query.data]);
+
+    return query;
 };
 
 // Helper function to invalidate user data cache
 export const invalidateUserData = () => {
-    const queryClient = useQueryClient();
     queryClient.invalidateQueries({ queryKey: ['userData'] });
 };

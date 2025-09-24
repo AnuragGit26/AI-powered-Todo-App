@@ -5,6 +5,58 @@ CREATE TABLE public.activity_logs (
     timestamp timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT activity_logs_pkey PRIMARY KEY (id)
 ) TABLESPACE pg_default;
+
+-- Security Hardening: Enable RLS and define policies for user_sessions
+ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to view their own sessions
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'user_sessions' AND policyname = 'Users can select own sessions'
+    ) THEN
+        CREATE POLICY "Users can select own sessions"
+        ON public.user_sessions
+        FOR SELECT
+        USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Allow users to insert their own session rows
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'user_sessions' AND policyname = 'Users can insert own sessions'
+    ) THEN
+        CREATE POLICY "Users can insert own sessions"
+        ON public.user_sessions
+        FOR INSERT
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Allow users to update only their own session rows
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'user_sessions' AND policyname = 'Users can update own sessions'
+    ) THEN
+        CREATE POLICY "Users can update own sessions"
+        ON public.user_sessions
+        FOR UPDATE
+        USING (auth.uid() = user_id)
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Allow users to delete only their own session rows
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'user_sessions' AND policyname = 'Users can delete own sessions'
+    ) THEN
+        CREATE POLICY "Users can delete own sessions"
+        ON public.user_sessions
+        FOR DELETE
+        USING (auth.uid() = user_id);
+    END IF;
+END $$;
 CREATE TABLE public.billing_invoices (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL,

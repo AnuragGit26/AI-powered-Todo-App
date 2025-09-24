@@ -17,6 +17,49 @@ test.describe('Create Todo', () => {
         await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'blocked by test' }) });
       }
     );
+
+    // Ensure billing limits are available from the very first script load (avoids Firefox flakiness)
+    const now = new Date().toISOString();
+    const oneYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const billingState = {
+      state: {
+        subscription: {
+          id: 'free_test_user',
+          userId: 'test-user-id-123',
+          tier: 'free',
+          status: 'active',
+          currentPeriodStart: now,
+          currentPeriodEnd: oneYear,
+          cancelAtPeriodEnd: false,
+          usage: {
+            tasksCreated: 0,
+            aiAnalysisUsed: 0,
+            pomodoroSessions: 0,
+            integrationsSynced: 0,
+            teamMembersInvited: 0,
+          },
+          limits: {
+            maxTasks: 50,
+            maxAiAnalysis: 10,
+            maxPomodoroSessions: -1,
+            maxIntegrations: 1,
+            maxTeamMembers: 0,
+            advancedAnalytics: false,
+            prioritySupport: false,
+            customThemes: false,
+            offlineSync: false,
+            voiceToTask: false,
+          },
+          createdAt: now,
+          updatedAt: now,
+        },
+        paymentMethods: [],
+      },
+      version: 0,
+    };
+    await page.addInitScript((data: Record<string, unknown>) => {
+      window.localStorage.setItem('billing-storage', JSON.stringify(data));
+    }, billingState);
   });
 
   test('should create a new todo from home page', async ({ page }) => {
@@ -40,19 +83,16 @@ test.describe('Create Todo', () => {
     }, undefined, { timeout: 5000 });
 
     await toggleButton.click();
-    await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Create new task' })).toBeVisible();
 
     // Fill the task title and submit
     const taskTitle = 'Write E2E todo item';
     const titleArea = page.locator('textarea#task-title');
     await expect(titleArea).toBeVisible();
     await titleArea.fill(taskTitle);
-
-    // Submit the form
     await page.getByRole('button', { name: 'Create task' }).click();
-
-    // The form closes on success, and the new todo appears in the list
     await expect(page.getByRole('button', { name: 'Create a Task' })).toBeVisible();
-    await expect(page.getByText(taskTitle)).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Create new task' })).toBeHidden();
+    await expect(page.locator('.task-item').filter({ hasText: taskTitle }).first()).toBeVisible();
   });
 });

@@ -146,12 +146,36 @@ export const createTask = async (task: Todo) => {
             }
         }
 
-        // If there are subtasks, create them
+        // If there are subtasks, create them (sanitize columns to match DB schema)
         if (subtasks && subtasks.length > 0) {
-            const subtasksToCreate = subtasks.map(subtask => ({
-                ...subtask,
-                parentId: taskToSave.id
-            }));
+            const subtasksToCreate = subtasks.map((subtask) => {
+                const {
+                    id,
+                    title,
+                    completed,
+                    createdAt,
+                    dueDate,
+                    priority,
+                    analysis,
+                    status,
+                    completedAt,
+                    estimatedTime,
+                } = subtask as Partial<SubTodo>;
+
+                return {
+                    id: isValidUUID(String(id)) ? String(id) : handleUUID(id as string | undefined),
+                    parentId: taskToSave.id,
+                    title,
+                    completed: completed ?? false,
+                    createdAt,
+                    dueDate,
+                    priority,
+                    analysis,
+                    status: status ?? 'Not Started',
+                    completedAt,
+                    estimatedTime,
+                };
+            });
 
             const { error: subtasksError } = await supabase
                 .from('subtasks')
@@ -349,18 +373,56 @@ export const fetchSubtasks = async (parentId: string) => {
 };
 
 export const createSubtask = async (subtask: Partial<SubTodo>) => {
-    const { error } = await supabase
-        .from('subtasks')
-        .insert([subtask]);
+    try {
+        // Pick only columns that exist in the 'subtasks' table to avoid insert errors
+        const {
+            id,
+            parentId,
+            title,
+            completed,
+            createdAt,
+            dueDate,
+            priority,
+            analysis,
+            status,
+            completedAt,
+            estimatedTime,
+        } = (subtask || {}) as Partial<SubTodo>;
 
-    if (error) {
-        console.error('Error creating subtask:', error);
-    } else {
-        console.log('Subtask created:', subtask.id);
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            await logActivity(userId, `SubTask Created ${subtask?.id}`);
+        if (!parentId) {
+            console.error('Error creating subtask: parentId is required');
+            return;
         }
+
+        const payload = {
+            id: isValidUUID(String(id)) ? String(id) : handleUUID(id as string | undefined),
+            parentId,
+            title,
+            completed: completed ?? false,
+            createdAt,
+            dueDate,
+            priority,
+            analysis,
+            status: status ?? 'Not Started',
+            completedAt,
+            estimatedTime,
+        };
+
+        const { error } = await supabase
+            .from('subtasks')
+            .insert([payload]);
+
+        if (error) {
+            console.error('Error creating subtask:', error);
+        } else {
+            console.log('Subtask created:', payload.id);
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                await logActivity(userId, `SubTask Created ${payload.id}`);
+            }
+        }
+    } catch (e) {
+        console.error('Unexpected error creating subtask:', e);
     }
 };
 
@@ -371,9 +433,34 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
         return;
     }
 
+    // Only pass allowed columns for subtasks table
+    const {
+        title,
+        completed,
+        createdAt,
+        dueDate,
+        priority,
+        analysis,
+        status,
+        completedAt,
+        estimatedTime,
+    } = (updates || {}) as Partial<SubTodo>;
+
+    const sanitizedUpdates = {
+        ...(title !== undefined ? { title } : {}),
+        ...(completed !== undefined ? { completed } : {}),
+        ...(createdAt !== undefined ? { createdAt } : {}),
+        ...(dueDate !== undefined ? { dueDate } : {}),
+        ...(priority !== undefined ? { priority } : {}),
+        ...(analysis !== undefined ? { analysis } : {}),
+        ...(status !== undefined ? { status } : {}),
+        ...(completedAt !== undefined ? { completedAt } : {}),
+        ...(estimatedTime !== undefined ? { estimatedTime } : {}),
+    };
+
     const { error } = await supabase
         .from('subtasks')
-        .update(updates)
+        .update(sanitizedUpdates)
         .eq('id', subtaskId);
 
     if (error) {

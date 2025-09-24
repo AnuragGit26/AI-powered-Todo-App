@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UserProfilePictureUploader from './UserProfilePictureUploader';
-import { fetchUserSessions, terminateSession, UserSession } from '../lib/sessionUtils';
+import { fetchUserSessions, terminateSession, UserSession, signOutOnAllDevices } from '../lib/sessionUtils';
 import { invalidateUserData } from '../hooks/useUserData';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
@@ -33,19 +33,19 @@ interface UserMetadata {
 }
 
 interface AppMetadata {
-    provider: string;
-    providers: string[];
+    provider?: string;
+    providers?: string[];
 }
 
 interface UserProfileProps {
     userData: {
         id: string;
-        email: string;
+        email?: string;
         phone?: string;
         app_metadata: AppMetadata;
         user_metadata: UserMetadata;
-        created_at: string;
-        updated_at: string;
+        created_at?: string;
+        updated_at?: string;
         confirmed_at?: string;
         last_sign_in_at?: string;
         role?: string;
@@ -138,38 +138,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
     useEffect(() => {
         const fetchInitialData = async () => {
             if (!userData?.id) return;
-
             try {
-                // Update user metadata if needed
-                const { error: updateError } = await supabase.auth.updateUser({
-                    data: {
-                        username: editedData.username,
-                        bio: editedData.bio,
-                        phone_number: editedData.phone_number,
-                        email: userData.email,
-                        email_verified: userData.confirmed_at ? true : false,
-                        phone_verified: false // You might want to implement phone verification
-                    }
-                });
-
-                if (updateError) {
-                    console.error('Error updating user metadata:', updateError);
-                    toast.error('Failed to update user data');
-                    return;
-                }
-
-                // Get profile picture URL
+                // Get profile picture URL only (no metadata update on mount)
                 const bucketName = "MultiMedia Bucket";
                 const filePath = `${userData.id}/profile.jpg`;
                 const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
                 setProfilePicture(data.publicUrl);
-
             } catch (error) {
                 console.error('Error in fetchInitialData:', error);
                 toast.error('Failed to load user data');
             }
         };
-
         fetchInitialData();
     }, [userData?.id]);
 
@@ -218,6 +197,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
             toast.error('Failed to update profile');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Global sign-out (all devices)
+    const handleSignOutAllDevices = async () => {
+        const confirmed = window.confirm('This will sign you out on ALL devices and browsers. Continue?');
+        if (!confirmed) return;
+        try {
+            await signOutOnAllDevices();
+        } catch (e) {
+            console.error('Failed to sign out on all devices', e);
+            toast.error('Failed to sign out on all devices');
         }
     };
 
@@ -289,9 +280,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
     };
 
     // Update the fetchSessions function
-    const fetchSessions = async () => {
+    const fetchSessions = useCallback(async () => {
         if (!userData?.id) return;
-
         setSessionLoading(true);
         try {
             const userSessions = await fetchUserSessions(userData.id);
@@ -303,19 +293,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         } finally {
             setSessionLoading(false);
         }
-    };
+    }, [userData?.id]);
 
     // Call fetchSessions when the Security tab is active
     useEffect(() => {
         if (activeTab === 'security') {
             fetchSessions();
         }
-    }, [activeTab, userData?.id]);
+    }, [activeTab, fetchSessions]);
 
     // Add new function to fetch activity logs
-    const fetchActivityLogs = async () => {
+    const fetchActivityLogs = useCallback(async () => {
         if (!userData?.id) return;
-
         setIsLoadingActivity(true);
         try {
             const { data, error } = await supabase
@@ -345,22 +334,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         } finally {
             setIsLoadingActivity(false);
         }
-    };
+    }, [userData?.id]);
 
     // Add useEffect to fetch activity logs when tab changes
     useEffect(() => {
         if (activeTab === 'activity') {
             fetchActivityLogs();
         }
-    }, [activeTab, userData?.id]);
+    }, [activeTab, fetchActivityLogs]);
 
     if (!userData) {
         return <div>Loading user data...</div>;
     }
 
-    const nameInitial = userData.user_metadata.username ?
-        userData.user_metadata.username.charAt(0).toUpperCase() :
-        userData.email.charAt(0).toUpperCase();
+    const nameInitial = userData.user_metadata.username
+        ? userData.user_metadata.username.charAt(0).toUpperCase()
+        : (userData.email || '').charAt(0).toUpperCase();
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-transparent p-4 md:p-8">
@@ -413,7 +402,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                 className="flex items-center justify-center md:justify-start mt-3 text-sm text-blue-100/80"
                             >
                                 <Clock className="h-4 w-4 mr-1" />
-                                <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
+                                <span>Member since {userData.created_at ? new Date(userData.created_at).toLocaleDateString() : ''}</span>
                             </motion.div>
                         </div>
                     </div>
@@ -467,7 +456,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                                     <Input
                                                         id="email"
                                                         type="email"
-                                                        value={userData.email}
+                                                        value={userData.email || ''}
                                                         disabled
                                                         className="mt-1.5 bg-gray-50/50 dark:bg-gray-800/30"
                                                     />
@@ -583,6 +572,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                         </CardContent>
                                     </Card>
                                 </div>
+
                             </div>
                         </TabsContent>
 
@@ -742,7 +732,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <BillingAnalytics userId={userData.id} />
+                                    <BillingAnalytics />
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -929,11 +919,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                         </CardContent>
                                     </Card>
                                 </div>
+                                {/* Global Sign-out Section */}
+                                <div className="lg:col-span-3">
+                                    <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="flex items-center gap-2 text-xl">
+                                                <LogOut className="h-5 w-5 text-red-500" />
+                                                Sign out on all devices
+                                            </CardTitle>
+                                            <CardDescription>
+                                                This will terminate all active sessions on every device and browser. Use this if you suspect account compromise or lost device.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Button
+                                                onClick={handleSignOutAllDevices}
+                                                variant="destructive"
+                                                className="w-full sm:w-auto"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <LogOut className="h-4 w-4" />
+                                                    Sign out on all devices
+                                                </div>
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </div>
                         </TabsContent>
 
                         <TabsContent value="billing">
-                            <BillingDashboard userId={userData.id} />
+                            <BillingDashboard />
                         </TabsContent>
                     </div>
                 </Tabs>

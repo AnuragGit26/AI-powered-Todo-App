@@ -2,10 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Settings, Moon, Sun, X, Palette, Type, ZoomIn, Save, Trash2, RefreshCw, ToggleLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTodoStore } from '../store/todoStore';
-import { Button } from './ui/button';
-import { ColorPicker } from './ui/color-picker';
-import { createClient } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
+import { signOutAndCleanup } from '../lib/sessionUtils';
 import { useNavigate } from "react-router-dom";
 import { useMetrics } from "../hooks/useMetrics.ts";
 import {
@@ -67,6 +64,7 @@ interface ThemePreset {
         mode: 'light' | 'dark';
         primaryColor: string;
         secondaryColor: string;
+        fontFamily?: string;
         fontSize?: string;
         enableAnimations?: boolean;
     };
@@ -92,11 +90,11 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     // Initialize state from theme settings
     useEffect(() => {
         const settings = loadThemeSettings();
-        setCustomPrimary(settings.primaryColor);
-        setCustomSecondary(settings.secondaryColor);
-        setFontSize(settings.fontSize);
-        setFontFamily(settings.fontFamily);
-        setEnableAnimations(settings.enableAnimations);
+        setCustomPrimary(settings.primaryColor || '');
+        setCustomSecondary(settings.secondaryColor || '');
+        setFontSize(settings.fontSize || 'text-base');
+        setFontFamily(settings.fontFamily || 'Inter');
+        setEnableAnimations(settings.enableAnimations ?? true);
 
         // Load user theme presets
         const savedPresets = localStorage.getItem('themePresets');
@@ -132,11 +130,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     const handleChangeFontFamily = useCallback((family: string) => {
         changeFontFamily(family);
         setFontFamily(family);
-        setTheme({
-            ...theme,
-            fontFamily: family,
-        });
-    }, [theme, setTheme]);
+        saveThemeSettings({ fontFamily: family });
+    }, []);
 
     const handleToggleAnimations = useCallback(() => {
         const newValue = !enableAnimations;
@@ -178,12 +173,11 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     }, [newPresetName, userPresets, theme]);
 
     const applyPreset = useCallback((preset: ThemePreset) => {
-        // Apply theme settings
+        // Apply theme settings (exclude fontFamily from store since it's not in the type)
         setTheme({
             mode: preset.theme.mode,
             primaryColor: preset.theme.primaryColor,
             secondaryColor: preset.theme.secondaryColor,
-            fontFamily: preset.theme.fontFamily,
         });
 
         // Save and apply all settings
@@ -195,6 +189,10 @@ const ThemeCustomizer: React.FC = React.memo(() => {
             fontSize: preset.theme.fontSize || 'text-base',
             enableAnimations: preset.theme.enableAnimations !== false,
         });
+
+        // Apply font family separate from store type
+        changeFontFamily(preset.theme.fontFamily || 'Inter');
+        setFontFamily(preset.theme.fontFamily || 'Inter');
 
         // Update local state
         setFontSize(preset.theme.fontSize || 'text-base');
@@ -221,15 +219,8 @@ const ThemeCustomizer: React.FC = React.memo(() => {
     const handleLogout = useCallback(async () => {
         const userId = localStorage.getItem('userId');
         await logUserActivity(userId || "", 'User logged out');
-        const { error } = await supabase.auth.signOut();
-        sessionStorage.removeItem('token');
-        localStorage.clear();
-        if (error) {
-            console.error('Error logging out:', error.message);
-        }
-        else {
-            window.location.reload();
-        }
+        await signOutAndCleanup({ scope: 'local', clearAll: true });
+        try { window.location.assign('/login'); } catch { /* noop */ }
     }, [logUserActivity]);
 
     const TabButton = ({ id, label, icon }: { id: 'general' | 'colors' | 'typography' | 'presets', label: string, icon: React.ReactNode }) => (

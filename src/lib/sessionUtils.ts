@@ -44,6 +44,78 @@ function generateDeviceFingerprint(): string {
 }
 
 /**
+ * Centralized sign-out helper that also cleans up local/session storage
+ */
+export async function signOutAndCleanup(options?: { scope?: 'local' | 'global'; clearAll?: boolean }) {
+    try {
+        const scope = options?.scope || 'local';
+        await supabase.auth.signOut({ scope });
+    } catch (e) {
+        console.warn('Sign out encountered an issue (continuing with cleanup):', e);
+    } finally {
+        try { sessionStorage.removeItem('token'); } catch { /* noop */ }
+        try { localStorage.removeItem('current_session_id'); } catch { /* noop */ }
+        try { localStorage.removeItem('userId'); } catch { /* noop */ }
+        try { localStorage.removeItem('username'); } catch { /* noop */ }
+        try { localStorage.removeItem('profilePicture'); } catch { /* noop */ }
+        if (options?.clearAll) {
+            try { localStorage.clear(); } catch { /* noop */ }
+        }
+    }
+}
+
+/**
+ * Subscribe to realtime deletion of this device's session row and sign out immediately.
+ * Returns an unsubscribe function that should be called to clean up the channel.
+ */
+export function subscribeToSessionRevocation(): () => void {
+    try {
+        const sessionId = localStorage.getItem('current_session_id');
+        if (!sessionId) return () => { /* noop */ };
+
+        const channel = supabase
+            .channel(`session_revoke_${sessionId}`)
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'user_sessions', filter: `id=eq.${sessionId}` },
+                async () => {
+                    await signOutAndCleanup({ scope: 'local' });
+                    try { window.location.assign('/login'); } catch { /* noop */ }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            try { supabase.removeChannel(channel); } catch { /* noop */ }
+        };
+    } catch {
+        return () => { /* noop */ };
+    }
+}
+
+/**
+ * Sign out from all devices for the current user.
+ * Deletes all user_sessions rows for the user, then performs a global sign out and local cleanup.
+ */
+export async function signOutOnAllDevices(): Promise<void> {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+            await supabase
+                .from('user_sessions')
+                .delete()
+                .eq('user_id', user.id);
+        }
+    } catch (e) {
+        console.warn('Error deleting user sessions during global sign-out:', e);
+        // continue to signout anyway
+    } finally {
+        await signOutAndCleanup({ scope: 'global', clearAll: true });
+        try { window.location.assign('/login'); } catch { /* noop */ }
+    }
+}
+
+/**
  * Fetches all active sessions for a user
  */
 export async function fetchUserSessions(userId: string): Promise<UserSession[]> {
@@ -97,7 +169,7 @@ export async function terminateSession(sessionId: string): Promise<void> {
 
         // If it's the current device's session, sign out the user
         if (isCurrentDevice) {
-            await supabase.auth.signOut();
+            await signOutAndCleanup({ scope: 'local' });
         }
     } catch (error) {
         console.error('Error terminating session:', error);
@@ -242,7 +314,7 @@ export async function updateSessionActivity(): Promise<void> {
         if (!sessionId) {
             console.warn('Cannot update session: No session ID in localStorage');
 
-            // Try to find or create a session as a recovery mechanism
+            // Recovery: create a fresh session row for this device if user is logged in
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData?.session?.user?.id) {
                 await recordSession();
@@ -257,11 +329,29 @@ export async function updateSessionActivity(): Promise<void> {
 
         if (error) {
             console.error('Error updating session activity:', error);
+            // Recovery: attempt to recreate the session row rather than signing out
+            await recordSession();
+            return;
+        }
 
-            // If the session no longer exists, try to record a new one
-            if (error.code === '22P02' || error.code === '23503') { // Invalid UUID or Foreign key violation
+        // Verify the session row still exists (handles case where update matched 0 rows)
+        try {
+            const { data: verifyData, error: verifyError } = await supabase
+                .from('user_sessions')
+                .select('id')
+                .eq('id', sessionId)
+                .maybeSingle();
+
+            if (verifyError || !verifyData) {
+                // Recovery: recreate the session row to heal from table clears
                 await recordSession();
+                return;
             }
+        } catch (e) {
+            console.warn('Session verify check failed:', e);
+            // Non-fatal: try to recreate session
+            await recordSession();
+            return;
         }
     } catch (error) {
         console.error('Error updating session activity:', error);
@@ -299,10 +389,21 @@ export async function checkExistingSession(): Promise<void> {
                     .eq('id', storedSessionId)
                     .eq('user_id', userId);
 
-                // If this succeeds (no error), we're done
-                if (!error) return;
-
-                // If error, continue to the next approach
+                if (!error) {
+                    // Double-check the row exists
+                    const { data: verifyData, error: verifyError } = await supabase
+                        .from('user_sessions')
+                        .select('id')
+                        .eq('id', storedSessionId)
+                        .single();
+                    if (verifyError || !verifyData) {
+                        // If verify fails (row gone), do NOT sign out here; fall back to fingerprint/creation
+                    } else {
+                        // Verified row exists; we are done
+                        return;
+                    }
+                }
+                // If error or verify failed, continue to fallback approaches
             } catch (error) {
                 console.warn('Error updating stored session:', error);
                 // Continue to fallback approaches

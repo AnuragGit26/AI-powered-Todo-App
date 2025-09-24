@@ -10,3 +10,21 @@
 [build.environment]
   # Add any build-time environment variables that are not sensitive
   NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Content Security Policy: tune connect-src domains if needed
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://vitals.vercel-insights.com; media-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob:;"
+    # HSTS (HTTPS only)
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    # Prevent MIME type sniffing
+    X-Content-Type-Options = "nosniff"
+    # Clickjacking protection (redundant with CSP frame-ancestors)
+    X-Frame-Options = "DENY"
+    # Safer referrers
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Restrict powerful features
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), clipboard-read=(), clipboard-write=(), display-capture=(), document-domain=(), encrypted-media=(), fullscreen=(), gamepad=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), midi=(), oversized-images=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), speaker-selection=(), sync-xhr=(), unload=(), web-share=()"
+    # Isolation for safer cross-origin handling
+    Cross-Origin-Opener-Policy = "same-origin"
