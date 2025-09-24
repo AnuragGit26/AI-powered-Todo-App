@@ -95,9 +95,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         return true;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const submit = async () => {
         if (!validateForm()) {
             return;
         }
@@ -211,10 +209,15 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         }
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await submit();
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey && title.trim()) {
             e.preventDefault();
-            handleSubmit(e as any);
+            submit();
         }
     };
 

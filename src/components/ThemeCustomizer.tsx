@@ -220,7 +220,16 @@ const ThemeCustomizer: React.FC = React.memo(() => {
         const userId = localStorage.getItem('userId');
         await logUserActivity(userId || "", 'User logged out');
         await signOutAndCleanup({ scope: 'local', clearAll: true });
-        try { window.location.assign('/login'); } catch { /* noop */ }
+        try {
+            window.location.assign('/login');
+        } catch (err) {
+            console.error('ThemeCustomizer: navigation to /login failed after logout:', err);
+            try {
+                window.location.href = '/login';
+            } catch (fallbackErr) {
+                console.error('ThemeCustomizer: fallback navigation failed:', fallbackErr);
+            }
+        }
     }, [logUserActivity]);
 
     const TabButton = ({ id, label, icon }: { id: 'general' | 'colors' | 'typography' | 'presets', label: string, icon: React.ReactNode }) => (

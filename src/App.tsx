@@ -44,25 +44,25 @@ const App: React.FC = () => {
     const [showTodoForm, setShowTodoForm] = useState(false);
     const { toast } = useToast();
 
-    // Initialize theme on first load and whenever theme changes
+    // Init theme
     useEffect(() => {
-        // Initialize theme with current settings from store
+        // Init from store
         initializeTheme(theme);
 
-        // Add dark class to ensure UI components reflect the current theme
+        // Force dark class
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
     }, [theme]);
 
-    // Add listener for system color scheme changes
+    // Watch system theme
     useEffect(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-        // Only apply system preference if user hasn't manually set a theme
+        // Only if no manual pick
         const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-            // If we have a stored preference, don't automatically change
+            // Has saved prefs?
             if (localStorage.getItem('todo-storage')) {
                 const storedData = JSON.parse(localStorage.getItem('todo-storage') || '{}');
-                // Only apply system change if user hasn't explicitly chosen a theme
+                // Skip if user chose
                 if (!storedData.state?.theme?.mode) {
                     setTheme({
                         ...theme,
@@ -70,7 +70,7 @@ const App: React.FC = () => {
                     });
                 }
             } else {
-                // No stored preference, follow system
+                // No prefs? follow system
                 setTheme({
                     ...theme,
                     mode: e.matches ? 'dark' : 'light',
@@ -85,7 +85,7 @@ const App: React.FC = () => {
         };
     }, [theme, setTheme]);
 
-    // Listen for analytics toggle event from NavBar
+    // Listen NavBar toggle
     useEffect(() => {
         const handleToggleAnalytics = () => {
             setShowAnalytics(prev => !prev);
@@ -98,23 +98,23 @@ const App: React.FC = () => {
         };
     }, []);
 
-    // Auth state listener - separated from data loading for performance
+    // Auth listener (separate)
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
 
             if (session) {
-                // Store token immediately
+                // Save token now
                 sessionStorage.setItem("token", session.access_token || "");
                 setUserToken(session.access_token || "");
 
-                // Start session operations in the background
+                // Do background stuff
                 Promise.resolve().then(async () => {
                     try {
                         await checkExistingSession();
                         if (session.user?.id) {
                             await cleanupDuplicateSessions(session.user.id);
-                            // Initialize billing subscription for new users
+                            // Init free sub
                             const freeSubscription = initializeFreeTierSubscription(session.user.id);
                             setSubscription(freeSubscription);
                         }
@@ -126,11 +126,11 @@ const App: React.FC = () => {
                 await signOutAndCleanup({ scope: 'local' });
             }
 
-            // Mark auth check as complete
+            // Auth check done
             setIsAuthChecking(false);
         });
 
-        // Initial auth check
+        // Initial check
         supabase.auth.getSession().then(({ data }) => {
             setSession(data.session);
             setIsAuthChecking(false);
@@ -139,7 +139,7 @@ const App: React.FC = () => {
         return () => subscription.unsubscribe();
     }, [setUserToken]);
 
-    // User data loading - separate from auth for performance
+    // Load user data (separate)
     useEffect(() => {
         if (!session) return;
 
@@ -163,22 +163,27 @@ const App: React.FC = () => {
             localStorage.setItem("profilePicture", data.publicUrl);
         };
 
-        // Run these concurrently
+        // Run in parallel
         Promise.all([fetchUser(), fetchProfileImage()])
             .catch(error => console.error("Error fetching user data:", error));
 
     }, [session]);
 
-    // Subscribe to realtime session revocation for this device
+    // Watch revoke events
     useEffect(() => {
         if (!session) return;
-        const unsubscribe = subscribeToSessionRevocation();
+        const unsubscribe = subscribeToSessionRevocation(session);
+        const safeUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : () => { /* noop */ };
         return () => {
-            try { unsubscribe(); } catch { /* noop */ }
+            try {
+                safeUnsubscribe();
+            } catch (err) {
+                console.error('Error unsubscribing session revocation channel:', err);
+            }
         };
-    }, [session]);
+    }, [session?.user?.id]);
 
-    // Data loading - separate effect to avoid blocking UI
+    // Load data (separate)
     useEffect(() => {
         if (!session) {
             setIsDataLoaded(true);
@@ -186,8 +191,8 @@ const App: React.FC = () => {
         }
 
         const loadData = async () => {
+            setIsDataLoaded(false);
             try {
-                // Get current userId 
                 const userId = localStorage.getItem('userId') || (await supabase.auth.getUser()).data.user?.id;
 
                 if (!userId) {
@@ -197,10 +202,8 @@ const App: React.FC = () => {
                 }
 
                 try {
-                    // Fetch tasks and subtasks concurrently
                     const tasks = await fetchTasks();
 
-                    // Process in batches to avoid UI freezing
                     const tasksWithSubtasks = [];
                     const batchSize = 5;
 
@@ -208,7 +211,7 @@ const App: React.FC = () => {
                         const batch = (tasks || []).slice(i, i + batchSize);
                         const batchResults = await Promise.all(
                             batch.map(async (task) => {
-                                // Ensure task has an id before trying to fetch subtasks
+                                // Guard: need id
                                 if (!task || typeof task.id !== 'string') {
                                     console.error('Invalid task object:', task);
                                     return { ...task, subtasks: [] };
@@ -219,18 +222,14 @@ const App: React.FC = () => {
                         );
                         tasksWithSubtasks.push(...batchResults);
 
-                        // Allow UI to breathe between batches
                         if (i + batchSize < (tasks || []).length) {
                             await new Promise(resolve => setTimeout(resolve, 0));
                         }
                     }
-
-                    // Type assertion to handle the subtasks correctly
                     setTodos(tasksWithSubtasks as unknown as Todo[]);
                 } catch (error: unknown) {
                     console.error("Error loading data:", error);
 
-                    // Check if it's the lastRecurrenceDate error
                     const errorObj = error as {
                         message?: string;
                         details?: string;
@@ -243,8 +242,6 @@ const App: React.FC = () => {
                     if (errorMessage.includes('lastRecurrenceDate') ||
                         errorDetails.includes('lastRecurrenceDate') ||
                         (errorObj?.code === 'PGRST204' && errorMessage.includes('column'))) {
-
-                        // setDbMigrationNeeded(true);
 
                         toast({
                             title: "Database Update Required",
@@ -278,7 +275,7 @@ const App: React.FC = () => {
         console.log("All letters have animated!");
     };
 
-    // Media query for screens larger than 1600px
+    // For >1600px
     const [isLargeScreen, setIsLargeScreen] = useState(false);
 
     useEffect(() => {
@@ -297,17 +294,17 @@ const App: React.FC = () => {
         };
     }, []);
 
-    // Record user sessions when logged in
+    // Record sessions
     useSessionRecording();
 
-    // Initialize pomodoro service
+    // Init pomodoro
     useEffect(() => {
         pomodoroService.initializeTable().catch(error => {
             console.warn('Could not initialize pomodoro table:', error);
         });
     }, []);
 
-    // Show a more streamlined loading state
+    // Lean loading UI
     if (isAuthChecking && !isDataLoaded) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8">
@@ -328,9 +325,9 @@ const App: React.FC = () => {
         );
     }
 
-    // Don't show the loading screen for data loading, let the UI render and show loading indicators in components
+    // Let components handle loading
 
-    // Home route component
+    // Home
     const HomeContent = (
         <div
             className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
@@ -346,8 +343,8 @@ const App: React.FC = () => {
                 speed={0.9}
             />
 
-            <div className="pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
-                <div className="max-w-4xl mx-auto h-full flex flex-col">
+            <div className={`pt-0 -mt-12 pb-8 px-4 sm:px-6 md:px-8 min-h-screen ${isLargeScreen ? 'xl:pr-80 2xl:pr-96' : ''}`}>
+                <div className="max-w-5xl xl:max-w-6xl mx-auto h-full flex flex-col">
                     <div className="w-full flex-shrink-0 mb-4">
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}
@@ -362,15 +359,23 @@ const App: React.FC = () => {
                             ) : (
                                 <>
                                     <Plus className="w-5 h-5" />
-                                    <GradientText colors={["#ffaa40", "#9c40ff", "#ffaa40"]} animationSpeed={8}>
-                                        Create a Task
+                                    <GradientText
+                                        colors={
+                                            theme.mode === 'dark'
+                                                ? ["#000", "#0640ff", "#000"]
+                                                : ["#fff", "#fc3811", "#fff"]
+                                        }
+                                        animationSpeed={8}
+                                        innerClassName="drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_1px_1px_rgba(255,255,255,0.15)]"
+                                    >
+                                        <span className="text-lg font-bold">Create a Task</span>
                                     </GradientText>
                                 </>
                             )}
                         </Button>
                     </div>
 
-                    {/* TodoForm - positioned at top when shown */}
+                    {/* Form at top when open */}
                     <AnimatePresence>
                         {showTodoForm && (
                             <motion.div
@@ -385,16 +390,16 @@ const App: React.FC = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* TodoList - scrollable container */}
-                    <div className="flex-1 min-h-0 overflow-y-auto">
+                    {/* List scrolls itself */}
+                    <div className="flex-1 min-h-0">
                         <TodoList isLoading={!isDataLoaded} />
                     </div>
                 </div>
             </div>
 
-            {/* Analytics panel for large screens */}
+            {/* Analytics (large screens) */}
             {isLargeScreen && (
-                <div className="fixed top-16 right-0 max-h-full w-72 lg:w-80 p-4 overflow-y-auto z-10 pr-5">
+                <div className="fixed top-20 right-4 max-h-full w-72 lg:w-80 xl:w-80 2xl:w-96 p-4 overflow-y-auto z-10 pr-5">
                     <div className="space-y-4">
                         <Suspense fallback={<div>Loading Analytics...</div>}>
                             <AnalyticsDashboard />
@@ -403,7 +408,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Slide-in analytics panel for smaller screens */}
+            {/* Slide-in analytics (small) */}
             <AnimatePresence>
                 {showAnalytics && !isLargeScreen && (
                     <motion.div
@@ -487,7 +492,7 @@ const App: React.FC = () => {
                                     amplitude={2.5}
                                     speed={0.9}
                                 />
-                                <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                <div className="pt-0 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
                                     {session?.user && <UserProfile userData={session.user} />}
                                 </div>
                                 <Footer />

@@ -20,8 +20,10 @@ export const IdleTimeoutGuard: React.FC<Props> = ({ idleMs = 30 * 60 * 1000, war
 
   const onStaySignedIn = async () => {
     try {
-      extendSession();
-    } catch { /* noop */ }
+      await extendSession();
+    } catch (err) {
+      console.error("Failed to extend session:", err);
+    }
   };
 
   const seconds = Math.max(0, Math.ceil(remainingMs / 1000));

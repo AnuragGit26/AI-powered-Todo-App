@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 interface GradientTextProps {
     children: ReactNode;
@@ -6,6 +6,8 @@ interface GradientTextProps {
     colors?: string[];
     animationSpeed?: number;
     showBorder?: boolean;
+    innerClassName?: string;
+    textShadow?: string; // e.g., '0 1px 1px rgba(0,0,0,0.6)'
 }
 
 export default function GradientText({
@@ -14,6 +16,8 @@ export default function GradientText({
     colors = ["#ffaa40", "#9c40ff", "#ffaa40"],
     animationSpeed = 8,
     showBorder = false,
+    innerClassName = "",
+    textShadow,
 }: GradientTextProps) {
     const gradientStyle = {
         backgroundImage: `linear-gradient(to right, ${colors.join(", ")})`,
@@ -45,12 +49,13 @@ export default function GradientText({
                 </div>
             )}
             <div
-                className="inline-block relative z-2 text-transparent bg-cover animate-gradient"
+                className={`inline-block relative z-2 text-transparent bg-cover animate-gradient ${innerClassName}`}
                 style={{
                     ...gradientStyle,
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     backgroundSize: "300% 100%",
+                    ...(textShadow ? { textShadow } : {}),
                 }}
             >
                 {children}

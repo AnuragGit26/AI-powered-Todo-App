@@ -1,6 +1,6 @@
 import { ThemeConfig } from '../types';
 
-// Theme storage key
+// Theme key
 const THEME_STORAGE_KEY = 'app_theme_settings';
 
 interface ThemeSettings extends ThemeConfig {
@@ -8,9 +8,7 @@ interface ThemeSettings extends ThemeConfig {
   enableAnimations: boolean;
 }
 
-/**
- * Save all theme settings to localStorage
- */
+// Save theme
 export const saveThemeSettings = (settings: Partial<ThemeSettings>) => {
   const currentSettings = loadThemeSettings();
   const updatedSettings = {
@@ -21,9 +19,7 @@ export const saveThemeSettings = (settings: Partial<ThemeSettings>) => {
   return updatedSettings;
 };
 
-/**
- * Load all theme settings from localStorage
- */
+// Load theme
 export const loadThemeSettings = (): ThemeSettings => {
   const defaultSettings: ThemeSettings = {
     mode: 'light',
@@ -48,21 +44,19 @@ export const loadThemeSettings = (): ThemeSettings => {
   }
 };
 
-/**
- * Initialize theme settings in the DOM based on stored preferences
- */
+// Init theme to DOM
 export const initializeTheme = (theme: ThemeConfig) => {
   const settings = loadThemeSettings();
 
-  // Apply theme mode (light/dark)
+  // Set mode
   const mode = theme.mode || settings.mode;
   document.documentElement.classList.toggle('dark', mode === 'dark');
 
-  // Apply custom colors as CSS variables
+  // Colors -> CSS vars
   const isDarkMode = mode === 'dark';
   const darkModeColors = getDarkModeColors();
 
-  // Use different colors for dark mode with better contrast
+  // Better dark contrast
   const primaryColor = isDarkMode
     ? getOptimizedDarkModeColor(theme.primaryColor || settings.primaryColor, darkModeColors)
     : theme.primaryColor || settings.primaryColor;
@@ -74,16 +68,16 @@ export const initializeTheme = (theme: ThemeConfig) => {
   document.documentElement.style.setProperty('--primary-color', primaryColor);
   document.documentElement.style.setProperty('--secondary-color', secondaryColor);
 
-  // Apply font family
+  // Font family
   const fontFamily = theme.fontFamily || settings.fontFamily;
-  document.documentElement.style.setProperty('--font-family', fontFamily);
+  document.documentElement.style.setProperty('--font-family', fontFamily || '');
 
-  // Apply font size
+  // Font size
   const fontSize = settings.fontSize;
   document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
   document.documentElement.classList.add(fontSize);
 
-  // Apply animations preference
+  // Animations on/off
   const enableAnimations = settings.enableAnimations;
   if (!enableAnimations) {
     document.documentElement.classList.add('disable-animations');
@@ -91,7 +85,7 @@ export const initializeTheme = (theme: ThemeConfig) => {
     document.documentElement.classList.remove('disable-animations');
   }
 
-  // Save all current settings
+  // Save now
   saveThemeSettings({
     mode,
     primaryColor,
@@ -102,11 +96,9 @@ export const initializeTheme = (theme: ThemeConfig) => {
   });
 };
 
-/**
- * Get optimized dark mode color for better contrast
- */
+// Pick better dark color
 export const getOptimizedDarkModeColor = (color: string, darkColors: Record<string, string>): string => {
-  // If color matches one of our light mode theme options, replace with dark mode version
+  // Swap light palette to dark
   if (color === '#10B981') return darkColors.mint;          // Mint
   if (color === '#6366F1') return darkColors.indigo;        // Indigo
   if (color === '#F43F5E') return darkColors.rose;          // Rose
@@ -122,42 +114,34 @@ export const getOptimizedDarkModeColor = (color: string, darkColors: Record<stri
   if (color === '#ad1457') return '#f472b6';                // Berry
   if (color === '#424242') return '#a1a1aa';                // Monochrome
 
-  // Default case - use dark mode primary or return original
+  // Fallback
   return darkColors.primary || color;
 };
 
-/**
- * Apply a theme color scheme
- */
+// Set color scheme
 export const applyColorScheme = (primary: string, secondary: string) => {
   document.documentElement.style.setProperty('--primary-color', primary);
   document.documentElement.style.setProperty('--secondary-color', secondary);
   saveThemeSettings({ primaryColor: primary, secondaryColor: secondary });
 };
 
-/**
- * Change the global font size
- */
+// Set font size
 export const changeFontSize = (size: string) => {
-  // Remove all font size classes
+  // Reset size classes
   document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
 
-  // Add selected font size class
+  // Add size
   document.documentElement.classList.add(size);
   saveThemeSettings({ fontSize: size });
 };
 
-/**
- * Change the global font family
- */
+// Set font family
 export const changeFontFamily = (fontFamily: string) => {
   document.documentElement.style.setProperty('--font-family', fontFamily);
   saveThemeSettings({ fontFamily });
 };
 
-/**
- * Toggle animations on/off globally
- */
+// Toggle animations
 export const toggleAnimations = (enable: boolean) => {
   if (enable) {
     document.documentElement.classList.remove('disable-animations');
@@ -167,9 +151,7 @@ export const toggleAnimations = (enable: boolean) => {
   saveThemeSettings({ enableAnimations: enable });
 };
 
-/**
- * Reset to default theme settings
- */
+// Reset theme
 export const resetToDefaultTheme = () => {
   const defaultTheme: ThemeSettings = {
     mode: 'light',
@@ -180,7 +162,7 @@ export const resetToDefaultTheme = () => {
     enableAnimations: true,
   };
 
-  // Apply default theme
+  // Apply defaults
   document.documentElement.classList.remove('dark');
   document.documentElement.style.setProperty('--primary-color', defaultTheme.primaryColor);
   document.documentElement.style.setProperty('--secondary-color', defaultTheme.secondaryColor);
@@ -189,7 +171,7 @@ export const resetToDefaultTheme = () => {
   document.documentElement.classList.add(defaultTheme.fontSize);
   document.documentElement.classList.remove('disable-animations');
 
-  // Save default settings
+  // Save defaults
   saveThemeSettings(defaultTheme);
 
   return defaultTheme;

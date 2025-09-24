@@ -1081,7 +1081,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
     }, [todos]);
 
     return (
-        <div className="w-full h-full flex flex-col">
+        <div className="w-full h-full flex flex-col overflow-y-auto">
             {/* AI Priority Recommendations */}
             {hasAIScores && sortCriteria === "ai_priority" && (
                 <motion.div
@@ -1138,9 +1138,18 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="flex-shrink-1 p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-sm mb-4 border border-gray-200 dark:border-gray-600"
+                className="flex-shrink-0 sticky top-0 z-20 p-2 bg-white/90 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-sm mb-4 border border-gray-200 dark:border-gray-600"
             >
-                {todos?.length !== 0 ? (
+                {isLoading ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="flex justify-center mb-1 p-4"
+                    >
+                        <Label htmlFor="message" className="text-gray-500 dark:text-gray-400">Loading tasks...</Label>
+                    </motion.div>
+                ) : todos?.length !== 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 backdrop-blur-sm rounded-lg p-4 transition-all duration-300 animate-fadeIn">
                         <div className="relative col-span-1 sm:col-span-2 lg:col-span-2">
                             <Input
@@ -1224,7 +1233,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                     </div>
                 )}
             </motion.div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0">
                 <AnimatePresence>
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">

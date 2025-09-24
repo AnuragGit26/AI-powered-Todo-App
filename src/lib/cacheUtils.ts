@@ -1,9 +1,6 @@
 export class AIPriorityCache {
     private static readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day
 
-    /**
-     * Get cached priority score for a task
-     */
     static get(taskId: string): any | null {
         const cached = localStorage.getItem(`ai_priority_${taskId}`);
         if (!cached) return null;
@@ -21,9 +18,6 @@ export class AIPriorityCache {
         }
     }
 
-    /**
-     * Cache priority score for a task (1 day expiration)
-     */
     static set(taskId: string, score: any): void {
         const item = {
             data: score,
@@ -43,9 +37,6 @@ export class AIPriorityCache {
         }
     }
 
-    /**
-     * Clear expired cache entries
-     */
     static clearExpired(): void {
         const keys = Object.keys(localStorage).filter(key => key.startsWith('ai_priority_'));
         const now = Date.now();

@@ -75,12 +75,37 @@ export const useUserData = () => {
         retry: 2,
     });
 
+    // Centralized localStorage error handling
+    const safeLocalStorage = (
+        operation: 'set' | 'remove',
+        key: string,
+        value: string | undefined,
+        isDev: boolean
+    ) => {
+        try {
+            if (operation === 'set') {
+                localStorage.setItem(key, value ?? '');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch (err) {
+            if (isDev) {
+                console.error(`useUserData: Failed to ${operation === 'set' ? 'set' : 'remove'} localStorage key "${key}"`, err);
+            }
+        }
+    };
+
     useEffect(() => {
         const data = query.data;
+        const isDev = !import.meta.env.PROD;
         if (data) {
-            try { localStorage.setItem('userId', data.id); } catch { /* noop */ }
-            try { localStorage.setItem('username', data.username); } catch { /* noop */ }
-            try { localStorage.setItem('profilePicture', data.profilePicture); } catch { /* noop */ }
+            safeLocalStorage('set', 'userId', data.id, isDev);
+            safeLocalStorage('set', 'username', data.username, isDev);
+            safeLocalStorage('set', 'profilePicture', data.profilePicture, isDev);
+        } else {
+            safeLocalStorage('remove', 'userId', undefined, isDev);
+            safeLocalStorage('remove', 'username', undefined, isDev);
+            safeLocalStorage('remove', 'profilePicture', undefined, isDev);
         }
     }, [query.data]);
 

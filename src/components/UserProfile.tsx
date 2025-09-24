@@ -202,10 +202,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
 
     // Global sign-out (all devices)
     const handleSignOutAllDevices = async () => {
+        // TODO: Replace window.confirm with a proper modal dialog for better UX
         const confirmed = window.confirm('This will sign you out on ALL devices and browsers. Continue?');
         if (!confirmed) return;
         try {
             await signOutOnAllDevices();
+            toast.success('Signed out on all devices');
+            navigate('/login');
         } catch (e) {
             console.error('Failed to sign out on all devices', e);
             toast.error('Failed to sign out on all devices');

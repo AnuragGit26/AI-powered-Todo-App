@@ -12,6 +12,8 @@ import { Loader, Mail, Lock, Check, Info, ArrowRight, UserCheck, Github } from "
 import { supabase } from "../lib/supabaseClient";
 import { Separator } from "./ui/separator";
 import useIsMobile from "../hooks/useIsMobile";
+import { useTodoStore } from "../store/todoStore";
+import { getOptimizedDarkModeColor, getDarkModeColors } from "../lib/themeUtils";
 
 export function SignUpForm() {
     const [email, setEmail] = useState("");
@@ -30,6 +32,12 @@ export function SignUpForm() {
 
     const navigate = useNavigate();
     const isMobile = useIsMobile();
+    const { theme } = useTodoStore();
+    const isDark = theme.mode === 'dark';
+    const darkColors = getDarkModeColors();
+    const laserColor = isDark
+        ? getOptimizedDarkModeColor(theme.secondaryColor || '#6366F1', darkColors)
+        : (theme.secondaryColor || '#6366F1');
 
     // Validation functions
     const validateUsername = (value: string) => {
@@ -204,60 +212,60 @@ export function SignUpForm() {
         }
     };
 
-    // LaserFlow parameters: lighter on mobile for readability and performance
+    // LaserFlow parameters: tuned per theme mode and viewport for readability and performance
     const laserProps = isMobile
         ? {
             dpr: 1,
             flowSpeed: 0.26,
-            horizontalBeamOffset: 0.16,
+            horizontalBeamOffset: 0.0,
             verticalBeamOffset: 0.0,
-            verticalSizing: 2.0,
-            horizontalSizing: 0.55,
-            fogIntensity: 0.5,
+            verticalSizing: 2.4,
+            horizontalSizing: 0.7,
+            fogIntensity: isDark ? 0.6 : 0.45,
             fogScale: 0.4,
             wispDensity: 1.0,
-            wispSpeed: 12.0,
-            wispIntensity: 4.0,
-            flowStrength: 0.25,
+            wispSpeed: isDark ? 12.0 : 11.0,
+            wispIntensity: isDark ? 5.0 : 3.5,
+            flowStrength: isDark ? 0.30 : 0.23,
         }
         : {
             flowSpeed: 0.35,
             horizontalBeamOffset: 0.18,
             verticalBeamOffset: 0.0,
-            verticalSizing: 2.4,
-            horizontalSizing: 0.7,
-            fogIntensity: 0.75,
+            verticalSizing: 2.8,
+            horizontalSizing: 0.85,
+            fogIntensity: isDark ? 0.8 : 0.65,
             fogScale: 0.5,
             wispDensity: 1.4,
-            wispSpeed: 16.0,
-            wispIntensity: 6.5,
-            flowStrength: 0.55,
+            wispSpeed: isDark ? 16.0 : 14.5,
+            wispIntensity: isDark ? 7.2 : 5.5,
+            flowStrength: isDark ? 0.45 : 0.35,
         };
 
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-white dark:bg-gray-950">
-            <div className="absolute inset-y-0 right-0 w-full md:w-3/4 pointer-events-none" aria-hidden="true">
+            <div className="absolute inset-0 pointer-events-none flex justify-center items-center md:justify-end md:items-stretch" aria-hidden="true">
                 <LaserFlow
-                    color="#6366F1"
+                    color={laserColor}
                     {...laserProps}
                     decay={1.1}
                     falloffStart={1.2}
                     fogFallSpeed={0.6}
-                    className="w-full h-full mix-blend-screen"
+                    className="w-[100vw] h-[75vh] md:w-full md:h-full mix-blend-screen"
                 />
             </div>
 
-            <div className="flex-1 py-12 overflow-y-auto z-50">
-                <div className="container max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="flex-1 py-10 md:py-12 overflow-y-auto z-50">
+                <div className="container max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center md:items-start min-h-[calc(100vh-8rem)]">
                     {/* Sign Up Form */}
                     <motion.div
-                        className="w-full md:justify-self-start"
+                        className="w-full max-w-[520px] mx-auto md:justify-self-start"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Card className="w-full backdrop-blur-md border border-white/20 dark:border-gray-800/50 shadow-xl overflow-hidden bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white">
-                            <CardHeader className="text-center pb-3">
+                        <Card className="w-full backdrop-blur-xl border border-white/20 dark:border-gray-800/50 shadow-xl overflow-hidden bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white rounded-2xl ring-1 ring-white/10">
+                            <CardHeader className="text-center pb-3 px-6 pt-6 md:pt-8">
                                 <SplitText
                                     text="Create your TaskMind account"
                                     className="text-2xl font-semibold text-center text-gray-900 dark:text-white"
@@ -272,7 +280,7 @@ export function SignUpForm() {
                                     Start your productivity journey today
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 px-6 pb-6 md:px-8">
                                 {error && (
                                     <Alert variant="destructive" className="text-red-500 border-red-500 bg-red-100 dark:bg-red-900/40 dark:text-red-300">
                                         <Info className="h-4 w-4" />
@@ -432,7 +440,7 @@ export function SignUpForm() {
                                     </Button>
                                 </form>
                             </CardContent>
-                            <CardFooter className="flex flex-col space-y-4 pb-6">
+                            <CardFooter className="flex flex-col space-y-4 px-6 pb-6 md:px-8">
                                 <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                                     Already have an account?{" "}
                                     <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
