@@ -417,7 +417,7 @@ export function LoginForm({
                                         </div>
 
                                         <div className="text-right">
-                                            <a href="/password-reset-request" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                            <a href="/reset-password" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                                                 Forgot password?
                                             </a>
                                         </div>

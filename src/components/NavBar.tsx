@@ -19,7 +19,7 @@ export const NavBar: React.FC = () => {
     const showAnalyticsButton = location.pathname === '/';
 
     // Skip rendering on authentication pages
-    if (['/login', '/signup', '/password-reset-request'].includes(location.pathname)) {
+    if (['/login', '/signup', '/reset-password'].includes(location.pathname)) {
         return null;
     }
 

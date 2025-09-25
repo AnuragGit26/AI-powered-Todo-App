@@ -134,7 +134,7 @@ export async function terminateSession(sessionId: string): Promise<void> {
             .from('user_sessions')
             .select('device_fingerprint')
             .eq('id', sessionId)
-            .single();
+            .maybeSingle();
 
         const isCurrentDevice = sessionData?.device_fingerprint === deviceFingerprint;
 
@@ -156,6 +156,7 @@ export async function terminateSession(sessionId: string): Promise<void> {
 
 // Upsert this device session
 export async function recordSession(): Promise<void> {
+    let currentUserId: string | null = null;
     try {
         const { data: sessionData } = await supabase.auth.getSession();
         if (!sessionData?.session) {
@@ -163,8 +164,8 @@ export async function recordSession(): Promise<void> {
             return;
         }
 
-        const userId = sessionData.session.user.id;
-        if (!userId) {
+        currentUserId = sessionData.session.user.id;
+        if (!currentUserId) {
             console.error('Cannot record session: Missing user ID');
             return;
         }
@@ -183,10 +184,13 @@ export async function recordSession(): Promise<void> {
         const { data: existingSession, error: findError } = await supabase
             .from('user_sessions')
             .select('id')
+            .eq('user_id', currentUserId)
             .eq('device_fingerprint', deviceFingerprint)
-            .single();
+            .order('last_seen_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        if (findError && findError.code !== 'PGRST116') { // no rows
+        if (findError) {
             console.error('Error finding existing session:', findError);
         }
 
@@ -200,7 +204,7 @@ export async function recordSession(): Promise<void> {
                     device_type: deviceType,
                     ip: await getUserIP(),
                     location: (await getUserRegion()).location,
-                    user_id: userId
+                    user_id: currentUserId
                 })
                 .eq('id', existingSession.id);
 
@@ -217,7 +221,7 @@ export async function recordSession(): Promise<void> {
 
         const { error } = await supabase.from('user_sessions').insert({
             id: sessionId,
-            user_id: userId,
+            user_id: currentUserId,
             created_at: new Date().toISOString(),
             last_seen_at: new Date().toISOString(),
             ip: await getUserIP(),
@@ -242,8 +246,11 @@ export async function recordSession(): Promise<void> {
                 const { data: existingSession, error: findError } = await supabase
                     .from('user_sessions')
                     .select('id')
+                    .eq('user_id', currentUserId)
                     .eq('device_fingerprint', deviceFingerprint)
-                    .single();
+                    .order('last_seen_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
 
                 if (findError) {
                     console.error('Error finding session after constraint violation:', findError);
@@ -341,7 +348,7 @@ export async function checkExistingSession(): Promise<void> {
                         .from('user_sessions')
                         .select('id')
                         .eq('id', storedSessionId)
-                        .single();
+                        .maybeSingle();
                     if (verifyData) {
                         return;
                     }

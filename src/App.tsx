@@ -9,7 +9,6 @@ import { LoginForm } from "./components/LoginForm";
 import { SignUpForm } from "./components/SignupForm";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { PasswordResetRequestForm } from "./components/PasswordResetRequestForm";
 import { Toaster } from "./components/ui/toaster";
 import { fetchSubtasks, fetchTasks } from "./services/taskService.ts";
 import NotFound from "./components/NotFound";
@@ -31,6 +30,7 @@ import { Link } from "react-router-dom";
 import type { Todo } from "./types";
 import { pomodoroService } from "./services/pomodoroService";
 import { useBillingStore, initializeFreeTierSubscription } from "./store/billingStore";
+import ResetPasswordForm from "./components/ResetPasswordForm";
 
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
@@ -108,15 +108,18 @@ const App: React.FC = () => {
                 sessionStorage.setItem("token", session.access_token || "");
                 setUserToken(session.access_token || "");
 
-                // Do background stuff
+                // Do background stuff (skip on reset-password route)
                 Promise.resolve().then(async () => {
                     try {
-                        await checkExistingSession();
-                        if (session.user?.id) {
-                            await cleanupDuplicateSessions(session.user.id);
-                            // Init free sub
-                            const freeSubscription = initializeFreeTierSubscription(session.user.id);
-                            setSubscription(freeSubscription);
+                        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+                        if (!pathname.startsWith('/reset-password')) {
+                            await checkExistingSession();
+                            if (session.user?.id) {
+                                await cleanupDuplicateSessions(session.user.id);
+                                // Init free sub
+                                const freeSubscription = initializeFreeTierSubscription(session.user.id);
+                                setSubscription(freeSubscription);
+                            }
                         }
                     } catch (error) {
                         console.warn('Session initialization background task:', error);
@@ -471,9 +474,7 @@ const App: React.FC = () => {
                 />
                 <Route
                     path="/password-reset-request"
-                    element={
-                        session ? <Navigate to="/" replace /> : <><PasswordResetRequestForm /></>
-                    }
+                    element={<Navigate to="/reset-password" replace />}
                 />
                 <Route
                     path="/profile"
@@ -536,10 +537,8 @@ const App: React.FC = () => {
                     }
                 />
                 <Route
-                    path="reset-password"
-                    element={
-                        session ? <Navigate to="/" /> : <PasswordResetRequestForm />
-                    }
+                    path="/reset-password"
+                    element={<ResetPasswordForm />}
                 />
 
                 <Route path="*" element={<><NotFound /></>} />

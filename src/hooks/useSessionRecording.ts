@@ -14,6 +14,16 @@ export function useSessionRecording() {
     const isMounted = useRef(true);
 
     useEffect(() => {
+        // Do not record/update sessions on the reset password flow
+        try {
+            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+            if (pathname.startsWith('/reset-password')) {
+                return;
+            }
+        } catch {
+            // ignore
+        }
+
         // Set mounted flag
         isMounted.current = true;
 
@@ -51,13 +61,15 @@ export function useSessionRecording() {
                 const updateTimeoutId = setTimeout(() => updateController.abort(), 5000);
 
                 // Call activity update but don't await it
-                updateSessionActivity().catch(err => {
-                    if (!updateController.signal.aborted) {
-                        console.warn('Error updating session activity:', err);
-                    }
-                }).finally(() => {
-                    clearTimeout(updateTimeoutId);
-                });
+                updateSessionActivity()
+                    .catch((err) => {
+                        if (!updateController.signal.aborted) {
+                            console.warn('Error updating session activity:', err);
+                        }
+                    })
+                    .finally(() => {
+                        clearTimeout(updateTimeoutId);
+                    });
             }
         }, 5 * 60 * 1000); // 5 minutes in milliseconds
 
@@ -69,4 +81,4 @@ export function useSessionRecording() {
             controller.abort(); // Abort any ongoing session operations
         };
     }, []);
-} 
+}
