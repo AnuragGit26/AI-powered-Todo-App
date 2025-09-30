@@ -181,6 +181,6 @@ CREATE TABLE public.user_sessions (
     is_current boolean NULL DEFAULT false,
     device_fingerprint text NULL,
     CONSTRAINT user_sessions_pkey PRIMARY KEY (id),
-    CONSTRAINT unique_device_fingerprint UNIQUE (device_fingerprint),
+    CONSTRAINT unique_user_device_fingerprint UNIQUE (user_id, device_fingerprint),
     CONSTRAINT user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 ) TABLESPACE pg_default;

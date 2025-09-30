@@ -1,459 +1,611 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { useToast } from '../hooks/use-toast';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from './ui/card';
-import { Loader2, LockKeyhole, Mail, CheckCircle2, Eye, EyeOff } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "./ui/card";
+import SplitText from "./ui/SplitText";
+import LaserFlow from "./ui/LaserFlow.tsx";
+import { motion } from "framer-motion";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert.tsx";
+import { Loader, Mail, Lock, Check, ArrowRight, AlertCircle, Shield } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
+import useIsMobile from "../hooks/useIsMobile";
+import { useTodoStore } from "../store/todoStore";
+import { getOptimizedDarkModeColor, getDarkModeColors } from "../lib/themeUtils";
 
-const MIN_LEN = 8;
+interface PasswordStrength {
+    score: number;
+    label: string;
+    color: string;
+    requirements: {
+        length: boolean;
+        lowercase: boolean;
+        uppercase: boolean;
+        number: boolean;
+        special: boolean;
+    };
+}
+
+const calculatePasswordStrength = (password: string): PasswordStrength => {
+    const requirements = {
+        length: password.length >= 8,
+        lowercase: /[a-z]/.test(password),
+        uppercase: /[A-Z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+    };
+
+    const score = Object.values(requirements).filter(Boolean).length;
+
+    let label = "Very Weak";
+    let color = "text-red-500 dark:text-red-400";
+
+    if (score === 5) {
+        label = "Very Strong";
+        color = "text-green-600 dark:text-green-400";
+    } else if (score === 4) {
+        label = "Strong";
+        color = "text-green-500 dark:text-green-400";
+    } else if (score === 3) {
+        label = "Medium";
+        color = "text-yellow-500 dark:text-yellow-400";
+    } else if (score === 2) {
+        label = "Weak";
+        color = "text-orange-500 dark:text-orange-400";
+    }
+
+    return { score, label, color, requirements };
+};
 
 const ResetPasswordForm: React.FC = () => {
-    const [password, setPassword] = useState('');
-    const [confirm, setConfirm] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [hasRecoveryContext, setHasRecoveryContext] = useState<boolean>(false);
-    const [email, setEmail] = useState('');
-    const [emailError, setEmailError] = useState('');
-    const [requesting, setRequesting] = useState(false);
-    const [linkSent, setLinkSent] = useState(false);
-    const [authError, setAuthError] = useState<{ code?: string; description?: string; raw?: string } | null>(null);
-    // Update email along with password
-    const [updateEmail, setUpdateEmail] = useState(false);
-    const [newEmail, setNewEmail] = useState('');
-    const [newEmailError, setNewEmailError] = useState('');
-
+    const [mode, setMode] = useState<"request" | "reset">("request");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
-    // Password strength checks
-    const pwdChecks = useMemo(() => ({
-        len: password.length >= MIN_LEN,
-        lower: /[a-z]/.test(password),
-        upper: /[A-Z]/.test(password),
-        number: /[0-9]/.test(password),
-        symbol: /[^A-Za-z0-9]/.test(password),
-    }), [password]);
-    const pwdScore = useMemo(() => Object.values(pwdChecks).filter(Boolean).length, [pwdChecks]);
-    const pwdBarClass = useMemo(() => {
-        if (pwdScore <= 2) return 'bg-red-500';
-        if (pwdScore === 3) return 'bg-yellow-500';
-        return 'bg-green-500';
-    }, [pwdScore]);
-    const passwordsMatch = useMemo(() => confirm.length > 0 && confirm === password, [confirm, password]);
-    const allChecksOk = useMemo(() => Object.values(pwdChecks).every(Boolean), [pwdChecks]);
-    const { toast } = useToast();
-    const [params] = useSearchParams();
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [tokenVerified, setTokenVerified] = useState(false);
+    const [verifyingToken, setVerifyingToken] = useState(true);
+
+    // Validation state
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+
+    // Password strength
+    const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
+
     const navigate = useNavigate();
-    const passwordRef = useRef<HTMLInputElement>(null);
+    const location = useLocation();
+    const isMobile = useIsMobile();
+    const { theme } = useTodoStore();
+    const isDark = theme.mode === 'dark';
+    const darkColors = getDarkModeColors();
+    const laserColor = isDark
+        ? getOptimizedDarkModeColor(theme.primaryColor || '#7C3AED', darkColors)
+        : (theme.primaryColor || '#7C3AED');
 
-    const type = useMemo(() => params.get('type'), [params]);
-    const isRecoveryHash = useMemo(() => {
-        try {
-            const h = window.location.hash || '';
-            if (!h) return false;
-            const hp = new URLSearchParams(h.startsWith('#') ? h.slice(1) : h);
-            return hp.get('type') === 'recovery';
-        } catch {
-            return false;
-        }
-    }, []);
-
+    // Check for recovery token in URL
     useEffect(() => {
-        const init = async () => {
+        const checkRecoveryToken = async () => {
+            setVerifyingToken(true);
             try {
-                const url = window.location.href;
-                const hash = window.location.hash || '';
-                const search = window.location.search || '';
-                console.log('[ResetPassword] init start', {
-                    hashPresent: Boolean(hash),
-                    searchPresent: Boolean(search),
-                    isRecoveryHash,
-                    typeParam: type,
-                });
+                // Check URL hash for access_token (recovery flow)
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+                const type = hashParams.get('type');
 
-                // Parse hash/search for error information (e.g., otp_expired)
-                let localAuthErr: { code?: string; description?: string; raw?: string } | null = null;
-                try {
-                    const hpAll = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
-                    const spAll = new URLSearchParams(search);
-                    const err = hpAll.get('error') || spAll.get('error');
-                    const errCode = hpAll.get('error_code') || spAll.get('error_code');
-                    const errDesc = hpAll.get('error_description') || spAll.get('error_description');
-                    if (err || errCode || errDesc) {
-                        localAuthErr = { code: errCode || err || undefined, description: errDesc || undefined, raw: hash || search };
-                        setAuthError(localAuthErr);
-                        console.warn('[ResetPassword] auth error from URL', localAuthErr);
-                    }
-                    const emailParam = hpAll.get('email') || spAll.get('email');
-                    if (emailParam) {
-                        setEmail(emailParam);
-                        setNewEmail(emailParam);
-                    }
-                } catch (parseErr) {
-                    console.warn('[ResetPassword] failed to parse error/email params:', parseErr);
-                }
-                if (hash.includes('access_token') && hash.includes('refresh_token')) {
-                    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
-                    const access_token = hashParams.get('access_token') || undefined;
-                    const refresh_token = hashParams.get('refresh_token') || undefined;
-                    if (access_token && refresh_token) {
-                        setHasRecoveryContext(true);
-                        supabase.auth.setSession({ access_token, refresh_token })
-                            .then(() => {
-                                console.log('[ResetPassword] setSession completed');
-                            })
-                            .catch((err) => {
-                                console.warn('[ResetPassword] setSession error (non-blocking):', err);
-                            });
-                    }
-                }
+                if (accessToken && type === 'recovery') {
+                    // Verify the session
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: hashParams.get('refresh_token') || '',
+                    });
 
-                const hasCode = /[?&]code=/.test(url);
-                if (hasCode && typeof supabase.auth.exchangeCodeForSession === 'function') {
-                    setHasRecoveryContext(true);
-                    try {
-                        await supabase.auth.exchangeCodeForSession(url);
-                        console.log('[ResetPassword] exchangeCodeForSession success');
-                    } catch (err) {
-                        console.warn('[ResetPassword] exchangeCodeForSession error (non-blocking):', err);
+                    if (error) {
+                        console.error('Token verification error:', error);
+                        setError('Invalid or expired reset link. Please request a new one.');
+                        setMode('request');
+                        setTokenVerified(false);
+                    } else if (data.session) {
+                        setMode('reset');
+                        setTokenVerified(true);
+                        setSuccess('Token verified! Please enter your new password.');
+                        // Clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
+                } else {
+                    // No token, stay in request mode
+                    setMode('request');
+                    setTokenVerified(false);
                 }
-            } catch (e) {
-                console.error('[ResetPassword] Recovery link handling failed or not required:', e);
-            }
-
-            // Finalize UI intent: if URL indicated recovery, ensure the form is shown
-            const isRecovery = (type === 'recovery' || isRecoveryHash) && !authError;
-            setHasRecoveryContext(prev => prev || isRecovery);
-
-            try {
-                const currentUrl = new URL(window.location.href);
-                if (currentUrl.hash) {
-                    currentUrl.hash = '';
-                }
-                if (currentUrl.searchParams.has('code')) currentUrl.searchParams.delete('code');
-                if (currentUrl.searchParams.has('type')) currentUrl.searchParams.delete('type');
-                if (currentUrl.searchParams.has('redirect_to')) currentUrl.searchParams.delete('redirect_to');
-                window.history.replaceState({}, document.title, currentUrl.toString());
-                console.log('[ResetPassword] cleaned URL (hash/query params removed)');
             } catch (err) {
-                console.warn('[ResetPassword] Could not clean URL:', err);
+                console.error('Error checking recovery token:', err);
+                setError('Failed to verify reset link. Please try again.');
+                setMode('request');
+                setTokenVerified(false);
+            } finally {
+                setVerifyingToken(false);
             }
         };
-        init();
-    }, [type, isRecoveryHash, authError]);
 
+        checkRecoveryToken();
+    }, [location]);
+
+    // Update password strength when password changes
     useEffect(() => {
-        if (hasRecoveryContext) {
-            setTimeout(() => passwordRef.current?.focus(), 0);
+        if (mode === 'reset' && password) {
+            setPasswordStrength(calculatePasswordStrength(password));
+        } else {
+            setPasswordStrength(null);
         }
-    }, [hasRecoveryContext]);
+    }, [password, mode]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('[ResetPassword] submit new password');
-        if (password.length < MIN_LEN) {
-            toast({
-                title: 'Weak password',
-                description: `Password must be at least ${MIN_LEN} characters long`,
-                variant: 'destructive',
-            });
-            return;
-        }
-        if (!allChecksOk) {
-            toast({
-                title: 'Improve password strength',
-                description: 'Use upper, lower, number, and a symbol.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        if (!passwordsMatch) {
-            toast({
-                title: 'Passwords do not match',
-                description: 'Please retype your new password.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        if (updateEmail && !validateNewEmail(newEmail)) {
-            toast({ title: 'Invalid email', description: 'Please provide a valid new email address', variant: 'destructive' });
-            return;
-        }
-
-        setSubmitting(true);
-        try {
-            // Build update payload. Requires an active session (via recovery link)
-            const payload: { password: string; email?: string } = { password };
-            if (updateEmail) payload.email = newEmail.trim();
-
-            const { error } = await supabase.auth.updateUser(payload);
-            if (error) {
-                console.error('[ResetPassword] updateUser error', error);
-                toast({ title: 'Reset failed', description: error.message, variant: 'destructive' });
-                return;
-            }
-            console.log('[ResetPassword] password updated, redirecting to /login');
-            toast({
-                title: updateEmail ? 'Password and email updated' : 'Password updated',
-                description: updateEmail
-                    ? 'If email change requires confirmation, check your inbox.'
-                    : 'You can now sign in with your new password.',
-            });
-            navigate('/login', { replace: true });
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error('[ResetPassword] unexpected error during submit', err);
-            toast({ title: 'Unexpected error', description: message, variant: 'destructive' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
+    // Validation functions
     const validateEmail = (value: string) => {
-        if (!value.trim()) {
-            setEmailError('Email is required');
+        if (!value) {
+            setEmailError("Email is required");
             return false;
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(value)) {
-            setEmailError('Please enter a valid email address');
+            setEmailError("Please enter a valid email address");
             return false;
         }
-        setEmailError('');
+        setEmailError(null);
         return true;
     };
 
-    const validateNewEmail = (value: string) => {
-        if (!value.trim()) {
-            setNewEmailError('Email is required');
+    const validatePassword = (value: string) => {
+        if (!value) {
+            setPasswordError("Password is required");
             return false;
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
-            setNewEmailError('Please enter a valid email address');
+        if (value.length < 8) {
+            setPasswordError("Password must be at least 8 characters");
             return false;
         }
-        setNewEmailError('');
+        if (!/(?=.*[a-z])/.test(value)) {
+            setPasswordError("Password must contain at least one lowercase letter");
+            return false;
+        }
+        if (!/(?=.*[A-Z])/.test(value)) {
+            setPasswordError("Password must contain at least one uppercase letter");
+            return false;
+        }
+        if (!/(?=.*\d)/.test(value)) {
+            setPasswordError("Password must contain at least one number");
+            return false;
+        }
+        setPasswordError(null);
         return true;
     };
 
-    const handleRequestSubmit = async (e: React.FormEvent) => {
+    const validateConfirmPassword = (value: string) => {
+        if (!value) {
+            setConfirmPasswordError("Please confirm your password");
+            return false;
+        }
+        if (value !== password) {
+            setConfirmPasswordError("Passwords do not match");
+            return false;
+        }
+        setConfirmPasswordError(null);
+        return true;
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setEmail(value);
+        if (emailError) validateEmail(value);
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPassword(value);
+        if (passwordError) validatePassword(value);
+        if (confirmPassword && confirmPasswordError) validateConfirmPassword(confirmPassword);
+    };
+
+    const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setConfirmPassword(value);
+        if (confirmPasswordError) validateConfirmPassword(value);
+    };
+
+    const handleRequestReset = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (linkSent) {
-            return;
-        }
+        
         if (!validateEmail(email)) {
-            toast({ title: 'Validation Error', description: 'Please provide a valid email address', variant: 'destructive' });
             return;
         }
-        setRequesting(true);
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`
+                redirectTo: `${window.location.origin}/reset-password`,
             });
+
             if (error) {
-                toast({ title: 'Error', description: error.message, variant: 'destructive' });
-            } else {
-                toast({ title: 'Reset link sent', description: 'Check your inbox for the password reset link.' });
-                setLinkSent(true);
+                throw error;
             }
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            toast({ title: 'Unexpected error', description: message, variant: 'destructive' });
+
+            setSuccess('Password reset link sent! Please check your email.');
+            setEmail('');
+        } catch (err) {
+            console.error('Password reset request error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to send reset link. Please try again.');
         } finally {
-            setRequesting(false);
+            setLoading(false);
         }
     };
 
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const isPasswordValid = validatePassword(password);
+        const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
+
+        if (!isPasswordValid || !isConfirmPasswordValid) {
+            return;
+        }
+
+        // Check password strength
+        if (passwordStrength && passwordStrength.score < 3) {
+            setError('Please choose a stronger password. Your password should meet at least 3 requirements.');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: password,
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            setSuccess('Password updated successfully! Redirecting to login...');
+            
+            // Sign out and redirect to login
+            setTimeout(async () => {
+                await supabase.auth.signOut();
+                navigate('/login');
+            }, 2000);
+        } catch (err) {
+            console.error('Password reset error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // LaserFlow parameters
+    const laserProps = isMobile
+        ? {
+            dpr: 1,
+            flowSpeed: 0.26,
+            horizontalBeamOffset: 0.0,
+            verticalBeamOffset: 0.0,
+            verticalSizing: 2.4,
+            horizontalSizing: 0.7,
+            fogIntensity: isDark ? 0.6 : 0.45,
+            fogScale: 0.4,
+            wispDensity: 1.0,
+            wispSpeed: isDark ? 12.0 : 11.0,
+            wispIntensity: isDark ? 5.0 : 3.5,
+            flowStrength: isDark ? 0.30 : 0.23,
+        }
+        : {
+            flowSpeed: 0.28,
+            horizontalBeamOffset: 0.18,
+            verticalBeamOffset: 0.0,
+            verticalSizing: 2.8,
+            horizontalSizing: 0.85,
+            fogIntensity: isDark ? 0.8 : 0.65,
+            fogScale: 0.32,
+            wispDensity: 1.4,
+            wispSpeed: isDark ? 16.0 : 14.5,
+            wispIntensity: isDark ? 7.2 : 5.5,
+            flowStrength: isDark ? 0.40 : 0.30,
+        };
+
+    if (verifyingToken) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+                <div className="text-center">
+                    <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-gray-600 dark:text-gray-400">Verifying reset link...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 md:p-8">
-            <Card className="w-full max-w-md border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-gray-900/30 overflow-hidden backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
-                <CardHeader className="space-y-1 pb-6 pt-8 px-6 text-center bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/80">
-                    <div className="mx-auto mb-4 p-3 rounded-full bg-indigo-50 dark:bg-indigo-900/30 w-16 h-16 flex items-center justify-center">
-                        <LockKeyhole className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {hasRecoveryContext ? 'Set a new password' : 'Reset your password'}
-                    </h2>
-                    <CardDescription className="text-gray-600 dark:text-gray-300 mt-2">
-                        {hasRecoveryContext
-                            ? 'Enter your new password below.'
-                            : 'Enter your email to receive a password reset link.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                    {authError && (
-                        <Alert variant="destructive" className="mb-4">
-                            <AlertTitle>Password reset link error</AlertTitle>
-                            <AlertDescription>
-                                {authError.description || 'The reset link is invalid or has expired. Please request a new link below.'}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    {hasRecoveryContext ? (
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">New Password</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="password"
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="Enter new password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        minLength={MIN_LEN}
-                                        required
-                                        ref={passwordRef}
-                                        className="pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                        onClick={() => setShowPassword((v) => !v)}
-                                    >
-                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                    </button>
+        <div className="min-h-screen flex flex-col relative overflow-hidden bg-white dark:bg-gray-950">
+            <div className="absolute inset-0 pointer-events-none flex justify-center items-center" aria-hidden="true">
+                <LaserFlow
+                    color={laserColor}
+                    {...laserProps}
+                    decay={1.1}
+                    falloffStart={1.2}
+                    fogFallSpeed={0.6}
+                    className="w-[100vw] h-[75vh] md:w-full md:h-full mix-blend-screen"
+                />
+            </div>
+
+            <div className="flex-1 py-12 overflow-y-auto z-50 flex items-center justify-center">
+                <div className="container max-w-md mx-auto px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <Card className="w-full backdrop-blur-xl border border-white/20 dark:border-gray-800/50 shadow-xl overflow-hidden bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white rounded-2xl ring-1 ring-white/10">
+                            <CardHeader className="text-center pb-3 px-6 pt-6 md:pt-8">
+                                <div className="flex justify-center mb-4">
+                                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20">
+                                        <Shield className="h-8 w-8 text-primary" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                                    <div
-                                        className={`h-2 ${pwdBarClass}`}
-                                        style={{ width: `${(pwdScore / 5) * 100}%` }}
-                                    />
-                                </div>
-                                <ul className="text-xs text-gray-600 dark:text-gray-400 grid grid-cols-2 gap-1">
-                                    <li className={pwdChecks.len ? 'text-green-600 dark:text-green-400' : ''}>≥ {MIN_LEN} characters</li>
-                                    <li className={pwdChecks.lower ? 'text-green-600 dark:text-green-400' : ''}>Lowercase letter</li>
-                                    <li className={pwdChecks.upper ? 'text-green-600 dark:text-green-400' : ''}>Uppercase letter</li>
-                                    <li className={pwdChecks.number ? 'text-green-600 dark:text-green-400' : ''}>Number</li>
-                                    <li className={pwdChecks.symbol ? 'text-green-600 dark:text-green-400' : ''}>Symbol</li>
-                                </ul>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="confirm" className="text-gray-700 dark:text-gray-200">Confirm Password</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="confirm"
-                                        type={showConfirm ? 'text' : 'password'}
-                                        placeholder="Retype new password"
-                                        value={confirm}
-                                        onChange={(e) => setConfirm(e.target.value)}
-                                        minLength={MIN_LEN}
-                                        required
-                                        className="pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                        onClick={() => setShowConfirm((v) => !v)}
-                                    >
-                                        {showConfirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                    </button>
-                                </div>
-                                {confirm.length > 0 && !passwordsMatch && (
-                                    <p className="text-sm text-red-600 dark:text-red-400">Passwords do not match</p>
+                                <SplitText
+                                    text={mode === 'request' ? 'Reset Your Password' : 'Create New Password'}
+                                    className="text-2xl font-semibold text-center text-gray-900 dark:text-white"
+                                    delay={70}
+                                    animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+                                    animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+                                    easing="easeOutCubic"
+                                    threshold={0.2}
+                                    rootMargin="-50px"
+                                />
+                                <CardDescription className="text-gray-600 dark:text-gray-400">
+                                    {mode === 'request' 
+                                        ? 'Enter your email to receive a password reset link'
+                                        : 'Enter your new password below'
+                                    }
+                                </CardDescription>
+                            </CardHeader>
+
+                            <CardContent className="space-y-4 px-6 pb-6 md:px-8">
+                                {error && (
+                                    <Alert variant="destructive" className="text-red-500 border-red-500 bg-red-100 dark:bg-red-900/40 dark:text-red-300">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Error</AlertTitle>
+                                        <AlertDescription>{error}</AlertDescription>
+                                    </Alert>
                                 )}
-                            </div>
-                            <div className="space-y-2">
-                                <label htmlFor="updateEmail" className="flex items-center gap-2">
-                                    <input
-                                        id="updateEmail"
-                                        type="checkbox"
-                                        className="h-4 w-4"
-                                        checked={updateEmail}
-                                        onChange={(e) => setUpdateEmail(e.target.checked)}
-                                    />
-                                    <span className="text-sm text-gray-700 dark:text-gray-200">Also update my email</span>
-                                </label>
-                                {updateEmail && (
-                                    <div className="space-y-1">
-                                        <Label htmlFor="newEmail" className="text-gray-700 dark:text-gray-200">New Email</Label>
-                                        <Input
-                                            id="newEmail"
-                                            type="email"
-                                            placeholder="new@example.com"
-                                            value={newEmail}
-                                            onChange={(e) => {
-                                                setNewEmail(e.target.value);
-                                                if (newEmailError) validateNewEmail(e.target.value);
-                                            }}
-                                            className={newEmailError ? 'border-red-500 focus:ring-red-500' : ''}
-                                        />
-                                        {newEmailError && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">{newEmailError}</p>
+                                {success && (
+                                    <Alert className="text-green-500 border-green-500 bg-green-100 dark:bg-green-900/40 dark:text-green-300">
+                                        <Check className="h-4 w-4" />
+                                        <AlertTitle>Success</AlertTitle>
+                                        <AlertDescription>{success}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                {mode === 'request' ? (
+                                    <form onSubmit={handleRequestReset} className="flex flex-col gap-4">
+                                        <div className="grid gap-1">
+                                            <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Email address
+                                            </Label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Input
+                                                    id="email"
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={handleEmailChange}
+                                                    placeholder="you@example.com"
+                                                    className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${emailError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                    aria-required="true"
+                                                    aria-invalid={emailError ? 'true' : 'false'}
+                                                />
+                                            </div>
+                                            {emailError && (
+                                                <p className="text-xs text-red-500 dark:text-red-400 mt-1" role="alert">
+                                                    {emailError}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <Button
+                                            disabled={loading}
+                                            type="submit"
+                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader className="h-4 w-4 animate-spin" />
+                                                    <span>Sending...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>Send Reset Link</span>
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+                                        <div className="grid gap-1">
+                                            <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                New Password
+                                            </Label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Input
+                                                    id="password"
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={password}
+                                                    onChange={handlePasswordChange}
+                                                    placeholder="••••••••"
+                                                    className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${passwordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                    aria-required="true"
+                                                    aria-invalid={passwordError ? 'true' : 'false'}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                                >
+                                                    {showPassword ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            {passwordError && (
+                                                <p className="text-xs text-red-500 dark:text-red-400 mt-1" role="alert">
+                                                    {passwordError}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="grid gap-1">
+                                            <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Confirm Password
+                                            </Label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                                <Input
+                                                    id="confirmPassword"
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    value={confirmPassword}
+                                                    onChange={handleConfirmPasswordChange}
+                                                    placeholder="••••••••"
+                                                    className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${confirmPasswordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
+                                                    aria-required="true"
+                                                    aria-invalid={confirmPasswordError ? 'true' : 'false'}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                                >
+                                                    {showConfirmPassword ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            {confirmPasswordError && (
+                                                <p className="text-xs text-red-500 dark:text-red-400 mt-1" role="alert">
+                                                    {confirmPasswordError}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Password Strength Indicator */}
+                                        {password && passwordStrength && (
+                                            <div className="space-y-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Password Strength:
+                                                    </span>
+                                                    <span className={`text-sm font-semibold ${passwordStrength.color}`}>
+                                                        {passwordStrength.label}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Strength Bar */}
+                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                    <div
+                                                        className={`h-full transition-all duration-300 ${
+                                                            passwordStrength.score === 5 ? 'bg-green-600' :
+                                                            passwordStrength.score === 4 ? 'bg-green-500' :
+                                                            passwordStrength.score === 3 ? 'bg-yellow-500' :
+                                                            passwordStrength.score === 2 ? 'bg-orange-500' :
+                                                            'bg-red-500'
+                                                        }`}
+                                                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                                                    />
+                                                </div>
+
+                                                {/* Requirements Checklist */}
+                                                <div className="space-y-1.5 pt-2">
+                                                    <div className={`flex items-center text-xs ${passwordStrength.requirements.length ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <Check className={`h-3 w-3 mr-1.5 ${passwordStrength.requirements.length ? 'opacity-100' : 'opacity-40'}`} />
+                                                        At least 8 characters
+                                                    </div>
+                                                    <div className={`flex items-center text-xs ${passwordStrength.requirements.lowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <Check className={`h-3 w-3 mr-1.5 ${passwordStrength.requirements.lowercase ? 'opacity-100' : 'opacity-40'}`} />
+                                                        One lowercase letter
+                                                    </div>
+                                                    <div className={`flex items-center text-xs ${passwordStrength.requirements.uppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <Check className={`h-3 w-3 mr-1.5 ${passwordStrength.requirements.uppercase ? 'opacity-100' : 'opacity-40'}`} />
+                                                        One uppercase letter
+                                                    </div>
+                                                    <div className={`flex items-center text-xs ${passwordStrength.requirements.number ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <Check className={`h-3 w-3 mr-1.5 ${passwordStrength.requirements.number ? 'opacity-100' : 'opacity-40'}`} />
+                                                        One number
+                                                    </div>
+                                                    <div className={`flex items-center text-xs ${passwordStrength.requirements.special ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <Check className={`h-3 w-3 mr-1.5 ${passwordStrength.requirements.special ? 'opacity-100' : 'opacity-40'}`} />
+                                                        One special character (optional)
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
-                                    </div>
+
+                                        <Button
+                                            disabled={loading || !tokenVerified}
+                                            type="submit"
+                                            className="w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white py-2 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader className="h-4 w-4 animate-spin" />
+                                                    <span>Updating Password...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>Reset Password</span>
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </form>
                                 )}
-                            </div>
-                            <Button
-                                type="submit"
-                                className="w-full py-2.5"
-                                disabled={
-                                    submitting ||
-                                    !allChecksOk ||
-                                    !passwordsMatch ||
-                                    (updateEmail && (!newEmail || !!newEmailError))
-                                }
-                            >
-                                {submitting ? (
-                                    <span className="inline-flex items-center"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Updating...</span>
-                                ) : (
-                                    'Update Password'
-                                )}
-                            </Button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleRequestSubmit} className="space-y-5">
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email Address</Label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Mail className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="you@example.com"
-                                        value={email}
-                                        onChange={(e) => {
-                                            setEmail(e.target.value);
-                                            if (emailError) validateEmail(e.target.value);
-                                            // Allow re-sending if the user edits the email
-                                            if (linkSent) setLinkSent(false);
-                                        }}
-                                        className={`pl-10 ${emailError ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                        required
-                                    />
+                            </CardContent>
+
+                            <CardFooter className="flex flex-col space-y-4 px-6 pb-6 md:px-8">
+                                <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                                    {mode === 'request' ? (
+                                        <>
+                                            Remember your password?{" "}
+                                            <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                Sign in
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                Back to Sign in
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
-                                {emailError && (
-                                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">{emailError}</p>
-                                )}
-                            </div>
-                            <Button type="submit" className="w-full py-2.5" disabled={requesting || linkSent}>
-                                {requesting ? (
-                                    <span className="inline-flex items-center"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending...</span>
-                                ) : linkSent ? (
-                                    <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-5 w-5 mr-2" />Sent</span>
-                                ) : (
-                                    'Send Password Reset Link'
-                                )}
-                            </Button>
-                        </form>
-                    )}
-                </CardContent>
-                <CardFooter className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-center w-full text-gray-500 dark:text-gray-400">
-                        <a href="/login" className="underline text-indigo-600 dark:text-indigo-400">Back to login</a>
-                    </p>
-                </CardFooter>
-            </Card>
+                            </CardFooter>
+                        </Card>
+                    </motion.div>
+                </div>
+            </div>
         </div>
     );
 };

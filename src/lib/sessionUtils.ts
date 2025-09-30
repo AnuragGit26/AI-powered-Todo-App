@@ -57,32 +57,93 @@ export async function signOutAndCleanup(options?: { scope?: 'local' | 'global'; 
     }
 }
 
-// Listen for revoke for this device
+// Listen for session deletion events for this device
+// When a session is terminated from another device, this will automatically log out the current device
 export function subscribeToSessionRevocation(activeSession?: { user?: { id?: string } } | string | null): () => void {
     try {
         const sessionId = localStorage.getItem('current_session_id');
-        if (!sessionId) return () => { /* noop */ };
+        if (!sessionId) {
+            console.log('No session ID found, skipping revocation subscription');
+            return () => { /* noop */ };
+        }
 
-        const scopeSuffix = typeof activeSession === 'string'
+        const userId = typeof activeSession === 'string'
             ? activeSession
             : activeSession?.user?.id || 'unknown';
 
+        console.log(`Subscribing to session revocation for session: ${sessionId}`);
+
         const channel = supabase
-            .channel(`session_revoke_${sessionId}_${scopeSuffix}`)
+            .channel(`session_revoke_${sessionId}_${userId}`, {
+                config: {
+                    broadcast: { self: false },
+                    presence: { key: sessionId }
+                }
+            })
             .on(
                 'postgres_changes',
-                { event: 'DELETE', schema: 'public', table: 'user_sessions', filter: `id=eq.${sessionId}` },
-                async () => {
+                { 
+                    event: 'DELETE', 
+                    schema: 'public', 
+                    table: 'user_sessions', 
+                    filter: `id=eq.${sessionId}` 
+                },
+                async (payload) => {
+                    console.log('Session deletion detected:', payload);
+                    console.log('This session has been terminated from another device. Logging out...');
+                    
+                    // Clear local session data
                     await signOutAndCleanup({ scope: 'local' });
-                    try { window.location.assign('/login'); } catch { /* noop */ }
+                    
+                    // Show a brief message before redirect
+                    try {
+                        const message = document.createElement('div');
+                        message.textContent = 'Your session was terminated from another device';
+                        message.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #ef4444;
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            z-index: 10000;
+                            font-family: system-ui, -apple-system, sans-serif;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        `;
+                        document.body.appendChild(message);
+                        
+                        setTimeout(() => {
+                            message.remove();
+                            window.location.assign('/login');
+                        }, 2000);
+                    } catch {
+                        // Fallback: immediate redirect
+                        window.location.assign('/login');
+                    }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to session revocation events');
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('Failed to subscribe to session revocation channel');
+                } else if (status === 'TIMED_OUT') {
+                    console.warn('Session revocation subscription timed out');
+                }
+            });
 
         return () => {
-            try { supabase.removeChannel(channel); } catch { /* noop */ }
+            try {
+                console.log('Unsubscribing from session revocation');
+                supabase.removeChannel(channel);
+            } catch (err) {
+                console.error('Error removing session revocation channel:', err);
+            }
         };
-    } catch {
+    } catch (error) {
+        console.error('Error setting up session revocation subscription:', error);
         return () => { /* noop */ };
     }
 }
@@ -126,27 +187,49 @@ export async function fetchUserSessions(userId: string): Promise<UserSession[]> 
     }
 }
 
-// Kill one session
+// Terminate a specific session
+// If it's the current device, logs out immediately
+// If it's another device, that device will be logged out via real-time subscription
 export async function terminateSession(sessionId: string): Promise<void> {
     try {
         const deviceFingerprint = generateDeviceFingerprint();
+        
+        // Check if this is the current device's session
         const { data: sessionData } = await supabase
             .from('user_sessions')
-            .select('device_fingerprint')
+            .select('device_fingerprint, user_id')
             .eq('id', sessionId)
             .maybeSingle();
 
-        const isCurrentDevice = sessionData?.device_fingerprint === deviceFingerprint;
+        if (!sessionData) {
+            console.warn('Session not found:', sessionId);
+            return;
+        }
 
+        const isCurrentDevice = sessionData.device_fingerprint === deviceFingerprint;
+
+        console.log(`Terminating session ${sessionId}${isCurrentDevice ? ' (current device)' : ' (remote device)'}`);
+
+        // Delete the session from database
+        // This will trigger the real-time subscription on the affected device
         const { error } = await supabase
             .from('user_sessions')
             .delete()
             .eq('id', sessionId);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error deleting session:', error);
+            throw error;
+        }
 
+        console.log('Session deleted successfully');
+
+        // If terminating current device, sign out locally
         if (isCurrentDevice) {
+            console.log('Terminating current device session, signing out...');
             await signOutAndCleanup({ scope: 'local' });
+        } else {
+            console.log('Remote device will be logged out via real-time subscription');
         }
     } catch (error) {
         console.error('Error terminating session:', error);
@@ -154,9 +237,8 @@ export async function terminateSession(sessionId: string): Promise<void> {
     }
 }
 
-// Upsert this device session
+// Upsert this device session using native upsert for resilience
 export async function recordSession(): Promise<void> {
-    let currentUserId: string | null = null;
     try {
         const { data: sessionData } = await supabase.auth.getSession();
         if (!sessionData?.session) {
@@ -164,7 +246,7 @@ export async function recordSession(): Promise<void> {
             return;
         }
 
-        currentUserId = sessionData.session.user.id;
+        const currentUserId = sessionData.session.user.id;
         if (!currentUserId) {
             console.error('Cannot record session: Missing user ID');
             return;
@@ -179,91 +261,102 @@ export async function recordSession(): Promise<void> {
         if (isTablet) deviceType = 'Tablet';
 
         const deviceFingerprint = generateDeviceFingerprint();
-        console.log('Generated device fingerprint:', deviceFingerprint);
+        console.log('Recording session with fingerprint:', deviceFingerprint);
 
-        const { data: existingSession, error: findError } = await supabase
+        // Get location and IP with timeout protection
+        let ipAddress = '';
+        let locationData = '';
+        
+        try {
+            const timeout = (ms: number) => new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), ms)
+            );
+            
+            const [ip, region] = await Promise.all([
+                Promise.race([getUserIP(), timeout(3000)]).catch(() => ''),
+                Promise.race([getUserRegion(), timeout(3000)]).catch(() => ({ location: '' }))
+            ]);
+            
+            ipAddress = typeof ip === 'string' ? ip : '';
+            locationData = region && typeof region === 'object' && 'location' in region ?
+                String(region.location || '') : '';
+        } catch (error) {
+            console.warn('Could not fetch IP/location:', error);
+        }
+
+        const now = new Date().toISOString();
+        
+        // First, try to find existing session for this user+device
+        const { data: existingSession } = await supabase
             .from('user_sessions')
             .select('id')
             .eq('user_id', currentUserId)
             .eq('device_fingerprint', deviceFingerprint)
-            .order('last_seen_at', { ascending: false })
-            .limit(1)
             .maybeSingle();
 
-        if (findError) {
-            console.error('Error finding existing session:', findError);
-        }
-
         if (existingSession) {
-            console.log('Found existing session:', existingSession.id);
+            // Update existing session
+            console.log('Updating existing session:', existingSession.id);
             const { error: updateError } = await supabase
                 .from('user_sessions')
                 .update({
-                    last_seen_at: new Date().toISOString(),
+                    last_seen_at: now,
                     user_agent: userAgent,
                     device_type: deviceType,
-                    ip: await getUserIP(),
-                    location: (await getUserRegion()).location,
-                    user_id: currentUserId
+                    ...(ipAddress && { ip: ipAddress }),
+                    ...(locationData && { location: locationData })
                 })
                 .eq('id', existingSession.id);
 
             if (updateError) {
-                console.error('Error updating existing session:', updateError);
-                throw updateError;
+                console.error('Error updating session:', updateError);
+                return;
             }
 
             localStorage.setItem('current_session_id', existingSession.id);
-            return;
+        } else {
+            // Create new session
+            const sessionId = crypto.randomUUID();
+            console.log('Creating new session:', sessionId);
+            
+            const { error: insertError } = await supabase
+                .from('user_sessions')
+                .insert({
+                    id: sessionId,
+                    user_id: currentUserId,
+                    created_at: now,
+                    last_seen_at: now,
+                    user_agent: userAgent,
+                    device_type: deviceType,
+                    device_fingerprint: deviceFingerprint,
+                    ...(ipAddress && { ip: ipAddress }),
+                    ...(locationData && { location: locationData })
+                });
+
+            if (insertError) {
+                // If insert fails due to race condition, try to find the session again
+                if (insertError.code === '23505') {
+                    console.log('Race condition detected, fetching existing session');
+                    const { data: raceSession } = await supabase
+                        .from('user_sessions')
+                        .select('id')
+                        .eq('user_id', currentUserId)
+                        .eq('device_fingerprint', deviceFingerprint)
+                        .maybeSingle();
+                    
+                    if (raceSession) {
+                        localStorage.setItem('current_session_id', raceSession.id);
+                        return;
+                    }
+                }
+                console.error('Error creating session:', insertError);
+                return;
+            }
+
+            localStorage.setItem('current_session_id', sessionId);
         }
-        const sessionId = crypto.randomUUID();
-        console.log('Creating new session with ID:', sessionId);
-
-        const { error } = await supabase.from('user_sessions').insert({
-            id: sessionId,
-            user_id: currentUserId,
-            created_at: new Date().toISOString(),
-            last_seen_at: new Date().toISOString(),
-            ip: await getUserIP(),
-            location: (await getUserRegion()).location,
-            user_agent: userAgent,
-            device_type: deviceType,
-            device_fingerprint: deviceFingerprint
-        });
-
-        if (error) {
-            console.error('Error inserting new session:', error);
-            throw error;
-        }
-
-        localStorage.setItem('current_session_id', sessionId);
     } catch (error) {
         console.error('Error recording session:', error);
-        if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
-            console.log('Handling unique constraint violation');
-            try {
-                const deviceFingerprint = generateDeviceFingerprint();
-                const { data: existingSession, error: findError } = await supabase
-                    .from('user_sessions')
-                    .select('id')
-                    .eq('user_id', currentUserId)
-                    .eq('device_fingerprint', deviceFingerprint)
-                    .order('last_seen_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-
-                if (findError) {
-                    console.error('Error finding session after constraint violation:', findError);
-                }
-
-                if (existingSession) {
-                    console.log('Found existing session after constraint violation:', existingSession.id);
-                    localStorage.setItem('current_session_id', existingSession.id);
-                }
-            } catch (recoveryError) {
-                console.error('Error recovering from unique constraint violation:', recoveryError);
-            }
-        }
     }
 }
 
@@ -329,106 +422,69 @@ export async function checkExistingSession(): Promise<void> {
         if (!userId) return;
 
         const deviceFingerprint = generateDeviceFingerprint();
+        console.log('Checking existing session for fingerprint:', deviceFingerprint);
 
-        const storedSessionId = localStorage.getItem('current_session_id');
+        // Always check if a session exists for this user+device in the database
+        const { data: existingSession } = await supabase
+            .from('user_sessions')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('device_fingerprint', deviceFingerprint)
+            .maybeSingle();
 
-        if (storedSessionId) {
-            try {
-                const { error } = await supabase
-                    .from('user_sessions')
-                    .update({
-                        device_fingerprint: deviceFingerprint,
-                        last_seen_at: new Date().toISOString()
-                    })
-                    .eq('id', storedSessionId)
-                    .eq('user_id', userId);
-
-                if (!error) {
-                    const { data: verifyData } = await supabase
-                        .from('user_sessions')
-                        .select('id')
-                        .eq('id', storedSessionId)
-                        .maybeSingle();
-                    if (verifyData) {
-                        return;
-                    }
-                }
-
-            } catch (error) {
-                console.warn('Error updating stored session:', error);
-            }
-        }
-
-        // Try fingerprint match
-        try {
-            const { data, error } = await supabase
+        if (existingSession) {
+            console.log('Found existing session in DB:', existingSession.id);
+            localStorage.setItem('current_session_id', existingSession.id);
+            
+            // Update last_seen_at (fire-and-forget)
+            void supabase
                 .from('user_sessions')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('device_fingerprint', deviceFingerprint)
-                .order('last_seen_at', { ascending: false })
-                .limit(1);
-
-            if (!error && data && data.length > 0) {
-                const sessionId = data[0].id;
-                localStorage.setItem('current_session_id', sessionId);
-
-                // Update ts (fire-and-forget)
-                void supabase
-                    .from('user_sessions')
-                    .update({ last_seen_at: new Date().toISOString() })
-                    .eq('id', sessionId);
-
-                return;
-            }
-        } catch (error) {
-            console.warn('Error finding session by fingerprint:', error);
+                .update({ last_seen_at: new Date().toISOString() })
+                .eq('id', existingSession.id);
+            return;
         }
 
-        // Else create new
+        // No session found, create new one
+        console.log('No existing session found, creating new one');
         await recordSession();
     } catch (error) {
         console.error('Error checking existing session:', error);
-        // avoid loops
     }
 }
 
-// Clean dup sessions for this device
+// Clean dup sessions for this device and remove stale sessions
 export async function cleanupDuplicateSessions(userId: string): Promise<void> {
     // Timeout guard
     const timeoutPromise = new Promise<void>((_, reject) =>
-        setTimeout(() => reject(new Error('Session cleanup timed out')), 3000)
+        setTimeout(() => reject(new Error('Session cleanup timed out')), 5000)
     );
 
     try {
         await Promise.race([
             (async () => {
-                // Get fingerprint
                 const deviceFingerprint = generateDeviceFingerprint();
 
-                // Get sessions for this device (limit 10)
+                // Get all sessions for this user+device
                 const { data } = await supabase
                     .from('user_sessions')
-                    .select('id')
+                    .select('id, last_seen_at')
                     .eq('user_id', userId)
                     .eq('device_fingerprint', deviceFingerprint)
-                    .order('last_seen_at', { ascending: false })
-                    .limit(10);
+                    .order('last_seen_at', { ascending: false });
 
                 if (!data || data.length <= 1) {
-                    // No dups
+                    // No duplicates
                     return;
                 }
 
-                // Keep newest, delete rest
+                // Keep the most recent session, delete the rest
                 const mostRecentSessionId = data[0].id;
                 const sessionsToDelete = data.slice(1).map(session => session.id);
 
                 if (sessionsToDelete.length > 0) {
-                    console.log(`Cleaning ${sessionsToDelete.length} dup sessions`);
+                    console.log(`Cleaning up ${sessionsToDelete.length} duplicate sessions for this device`);
 
-                    // Fire-and-forget
-                    void supabase
+                    await supabase
                         .from('user_sessions')
                         .delete()
                         .in('id', sessionsToDelete);
@@ -436,11 +492,21 @@ export async function cleanupDuplicateSessions(userId: string): Promise<void> {
                     // Ensure correct local ID
                     localStorage.setItem('current_session_id', mostRecentSessionId);
                 }
+
+                // Also clean up very old sessions (older than 90 days) for this user
+                const ninetyDaysAgo = new Date();
+                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                
+                void supabase
+                    .from('user_sessions')
+                    .delete()
+                    .eq('user_id', userId)
+                    .lt('last_seen_at', ninetyDaysAgo.toISOString());
             })(),
             timeoutPromise
         ]);
     } catch (error) {
-        // Just log, don't block
+        // Just log, don't block user flow
         console.warn('Session cleanup operation:', error);
     }
 }

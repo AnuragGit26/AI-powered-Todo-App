@@ -1,4 +1,4 @@
-import React, { useEffect, useState, lazy, Suspense } from "react";
+import React, { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus } from "lucide-react";
 import TodoForm from "./components/TodoForm";
@@ -31,6 +31,8 @@ import type { Todo } from "./types";
 import { pomodoroService } from "./services/pomodoroService";
 import { useBillingStore, initializeFreeTierSubscription } from "./store/billingStore";
 import ResetPasswordForm from "./components/ResetPasswordForm";
+import PageTransition from "./components/PageTransition";
+import SessionTransition from "./components/SessionTransition";
 
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
@@ -42,14 +44,25 @@ const App: React.FC = () => {
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [showTodoForm, setShowTodoForm] = useState(false);
+    const [showSessionTransition, setShowSessionTransition] = useState(false);
     const { toast } = useToast();
+    const authRedirectInProgressRef = useRef(false);
+
+    // Safety timeout to prevent infinite loading
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (isAuthChecking) {
+                console.warn('[App] Auth check timeout - forcing completion');
+                setIsAuthChecking(false);
+            }
+        }, 5000); // 5 second timeout
+
+        return () => clearTimeout(timeout);
+    }, [isAuthChecking]);
 
     // Init theme
     useEffect(() => {
-        // Init from store
         initializeTheme(theme);
-
-        // Force dark class
         document.documentElement.classList.toggle('dark', theme.mode === 'dark');
     }, [theme]);
 
@@ -57,12 +70,9 @@ const App: React.FC = () => {
     useEffect(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-        // Only if no manual pick
         const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-            // Has saved prefs?
             if (localStorage.getItem('todo-storage')) {
                 const storedData = JSON.parse(localStorage.getItem('todo-storage') || '{}');
-                // Skip if user chose
                 if (!storedData.state?.theme?.mode) {
                     setTheme({
                         ...theme,
@@ -70,7 +80,6 @@ const App: React.FC = () => {
                     });
                 }
             } else {
-                // No prefs? follow system
                 setTheme({
                     ...theme,
                     mode: e.matches ? 'dark' : 'light',
@@ -98,9 +107,78 @@ const App: React.FC = () => {
         };
     }, []);
 
-    // Auth listener (separate)
+    // Handle auth redirect (magic link / OAuth) on non-reset routes before any redirects occur
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        try {
+            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+            if (pathname.startsWith('/reset-password')) {
+                setIsAuthChecking(false);
+                return; // The reset page handles its own recovery/auth flow
+            }
+
+            const url = window.location.href;
+            const hash = window.location.hash || '';
+            const hasCode = /[?&]code=/.test(url);
+            const hasTokens = hash.includes('access_token') && hash.includes('refresh_token');
+
+            if (!hasCode && !hasTokens) {
+                return;
+            }
+
+            authRedirectInProgressRef.current = true;
+            setIsAuthChecking(true);
+
+            (async () => {
+                try {
+                    if (hasCode && typeof supabase.auth.exchangeCodeForSession === 'function') {
+                        await supabase.auth.exchangeCodeForSession(url);
+                        console.log('[App] exchangeCodeForSession success');
+                    } else if (hasTokens) {
+                        const hp = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+                        const access_token = hp.get('access_token') || undefined;
+                        const refresh_token = hp.get('refresh_token') || undefined;
+                        if (access_token && refresh_token) {
+                            console.log('[App] Init setSession from hash tokens with Supabase');
+                            await supabase.auth.setSession({ access_token, refresh_token });
+                            console.log('[App] setSession success from hash tokens');
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[App] auth redirect handling error:', err);
+                } finally {
+                    try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session) {
+                            const currentUrl = new URL(window.location.href);
+                            if (currentUrl.hash) currentUrl.hash = '';
+                            if (currentUrl.searchParams.has('code')) currentUrl.searchParams.delete('code');
+                            if (currentUrl.searchParams.has('type')) currentUrl.searchParams.delete('type');
+                            if (currentUrl.searchParams.has('redirect_to')) currentUrl.searchParams.delete('redirect_to');
+                            window.history.replaceState({}, document.title, currentUrl.toString());
+                            console.log('[App] cleaned URL after auth redirect');
+                        }
+                    } catch (e) {
+                        console.warn('[App] URL cleanup post-auth failed:', e);
+                    }
+                    authRedirectInProgressRef.current = false;
+                    setIsAuthChecking(false);
+                }
+            })();
+        } catch (err) {
+            console.warn('[App] auth redirect handling init failed:', err);
+        }
+    }, []);
+
+    // Auth listener
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+            const isAuthPage = pathname === '/login' || pathname === '/signup';
+            const isExistingSession = event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED';
+
+            if (session && isAuthPage && isExistingSession) {
+                setShowSessionTransition(true);
+            }
             setSession(session);
 
             if (session) {
@@ -129,14 +207,18 @@ const App: React.FC = () => {
                 await signOutAndCleanup({ scope: 'local' });
             }
 
-            // Auth check done
-            setIsAuthChecking(false);
+            // Auth check done (unless handling auth redirect)
+            if (!authRedirectInProgressRef.current) {
+                setIsAuthChecking(false);
+            }
         });
 
         // Initial check
         supabase.auth.getSession().then(({ data }) => {
             setSession(data.session);
-            setIsAuthChecking(false);
+            if (!authRedirectInProgressRef.current) {
+                setIsAuthChecking(false);
+            }
         });
 
         return () => subscription.unsubscribe();
@@ -308,7 +390,7 @@ const App: React.FC = () => {
     }, []);
 
     // Lean loading UI
-    if (isAuthChecking && !isDataLoaded) {
+    if (isAuthChecking) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8">
                 <div className="text-xl sm:text-2xl md:text-3xl text-center text-gray-700 dark:text-gray-300 responsive-text">
@@ -327,8 +409,6 @@ const App: React.FC = () => {
             </div>
         );
     }
-
-    // Let components handle loading
 
     // Home
     const HomeContent = (
@@ -456,6 +536,10 @@ const App: React.FC = () => {
 
     return (
         <>
+            <SessionTransition
+                show={showSessionTransition}
+                onComplete={() => setShowSessionTransition(false)}
+            />
             <NavBar />
             {session && <IdleTimeoutGuard idleMs={30 * 60 * 1000} warningMs={60 * 1000} />}
             <Toaster />
@@ -463,13 +547,25 @@ const App: React.FC = () => {
                 <Route
                     path="/login"
                     element={
-                        session ? <Navigate to="/" replace /> : <><LoginForm /></>
+                        session ? (
+                            <Navigate to="/" replace />
+                        ) : (
+                            <PageTransition>
+                                <LoginForm />
+                            </PageTransition>
+                        )
                     }
                 />
                 <Route
                     path="/signup"
                     element={
-                        session ? <Navigate to="/" replace /> : <><SignUpForm /></>
+                        session ? (
+                            <Navigate to="/" replace />
+                        ) : (
+                            <PageTransition>
+                                <SignUpForm />
+                            </PageTransition>
+                        )
                     }
                 />
                 <Route
@@ -480,24 +576,26 @@ const App: React.FC = () => {
                     path="/profile"
                     element={
                         <ProtectedRoute isAuthenticated={!!session}>
-                            <div
-                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
-                                style={{
-                                    "--primary-color": theme.primaryColor,
-                                    "--secondary-color": theme.secondaryColor,
-                                } as React.CSSProperties}
-                            >
-                                <Aurora
-                                    colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
-                                    blend={0.7}
-                                    amplitude={2.5}
-                                    speed={0.9}
-                                />
-                                <div className="pt-0 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
-                                    {session?.user && <UserProfile userData={session.user} />}
+                            <PageTransition>
+                                <div
+                                    className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden"
+                                    style={{
+                                        "--primary-color": theme.primaryColor,
+                                        "--secondary-color": theme.secondaryColor,
+                                    } as React.CSSProperties}
+                                >
+                                    <Aurora
+                                        colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
+                                        blend={0.7}
+                                        amplitude={2.5}
+                                        speed={0.9}
+                                    />
+                                    <div className="pt-0 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                        {session?.user && <UserProfile userData={session.user} />}
+                                    </div>
+                                    <Footer />
                                 </div>
-                                <Footer />
-                            </div>
+                            </PageTransition>
                         </ProtectedRoute>
                     }
                 />
@@ -505,7 +603,9 @@ const App: React.FC = () => {
                     path="/"
                     element={
                         <ProtectedRoute isAuthenticated={!!session}>
-                            {HomeContent}
+                            <PageTransition>
+                                {HomeContent}
+                            </PageTransition>
                         </ProtectedRoute>
                     }
                 />
@@ -513,35 +613,48 @@ const App: React.FC = () => {
                     path="/pomodoro"
                     element={
                         <ProtectedRoute isAuthenticated={!!session}>
-                            <div
-                                className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-auto"
-                                style={{
-                                    "--primary-color": theme.primaryColor,
-                                    "--secondary-color": theme.secondaryColor,
-                                } as React.CSSProperties}
-                            >
-                                <Aurora
-                                    colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
-                                    blend={0.7}
-                                    amplitude={2.5}
-                                    speed={0.9}
-                                />
-                                <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
-                                    <div className="max-w-2xl mx-auto">
-                                        <PomodoroTimer />
+                            <PageTransition>
+                                <div
+                                    className="relative min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-auto"
+                                    style={{
+                                        "--primary-color": theme.primaryColor,
+                                        "--secondary-color": theme.secondaryColor,
+                                    } as React.CSSProperties}
+                                >
+                                    <Aurora
+                                        colorStops={[theme.primaryColor, theme.secondaryColor, "#FF3232"]}
+                                        blend={0.7}
+                                        amplitude={2.5}
+                                        speed={0.9}
+                                    />
+                                    <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                        <div className="max-w-2xl mx-auto">
+                                            <PomodoroTimer />
+                                        </div>
                                     </div>
+                                    <Footer />
                                 </div>
-                                <Footer />
-                            </div>
+                            </PageTransition>
                         </ProtectedRoute>
                     }
                 />
                 <Route
                     path="/reset-password"
-                    element={<ResetPasswordForm />}
+                    element={
+                        <PageTransition>
+                            <ResetPasswordForm />
+                        </PageTransition>
+                    }
                 />
 
-                <Route path="*" element={<><NotFound /></>} />
+                <Route
+                    path="*"
+                    element={
+                        <PageTransition>
+                            <NotFound />
+                        </PageTransition>
+                    }
+                />
             </Routes>
         </>
     );
