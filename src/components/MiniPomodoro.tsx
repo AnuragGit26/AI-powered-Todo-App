@@ -4,6 +4,7 @@ import { Timer, Play, Pause, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import notifySound from '../assets/notify.wav';
 import { useToast } from '../hooks/use-toast';
+import { notificationService } from '../services/notificationService';
 
 export const MiniPomodoro: React.FC = () => {
     const { pomodoro, updatePomodoroState, togglePomodoroTimer, resetPomodoroTimer, syncPomodoroState, loadPomodoroState, subscribeToPomodoroSync } = useTodoStore();
@@ -126,7 +127,7 @@ export const MiniPomodoro: React.FC = () => {
         };
     }, [pomodoro.notificationVolume]);
 
-    const handleTimerComplete = () => {
+    const handleTimerComplete = async () => {
         // Play notification sound
         if (pomodoro.notificationEnabled) {
             try {
@@ -137,15 +138,9 @@ export const MiniPomodoro: React.FC = () => {
                     });
                 }
 
-                // Show browser notification if allowed
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    const title = pomodoro.isWorkTime ? 'Work Session Complete!' : 'Break Complete!';
-                    const message = pomodoro.isWorkTime ?
-                        `Time for a ${pomodoro.completedSessions % pomodoro.settings.longBreakInterval === 0 ? 'long' : 'short'} break.` :
-                        'Time to get back to work.';
-
-                    new Notification(title, { body: message });
-                }
+                // Use notification service for enhanced notifications
+                const notificationType = pomodoro.isWorkTime ? 'work-complete' : 'break-complete';
+                await notificationService.showPomodoroNotification(notificationType);
 
                 // Show toast notification
                 toast({
@@ -210,9 +205,10 @@ export const MiniPomodoro: React.FC = () => {
     };
 
     // Request notification permission if not set
-    const requestNotificationPermission = () => {
-        if ('Notification' in window && Notification.permission !== 'granted') {
-            Notification.requestPermission();
+    const requestNotificationPermission = async () => {
+        const permission = notificationService.getPermission();
+        if (permission === 'default') {
+            await notificationService.requestPermission();
         }
     };
 

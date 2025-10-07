@@ -16,10 +16,13 @@ test.describe('Authentication', () => {
         // Mock Supabase password grant sign-in to avoid real network calls on CI
         await setupSignInMock(page, 'signInSuccess');
         await page.goto('http://localhost:5175/login');
-        await expect(page.getByLabel('Email')).toBeVisible();
+
+        // Wait for the form to be fully loaded and interactive
+        await page.waitForSelector('form[role="form"]', { state: 'visible' });
+        await expect(page.getByLabel('Email address')).toBeVisible();
         await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
-        await page.getByLabel('Email').fill('test_user@gmail.com');
+        await page.getByLabel('Email address').fill('test_user@gmail.com');
         await page.getByLabel('Password', { exact: true }).fill('testpassword@123');
         await page.getByRole('button', { name: 'Sign In' }).click();
 
@@ -37,12 +40,15 @@ test.describe('Authentication', () => {
             await page.context().clearCookies();
             await page.goto('http://localhost:5175/signup');
             await expect(page).toHaveURL(/\/signup$/);
+
+            // Wait for the form to be fully loaded and interactive
+            await page.waitForSelector('form', { state: 'visible' });
         });
 
         test('should have all required signup form fields', async ({ page }) => {
             const formFields = [
                 { label: 'Username' },
-                { label: 'Email' },
+                { label: 'Email address' },
                 { label: 'Password', exact: true },
             ];
 
@@ -63,7 +69,7 @@ test.describe('Authentication', () => {
         test('should successfully create a new account with valid credentials', async ({ page }) => {
             await setupSignupMock(page, 'signupSuccess');
             await page.getByLabel('Username').fill(testUser.username);
-            await page.getByLabel('Email').fill(testUser.email);
+            await page.getByLabel('Email address').fill(testUser.email);
             await page.getByLabel('Password', { exact: true }).fill(testUser.password);
 
             await page.getByRole('button', { name: /Create Account/i }).click();
@@ -83,7 +89,7 @@ test.describe('Authentication', () => {
         test('should handle signup errors gracefully', async ({ page }) => {
             await setupSignupMock(page, 'signupEmailExists');
             await page.getByLabel('Username').fill(testUser.username);
-            await page.getByLabel('Email').fill(testUser.email);
+            await page.getByLabel('Email address').fill(testUser.email);
             await page.getByLabel('Password', { exact: true }).fill(testUser.password);
             await page.getByRole('button', { name: /Create Account/i }).click();
             await page.waitForTimeout(2000);
@@ -94,7 +100,7 @@ test.describe('Authentication', () => {
         test('should handle rate limiting gracefully', async ({ page }) => {
             await setupSignupMock(page, 'signupRateLimited');
             await page.getByLabel('Username').fill(testUser.username);
-            await page.getByLabel('Email').fill(testUser.email);
+            await page.getByLabel('Email address').fill(testUser.email);
             await page.getByLabel('Password', { exact: true }).fill(testUser.password);
             await page.getByRole('button', { name: /Create Account/i }).click();
             await page.waitForTimeout(2000);
@@ -107,7 +113,7 @@ test.describe('Authentication', () => {
         test('should show validation errors for invalid inputs', async ({ page }) => {
             const testCases = [
                 { field: 'Username', value: 'ab', error: 'Username must be at least 3 characters' },
-                { field: 'Email', value: 'invalid-email', error: 'Please enter a valid email' },
+                { field: 'Email address', value: 'invalid-email', error: 'Please enter a valid email address' },
                 { field: 'Password', value: 'weak', error: 'Password must be at least 8 characters' },
             ];
 
@@ -116,8 +122,8 @@ test.describe('Authentication', () => {
                     if (field !== 'Username') {
                         await page.getByLabel('Username').fill('validusername');
                     }
-                    if (field !== 'Email') {
-                        await page.getByLabel('Email').fill('validuser@test-mail.org');
+                    if (field !== 'Email address') {
+                        await page.getByLabel('Email address').fill('validuser@test-mail.org');
                     }
                     if (field !== 'Password') {
                         await page.getByLabel('Password', { exact: true }).fill('ValidPass123!');

@@ -14,9 +14,12 @@ test.describe('Auth Setup', () => {
 
         // Perform login
         await page.goto('/login');
-        await expect(page.getByLabel('Email')).toBeVisible();
+
+        // Wait for the form to be fully loaded and interactive
+        await page.waitForSelector('form[role="form"]', { state: 'visible' });
+        await expect(page.getByLabel('Email address')).toBeVisible();
         await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
-        await page.getByLabel('Email').fill('test_user@gmail.com');
+        await page.getByLabel('Email address').fill('test_user@gmail.com');
         await page.getByLabel('Password', { exact: true }).fill('testpassword@123');
         await page.getByRole('button', { name: 'Sign In' }).click();
 

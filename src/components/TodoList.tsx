@@ -43,6 +43,7 @@ import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { useAIPriority } from "../hooks/useAIPriority";
 import { useBillingUsage } from "../hooks/useBillingUsage";
+import { notificationService } from "../services/notificationService";
 
 
 const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
@@ -1013,6 +1014,33 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
 
     // Initialize AI Priority management
     const { getPriorityRecommendations } = useAIPriority();
+
+    // Task reminder notifications
+    useEffect(() => {
+        const checkTaskReminders = () => {
+            const now = new Date();
+
+            todos.forEach(todo => {
+                if (!todo.completed && todo.dueDate) {
+                    const dueDate = new Date(todo.dueDate);
+                    const timeUntilDue = dueDate.getTime() - now.getTime();
+
+                    // Send notification if task is due within 30 minutes
+                    if (timeUntilDue > 0 && timeUntilDue <= 30 * 60 * 1000) {
+                        notificationService.showTaskReminder(todo.title, dueDate);
+                    }
+                }
+            });
+        };
+
+        // Check reminders every 5 minutes
+        const reminderInterval = setInterval(checkTaskReminders, 5 * 60 * 1000);
+
+        // Initial check
+        checkTaskReminders();
+
+        return () => clearInterval(reminderInterval);
+    }, [todos]);
 
     const sortedTodos = useMemo(() => {
         if (sortCriteria === "ai_priority") {

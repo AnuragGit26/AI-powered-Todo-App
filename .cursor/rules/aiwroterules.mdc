@@ -1,0 +1,184 @@
+---
+alwaysApply: true
+---
+
+# AiWroteMeRules - Coding Style and Development Guidelines
+
+## Code Formatting and Style
+- **Tooling**: Use Prettier + ESLint combination for code formatting and style consistency
+- **Indentation**: 2 spaces for indentation across all languages
+- **Semicolons**: Use default practices (typically always use semicolons)
+- **Quotes**: Use default practices (typically single quotes for strings)
+- **Trailing Commas**: Use default practices (typically always use trailing commas in multiline structures)
+
+## Import Organization
+- **Structure**: Keep all imports at the top of files with no specific grouping
+- **Style**: Use named imports over default imports when possible
+- **Optimization**: Import only what you need (tree-shaking friendly)
+
+## Naming Conventions
+- **Variables and Functions**: camelCase (myVariable, myFunction)
+- **Constants**: UPPER_SNAKE_CASE (MY_CONSTANT)
+- **React Components**: PascalCase (MyComponent)
+- **CSS Classes and IDs**: kebab-case (my-class)
+
+## File and Directory Structure
+- **Component Files**: One component per file, files named same as component
+- **File Naming**: PascalCase for React components (MyComponent.tsx)
+- **Directory Naming**: kebab-case (my-feature/)
+
+## TypeScript Preferences
+- **Settings**: Use moderate TypeScript settings
+- **Type Definitions**: Explicit typing everywhere (let name: string = "hello")
+- **Type Patterns**: Interface over type aliases
+- **Error Handling**: Try-catch blocks
+
+## React and Component Patterns
+- **State Management**: Use state management library (Redux, Zustand, etc.)
+- **Components**: Functional components with hooks
+- **Props**: Default props with default parameters
+- **Event Handling**: Mix based on complexity (inline for simple, separate functions for complex)
+
+## Testing Preferences
+- **Coverage**: Write tests for all components and functions
+- **Framework**: Jest + React Testing Library
+- **Organization**: Tests in separate __tests__ directories
+- **Naming**: describe/it pattern (describe('Component', () => { it('should...') }))
+
+## Performance and Optimization
+- **Strategy**: Use optimization techniques selectively based on component complexity
+- **Bundle Optimization**: All techniques (code splitting at route/component level, lazy loading)
+- **Image Optimization**: Use optimized image formats (WebP, AVIF)
+
+## Error Handling and Logging
+- **Approach**: Comprehensive error boundaries and logging
+- **Error Boundaries**: Mix of global and component-level error boundaries
+- **Logging**: Console logging for development, external service for production
+
+## Documentation and Comments
+- **Functions/Components**: JSDoc comments for all functions and components
+- **Component Documentation**: TypeScript interfaces with comments
+- **Code Comments**: Comment complex algorithms and business logic
+
+## Git and Version Control
+- **Workflow**: Direct commits to main with good commit messages
+- **Commit Messages**: Conventional commits (feat:, fix:, docs:, etc.)
+- **Branch Naming**: feature/description (feature/user-authentication)
+
+## Build and Deployment
+- **Process**: Automated CI/CD with multiple environments
+- **Environment Management**: Environment-specific configuration files
+- **Build Optimization**: Production builds with minification and optimization
+
+## Code Quality and Linting
+- **Linting Rules**: Moderate linting rules, allow some warnings
+- **Code Review**: Automated checks (linting, tests, type checking)
+- **Formatting**: Auto-format on save
+
+## Additional Guidelines
+- **Code Readability**: Prioritize clean, readable code over micro-optimizations
+- **Consistency**: Maintain consistent patterns throughout the codebase
+- **Documentation**: Keep documentation up-to-date with code changes
+- **Testing**: Ensure all tests pass before committing
+- **Performance**: Profile and optimize only when performance issues are identified
+
+## Tools and Extensions Recommended
+- Prettier extension for VS Code
+- ESLint extension for VS Code
+- TypeScript extension for VS Code
+- Jest extension for VS Code
+- GitLens for Git integration
+- Auto-format on save enabled
+
+---
+*This file was generated based on your coding preferences and should be updated as your preferences evolve.*
+# AiWroteMeRules - Coding Style and Development Guidelines
+
+## Code Formatting and Style
+- **Tooling**: Use Prettier + ESLint combination for code formatting and style consistency
+- **Indentation**: 2 spaces for indentation across all languages
+- **Semicolons**: Use default practices (typically always use semicolons)
+- **Quotes**: Use default practices (typically single quotes for strings)
+- **Trailing Commas**: Use default practices (typically always use trailing commas in multiline structures)
+
+## Import Organization
+- **Structure**: Keep all imports at the top of files with no specific grouping
+- **Style**: Use named imports over default imports when possible
+- **Optimization**: Import only what you need (tree-shaking friendly)
+
+## Naming Conventions
+- **Variables and Functions**: camelCase (myVariable, myFunction)
+- **Constants**: UPPER_SNAKE_CASE (MY_CONSTANT)
+- **React Components**: PascalCase (MyComponent)
+- **CSS Classes and IDs**: kebab-case (my-class)
+
+## File and Directory Structure
+- **Component Files**: One component per file, files named same as component
+- **File Naming**: PascalCase for React components (MyComponent.tsx)
+- **Directory Naming**: kebab-case (my-feature/)
+
+## TypeScript Preferences
+- **Settings**: Use moderate TypeScript settings
+- **Type Definitions**: Explicit typing everywhere (let name: string = "hello")
+- **Type Patterns**: Interface over type aliases
+- **Error Handling**: Try-catch blocks
+
+## React and Component Patterns
+- **State Management**: Use state management library (Redux, Zustand, etc.)
+- **Components**: Functional components with hooks
+- **Props**: Default props with default parameters
+- **Event Handling**: Mix based on complexity (inline for simple, separate functions for complex)
+
+## Testing Preferences
+- **Coverage**: Write tests for all components and functions
+- **Framework**: Jest + React Testing Library
+- **Organization**: Tests in separate __tests__ directories
+- **Naming**: describe/it pattern (describe('Component', () => { it('should...') }))
+
+## Performance and Optimization
+- **Strategy**: Use optimization techniques selectively based on component complexity
+- **Bundle Optimization**: All techniques (code splitting at route/component level, lazy loading)
+- **Image Optimization**: Use optimized image formats (WebP, AVIF)
+
+## Error Handling and Logging
+- **Approach**: Comprehensive error boundaries and logging
+- **Error Boundaries**: Mix of global and component-level error boundaries
+- **Logging**: Console logging for development, external service for production
+
+## Documentation and Comments
+- **Functions/Components**: JSDoc comments for all functions and components
+- **Component Documentation**: TypeScript interfaces with comments
+- **Code Comments**: Comment complex algorithms and business logic
+
+## Git and Version Control
+- **Workflow**: Direct commits to main with good commit messages
+- **Commit Messages**: Conventional commits (feat:, fix:, docs:, etc.)
+- **Branch Naming**: feature/description (feature/user-authentication)
+
+## Build and Deployment
+- **Process**: Automated CI/CD with multiple environments
+- **Environment Management**: Environment-specific configuration files
+- **Build Optimization**: Production builds with minification and optimization
+
+## Code Quality and Linting
+- **Linting Rules**: Moderate linting rules, allow some warnings
+- **Code Review**: Automated checks (linting, tests, type checking)
+- **Formatting**: Auto-format on save
+
+## Additional Guidelines
+- **Code Readability**: Prioritize clean, readable code over micro-optimizations
+- **Consistency**: Maintain consistent patterns throughout the codebase
+- **Documentation**: Keep documentation up-to-date with code changes
+- **Testing**: Ensure all tests pass before committing
+- **Performance**: Profile and optimize only when performance issues are identified
+
+## Tools and Extensions Recommended
+- Prettier extension for VS Code
+- ESLint extension for VS Code
+- TypeScript extension for VS Code
+- Jest extension for VS Code
+- GitLens for Git integration
+- Auto-format on save enabled
+
+---
+*This file was generated based on your coding preferences and should be updated as your preferences evolve.*

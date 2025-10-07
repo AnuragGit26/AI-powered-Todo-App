@@ -33,6 +33,8 @@ import { useBillingStore, initializeFreeTierSubscription } from "./store/billing
 import ResetPasswordForm from "./components/ResetPasswordForm";
 import PageTransition from "./components/PageTransition";
 import SessionTransition from "./components/SessionTransition";
+import { notificationService } from "./services/notificationService";
+import { NotificationPermissionBanner } from "./components/NotificationPermissionBanner";
 
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
@@ -389,6 +391,26 @@ const App: React.FC = () => {
         });
     }, []);
 
+    // Initialize notification service
+    useEffect(() => {
+        const initializeNotifications = async () => {
+            try {
+                await notificationService.initialize();
+
+                // Request permission if not already granted
+                const permission = notificationService.getPermission();
+                if (permission === 'default') {
+                    // Show a subtle notification permission request
+                    console.log('Notification permission not granted yet');
+                }
+            } catch (error) {
+                console.warn('Could not initialize notification service:', error);
+            }
+        };
+
+        initializeNotifications();
+    }, []);
+
     // Lean loading UI
     if (isAuthChecking) {
         return (
@@ -536,6 +558,7 @@ const App: React.FC = () => {
 
     return (
         <>
+            <NotificationPermissionBanner />
             <SessionTransition
                 show={showSessionTransition}
                 onComplete={() => setShowSessionTransition(false)}
