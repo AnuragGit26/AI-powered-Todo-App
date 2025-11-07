@@ -89,6 +89,18 @@ const ResetPasswordForm: React.FC = () => {
         ? getOptimizedDarkModeColor(theme.primaryColor || '#7C3AED', darkColors)
         : (theme.primaryColor || '#7C3AED');
 
+    // Utility: promise timeout
+    const withTimeout = <T,>(promise: Promise<T>, ms: number, label = 'Operation'): Promise<T> => {
+        let timer: number | undefined;
+        const timeout = new Promise<never>((_, reject) => {
+            // window.setTimeout type for TS in browser
+            timer = window.setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+        });
+        return Promise.race([promise, timeout]).finally(() => {
+            if (timer) window.clearTimeout(timer);
+        }) as Promise<T>;
+    };
+
     // Check for recovery token in URL
     useEffect(() => {
         const checkRecoveryToken = async () => {
@@ -99,12 +111,34 @@ const ResetPasswordForm: React.FC = () => {
                 const accessToken = hashParams.get('access_token');
                 const type = hashParams.get('type');
 
+                // Fast-path: if a valid session already exists, immediately allow reset
+                const quickSession = await withTimeout(
+                    supabase.auth.getSession(),
+                    700,
+                    'Session check'
+                ).catch(() => ({ data: { session: null } } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>));
+
+                if (quickSession?.data?.session) {
+                    setMode('reset');
+                    setTokenVerified(true);
+                    setSuccess('Token verified! Please enter your new password.');
+                    // Clean URL if hash present
+                    if (window.location.hash) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                    return;
+                }
+
                 if (accessToken && type === 'recovery') {
-                    // Verify the session
-                    const { data, error } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: hashParams.get('refresh_token') || '',
-                    });
+                    // Verify the session with a timeout guard
+                    const { data, error } = await withTimeout(
+                        supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: hashParams.get('refresh_token') || '',
+                        }),
+                        5000,
+                        'Token verification'
+                    );
 
                     if (error) {
                         console.error('Token verification error:', error);
@@ -117,6 +151,10 @@ const ResetPasswordForm: React.FC = () => {
                         setSuccess('Token verified! Please enter your new password.');
                         // Clean URL
                         window.history.replaceState({}, document.title, window.location.pathname);
+                    } else {
+                        setError('Failed to verify session. Please request a new link.');
+                        setMode('request');
+                        setTokenVerified(false);
                     }
                 } else {
                     // No token, stay in request mode
@@ -219,7 +257,7 @@ const ResetPasswordForm: React.FC = () => {
 
     const handleRequestReset = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateEmail(email)) {
             return;
         }
@@ -268,16 +306,20 @@ const ResetPasswordForm: React.FC = () => {
         setSuccess(null);
 
         try {
-            const { error } = await supabase.auth.updateUser({
-                password: password,
-            });
+            const { error } = await withTimeout(
+                supabase.auth.updateUser({
+                    password: password,
+                }),
+                8000,
+                'Password update'
+            );
 
             if (error) {
                 throw error;
             }
 
             setSuccess('Password updated successfully! Redirecting to login...');
-            
+
             // Sign out and redirect to login
             setTimeout(async () => {
                 await supabase.auth.signOut();
@@ -285,7 +327,13 @@ const ResetPasswordForm: React.FC = () => {
             }, 2000);
         } catch (err) {
             console.error('Password reset error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
+            const message = err instanceof Error ? err.message : 'Failed to reset password. Please try again.';
+            // Provide clearer guidance on timeouts
+            setError(
+                /timed out/i.test(message)
+                    ? 'Taking longer than expected. Please check your connection and try again.'
+                    : message
+            );
         } finally {
             setLoading(false);
         }
@@ -370,7 +418,7 @@ const ResetPasswordForm: React.FC = () => {
                                     rootMargin="-50px"
                                 />
                                 <CardDescription className="text-gray-600 dark:text-gray-400">
-                                    {mode === 'request' 
+                                    {mode === 'request'
                                         ? 'Enter your email to receive a password reset link'
                                         : 'Enter your new password below'
                                     }
@@ -451,6 +499,7 @@ const ResetPasswordForm: React.FC = () => {
                                                     value={password}
                                                     onChange={handlePasswordChange}
                                                     placeholder="••••••••"
+                                                    autoComplete="new-password"
                                                     className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${passwordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
                                                     aria-required="true"
                                                     aria-invalid={passwordError ? 'true' : 'false'}
@@ -487,6 +536,7 @@ const ResetPasswordForm: React.FC = () => {
                                                     value={confirmPassword}
                                                     onChange={handleConfirmPasswordChange}
                                                     placeholder="••••••••"
+                                                    autoComplete="new-password"
                                                     className={`pl-10 bg-white dark:bg-gray-800/90 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary/60 ${confirmPasswordError ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500' : ''}`}
                                                     aria-required="true"
                                                     aria-invalid={confirmPasswordError ? 'true' : 'false'}
@@ -522,17 +572,16 @@ const ResetPasswordForm: React.FC = () => {
                                                         {passwordStrength.label}
                                                     </span>
                                                 </div>
-                                                
+
                                                 {/* Strength Bar */}
                                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                                     <div
-                                                        className={`h-full transition-all duration-300 ${
-                                                            passwordStrength.score === 5 ? 'bg-green-600' :
-                                                            passwordStrength.score === 4 ? 'bg-green-500' :
-                                                            passwordStrength.score === 3 ? 'bg-yellow-500' :
-                                                            passwordStrength.score === 2 ? 'bg-orange-500' :
-                                                            'bg-red-500'
-                                                        }`}
+                                                        className={`h-full transition-all duration-300 ${passwordStrength.score === 5 ? 'bg-green-600' :
+                                                                passwordStrength.score === 4 ? 'bg-green-500' :
+                                                                    passwordStrength.score === 3 ? 'bg-yellow-500' :
+                                                                        passwordStrength.score === 2 ? 'bg-orange-500' :
+                                                                            'bg-red-500'
+                                                            }`}
                                                         style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                                                     />
                                                 </div>

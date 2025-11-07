@@ -35,6 +35,8 @@ import PageTransition from "./components/PageTransition";
 import SessionTransition from "./components/SessionTransition";
 import { notificationService } from "./services/notificationService";
 import { NotificationPermissionBanner } from "./components/NotificationPermissionBanner";
+import NavigationBlocker from "./components/NavigationBlocker";
+import { useMutationStore } from "./store/mutationStore";
 
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
@@ -49,6 +51,8 @@ const App: React.FC = () => {
     const [showSessionTransition, setShowSessionTransition] = useState(false);
     const { toast } = useToast();
     const authRedirectInProgressRef = useRef(false);
+    const activeCrudCount = useMutationStore((s) => s.activeCrudCount);
+    const isMutating = activeCrudCount > 0;
 
     // Safety timeout to prevent infinite loading
     useEffect(() => {
@@ -258,6 +262,15 @@ const App: React.FC = () => {
 
     // Watch revoke events
     useEffect(() => {
+        // Do not subscribe to revocation events on the reset password route
+        try {
+            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+            if (pathname.startsWith('/reset-password')) {
+                return;
+            }
+        } catch {
+            // ignore
+        }
         if (!session) return;
         const unsubscribe = subscribeToSessionRevocation(session);
         const safeUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : () => { /* noop */ };
@@ -455,6 +468,34 @@ const App: React.FC = () => {
         initializeNotifications();
     }, []);
 
+    // Block page refresh and keyboard refresh while mutations are active
+    useEffect(() => {
+        if (!isMutating) return;
+
+        const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        };
+
+        const keydownHandler = (e: KeyboardEvent) => {
+            const isRefreshKey = e.key === 'F5' || ((e.metaKey || e.ctrlKey) && (e.key === 'r' || e.key === 'R'));
+            if (isRefreshKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                toast({ title: 'Action disabled', description: 'Please wait for the current operation to finish.' });
+            }
+        };
+
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+        window.addEventListener('keydown', keydownHandler, { capture: true } as AddEventListenerOptions);
+
+        return () => {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            window.removeEventListener('keydown', keydownHandler, { capture: true } as EventListenerOptions);
+        };
+    }, [isMutating, toast]);
+
     // Lean loading UI
     if (isAuthChecking) {
         return (
@@ -603,6 +644,7 @@ const App: React.FC = () => {
     return (
         <>
             <NotificationPermissionBanner />
+            <NavigationBlocker />
             <SessionTransition
                 show={showSessionTransition}
                 onComplete={() => setShowSessionTransition(false)}

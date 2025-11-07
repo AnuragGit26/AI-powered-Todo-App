@@ -286,6 +286,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         };
     };
 
+    // Presence window for "Active now" (in ms)
+    const ACTIVE_NOW_WINDOW_MS = 60 * 1000;
+    const isSessionActiveNow = (session: UserSession): boolean => {
+        try {
+            const lastSeen = new Date(session.last_seen_at).getTime();
+            return Date.now() - lastSeen <= ACTIVE_NOW_WINDOW_MS;
+        } catch {
+            return false;
+        }
+    };
+
     // Update the fetchSessions function
     const fetchSessions = useCallback(async () => {
         if (!userData?.id) return;
@@ -308,6 +319,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
             fetchSessions();
         }
     }, [activeTab, fetchSessions]);
+
+    // Live updates for session changes (insert/update/delete)
+    useEffect(() => {
+        if (activeTab !== 'security' || !userData?.id) return;
+        const channel = supabase
+            .channel(`user_sessions_${userData.id}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'user_sessions', filter: `user_id=eq.${userData.id}` },
+                () => {
+                    // Re-fetch sessions on any change
+                    fetchSessions();
+                }
+            )
+            .subscribe();
+        const interval = setInterval(() => {
+            // Force UI refresh to update "Active now" when threshold changes
+            setSessions((prev) => [...prev]);
+        }, 30 * 1000);
+        return () => {
+            try { supabase.removeChannel(channel); } catch { /* noop */ }
+            clearInterval(interval);
+        };
+    }, [activeTab, userData?.id, fetchSessions]);
 
     // Add new function to fetch activity logs
     const fetchActivityLogs = useCallback(async () => {
@@ -860,6 +895,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                                 <div className="space-y-4">
                                                     {sessions.map((session) => {
                                                         const { device, location, lastActive, isCurrent, deviceIcon } = formatSessionInfo(session);
+                                                        const activeNow = isSessionActiveNow(session);
                                                         return (
                                                             <motion.div
                                                                 key={session.id}
@@ -885,6 +921,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                                                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
                                                                                         <CheckCircle2 className="h-3 w-3 mr-1" />
                                                                                         Current
+                                                                                    </span>
+                                                                                )}
+                                                                                {activeNow && (
+                                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                                                                        <span className="mr-1 h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                                                                        Active now
                                                                                     </span>
                                                                                 )}
                                                                             </div>

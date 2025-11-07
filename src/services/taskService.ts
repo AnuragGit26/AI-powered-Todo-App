@@ -3,6 +3,7 @@ import { useTodoStore } from "../store/todoStore";
 import { logActivity } from "./activityMetrics.ts";
 import { supabase } from "../lib/supabaseClient";
 import { handleUUID, isValidUUID } from "../lib/utils";
+import { useMutationStore } from "../store/mutationStore";
 
 export const getTaskById = (id: string): Todo | undefined => {
     const todos = useTodoStore.getState().todos;
@@ -70,6 +71,8 @@ export const fetchTasks = async () => {
 };
 
 export const createTask = async (task: Todo) => {
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
     // Clone the task to avoid modifying the original object
     const taskToSave = { ...task };
 
@@ -193,6 +196,8 @@ export const createTask = async (task: Todo) => {
         }
     } catch (err) {
         console.error('Unexpected error creating task:', err);
+    } finally {
+        endCrud();
     }
 };
 
@@ -275,6 +280,8 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
         return;
     }
 
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
     try {
         // Clone the updates to avoid modifying the original object
         const updatesToApply = { ...updates };
@@ -339,6 +346,8 @@ export const updateTask = async (taskId: string, updates: Partial<Todo>) => {
         }
     } catch (err) {
         console.error('Unexpected error updating task:', err);
+    } finally {
+        endCrud();
     }
 };
 
@@ -349,16 +358,22 @@ export const deleteTask = async (taskId: string) => {
         return;
     }
 
-    const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId).eq('userId', userId);
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
+    try {
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .eq('id', taskId).eq('userId', userId);
 
-    if (error) {
-        console.error('Error deleting task:', error);
-    } else {
-        console.log('Task deleted:', taskId);
-        await logActivity(userId, `Task Deleted ${taskId}`);
+        if (error) {
+            console.error('Error deleting task:', error);
+        } else {
+            console.log('Task deleted:', taskId);
+            await logActivity(userId, `Task Deleted ${taskId}`);
+        }
+    } finally {
+        endCrud();
     }
 };
 
@@ -373,6 +388,8 @@ export const fetchSubtasks = async (parentId: string) => {
 };
 
 export const createSubtask = async (subtask: Partial<SubTodo>) => {
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
     try {
         // Pick only columns that exist in the 'subtasks' table to avoid insert errors
         const {
@@ -387,6 +404,7 @@ export const createSubtask = async (subtask: Partial<SubTodo>) => {
             status,
             completedAt,
             estimatedTime,
+            reminders,
         } = (subtask || {}) as Partial<SubTodo>;
 
         if (!parentId) {
@@ -406,6 +424,7 @@ export const createSubtask = async (subtask: Partial<SubTodo>) => {
             status: status ?? 'Not Started',
             completedAt,
             estimatedTime,
+            reminders,
         };
 
         const { error } = await supabase
@@ -423,6 +442,8 @@ export const createSubtask = async (subtask: Partial<SubTodo>) => {
         }
     } catch (e) {
         console.error('Unexpected error creating subtask:', e);
+    } finally {
+        endCrud();
     }
 };
 
@@ -444,6 +465,7 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
         status,
         completedAt,
         estimatedTime,
+        reminders,
     } = (updates || {}) as Partial<SubTodo>;
 
     const sanitizedUpdates = {
@@ -456,19 +478,26 @@ export const updateSubtask = async (subtaskId: string, updates: Partial<Todo>) =
         ...(status !== undefined ? { status } : {}),
         ...(completedAt !== undefined ? { completedAt } : {}),
         ...(estimatedTime !== undefined ? { estimatedTime } : {}),
+        ...(reminders !== undefined ? { reminders } : {}),
     };
 
-    const { error } = await supabase
-        .from('subtasks')
-        .update(sanitizedUpdates)
-        .eq('id', subtaskId);
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
+    try {
+        const { error } = await supabase
+            .from('subtasks')
+            .update(sanitizedUpdates)
+            .eq('id', subtaskId);
 
-    if (error) {
-        console.error('Error updating subtask:', error);
-    } else {
-        console.log('Subtask updated:', subtaskId);
-        const changedFields = Object.keys(updates).join(', ');
-        await logActivity(userId, `Subtask Updated: ${subtaskId} (Changed: ${changedFields})`);
+        if (error) {
+            console.error('Error updating subtask:', error);
+        } else {
+            console.log('Subtask updated:', subtaskId);
+            const changedFields = Object.keys(updates).join(', ');
+            await logActivity(userId, `Subtask Updated: ${subtaskId} (Changed: ${changedFields})`);
+        }
+    } finally {
+        endCrud();
     }
 };
 
@@ -479,15 +508,21 @@ export const deleteSubtask = async (subtaskId: string) => {
         return;
     }
 
-    const { error } = await supabase
-        .from('subtasks')
-        .delete()
-        .eq('id', subtaskId);
+    const { beginCrud, endCrud } = useMutationStore.getState();
+    beginCrud();
+    try {
+        const { error } = await supabase
+            .from('subtasks')
+            .delete()
+            .eq('id', subtaskId);
 
-    if (error) {
-        console.error('Error deleting subtask:', error);
-    } else {
-        console.log('Subtask deleted:', subtaskId);
-        await logActivity(userId, `SubTask Deleted ${subtaskId}`);
+        if (error) {
+            console.error('Error deleting subtask:', error);
+        } else {
+            console.log('Subtask deleted:', subtaskId);
+            await logActivity(userId, `SubTask Deleted ${subtaskId}`);
+        }
+    } finally {
+        endCrud();
     }
 };

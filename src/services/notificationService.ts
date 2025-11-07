@@ -5,6 +5,7 @@
  */
 
 import type { TaskReminder, Todo } from '../types';
+import { useNotificationStore } from '../store/notificationStore';
 
 export interface NotificationOptions {
     title: string;
@@ -162,6 +163,18 @@ class NotificationService {
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                 try {
                     await this.showNotificationViaServiceWorker(notificationOptions);
+                    // Mirror into in-app center even when SW handles display
+                    try {
+                        const store = useNotificationStore.getState();
+                        store.addNotification({
+                            id: notificationOptions.tag || `notification-${Date.now()}`,
+                            title: notificationOptions.title,
+                            body: notificationOptions.body,
+                            tag: notificationOptions.tag,
+                        });
+                    } catch (e) {
+                        console.warn('NotificationCenter store unavailable', e);
+                    }
                     return null; // Service worker handled it
                 } catch (swError) {
                     console.warn('Service worker notification failed, falling back to main thread:', swError);
@@ -202,6 +215,20 @@ class NotificationService {
 
             // Set up event handlers
             this.setupNotificationEventHandlers(notification, notificationId);
+
+            // Mirror into in-app notification center
+            try {
+                const store = useNotificationStore.getState();
+                store.addNotification({
+                    id: notificationId,
+                    title: notificationOptions.title,
+                    body: notificationOptions.body,
+                    tag: notificationOptions.tag,
+                });
+            } catch (e) {
+                // ignore store errors
+                console.warn('NotificationCenter store unavailable', e);
+            }
 
             return notification;
         } catch (error) {
@@ -348,12 +375,10 @@ class NotificationService {
 
                     console.log(`✅ Reminder notification sent for task "${task.title}"`);
 
-                    // Update last triggered time
-                    reminder.lastTriggered = new Date();
+                    const updatedReminder: TaskReminder = { ...reminder, lastTriggered: new Date() };
 
-                    // Handle recurring reminders
-                    if (reminder.reminderType === 'recurring') {
-                        this.scheduleRecurringReminder(reminder, task);
+                    if (updatedReminder.reminderType === 'recurring') {
+                        this.scheduleRecurringReminder(updatedReminder, task);
                     }
                 }
             } catch (error) {

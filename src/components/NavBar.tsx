@@ -7,6 +7,7 @@ import { useTodoStore } from '../store/todoStore';
 import ThemeCustomizer from "./ThemeCustomizer";
 import ShinyText from "./ui/ShinyText";
 import { MiniPomodoro } from "./MiniPomodoro";
+import { NotificationBell, NotificationCenter } from "./NotificationCenter";
 
 export const NavBar: React.FC = () => {
     const navigate = useNavigate();
@@ -80,6 +81,7 @@ export const NavBar: React.FC = () => {
 
                 {/* Right section with actions */}
                 <div className="flex items-center gap-3" role="toolbar" aria-label="Navigation actions">
+                    <NotificationBell />
                     <Button
                         variant="ghost"
                         className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
@@ -114,6 +116,7 @@ export const NavBar: React.FC = () => {
                     </div>
                 </div>
             </nav>
+            <NotificationCenter />
 
             {/* Mobile Navigation */}
             <nav

@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3B82F6" />
+    <title>You're offline • TaskMind AI</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+        :root {
+            --bg-start: #0f172a;
+            --bg-end: #020617;
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent-1: #3b82f6;
+            --accent-2: #a855f7;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+                Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: var(--text);
+            background: radial-gradient(1200px 700px at 20% 10%, #1e293b 0%, transparent 55%),
+                radial-gradient(900px 600px at 80% 20%, #0b7cff20 0%, transparent 50%),
+                linear-gradient(160deg, var(--bg-start), var(--bg-end));
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: -20vmax;
+            background:
+                radial-gradient(45vmax 45vmax at 15% 20%, #3b82f615 0%, transparent 60%),
+                radial-gradient(55vmax 55vmax at 85% 10%, #a855f715 0%, transparent 60%),
+                radial-gradient(35vmax 35vmax at 60% 80%, #22c55e12 0%, transparent 60%);
+            filter: blur(30px);
+            z-index: 0;
+            animation: float 16s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: min(720px, 92vw);
+            padding: 28px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            backdrop-filter: saturate(140%) blur(10px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .brand img {
+            width: 28px;
+            height: 28px;
+        }
+
+        .brand span {
+            letter-spacing: 0.3px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .art {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            justify-self: end;
+        }
+
+        .art svg {
+            width: 100%;
+            max-width: 380px;
+            height: auto;
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.35));
+        }
+
+        .art .badge {
+            display: inline-block;
+            padding: 18px;
+            border-radius: 28px;
+            background: radial-gradient(60% 80% at 20% 10%, rgba(59, 130, 246, 0.20), transparent),
+                radial-gradient(70% 70% at 80% 90%, rgba(168, 85, 247, 0.20), transparent),
+                linear-gradient(160deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.85));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(24px, 3.2vw, 32px);
+            line-height: 1.15;
+        }
+
+        p.lead {
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: clamp(14px, 2.2vw, 16px);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            appearance: none;
+            border: 0;
+            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #0b1220;
+            background: linear-gradient(180deg, #ffffff, #e9eefb);
+            box-shadow: 0 4px 20px rgba(17, 25, 40, 0.25);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .grid {
+            margin-top: 22px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .tip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 16px 14px;
+            font-size: 13px;
+            line-height: 1.25;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .status {
+            margin-top: 14px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .footer {
+            margin-top: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* Header */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .status-pill.ok {
+            border-color: #22c55e55;
+            background: linear-gradient(140deg, rgba(34, 197, 94, 0.18), rgba(34, 197, 94, 0.08));
+            color: #86efac;
+        }
+
+        .status-pill.warn {
+            border-color: #f59e0b55;
+            background: linear-gradient(140deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.08));
+            color: #fcd34d;
+        }
+
+        /* Mascot */
+        .mascot {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0 12px;
+        }
+
+        .mascot-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mascot-badge.online {
+            background: linear-gradient(135deg, #10b981, #22c55e);
+        }
+
+        .mascot-quips {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .wiggle {
+            animation: wiggle 2.2s ease-in-out infinite;
+            transform-origin: 50% 90%;
+        }
+
+        @keyframes wiggle {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            15% {
+                transform: rotate(-8deg);
+            }
+
+            30% {
+                transform: rotate(8deg);
+            }
+
+            45% {
+                transform: rotate(-4deg);
+            }
+
+            60% {
+                transform: rotate(4deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        .pop {
+            animation: pop 600ms ease;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0.92);
+            }
+
+            50% {
+                transform: scale(1.06);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .pill.success {
+            border-color: #22c55e55;
+            color: #86efac;
+        }
+
+        .pill.warn {
+            border-color: #f59e0b55;
+            color: #fcd34d;
+        }
+
+        @media (min-width: 820px) {
+            .hero {
+                grid-template-columns: 3fr 2fr;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <div class="brand">
+                    <img src="/icon-192.png" alt="" />
+                    <span>TaskMind AI</span>
+                </div>
+                <div class="status-pill ok" id="onlinePill" title="Connection status">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <span>Back online — high‑five ✋</span>
+                </div>
+            </div>
+            <div class="hero">
+                <div>
+                    <div class="mascot" role="img" aria-label="Offline connection mascot">
+                        <div class="mascot-badge wiggle" id="mascotBadge" title="Oops! Unplugged vibes">
+                            <!-- Cute unplugged plug face -->
+                            <svg id="offlineMascot" width="26" height="26" viewBox="0 0 24 24" fill="none"
+                                aria-hidden="true">
+                                <!-- Body -->
+                                <rect x="4.5" y="8" width="15" height="10" rx="3" fill="#ffffff" opacity="0.92" />
+                                <!-- Eyes -->
+                                <circle cx="9" cy="13" r="1.2" fill="#0b1220" />
+                                <circle cx="15" cy="13" r="1.2" fill="#0b1220" />
+                                <!-- Crooked mouth -->
+                                <path d="M8.8 16c2.1 1.3 4.3 1.3 6.4 0" stroke="#0b1220" stroke-width="1.6"
+                                    stroke-linecap="round" />
+                                <!-- Prongs -->
+                                <rect x="8" y="6" width="2" height="3" rx="0.8" fill="#ffffff" opacity="0.85" />
+                                <rect x="14" y="6" width="2" height="3" rx="0.8" fill="#ffffff" opacity="0.85" />
+                                <!-- Broken cable squiggle -->
+                                <path d="M19 14c2.2 0 2.6 3 4.8 3" stroke="#ffffff" stroke-opacity="0.7"
+                                    stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2.4 2.4" />
+                            </svg>
+                        </div>
+                        <div class="mascot-quips" id="quipText">Our Wi‑Fi goblin unplugged the cable.</div>
+                    </div>
+                    <h1
+                        style="background:linear-gradient(90deg,#fff,#cbd5e1);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                        You're offline</h1>
+                    <p class="lead">
+                        It looks like there's no internet connection. You can still open the app
+                        if it was cached before, or try again once you're back online.
+                    </p>
+                    <div class="actions">
+                        <button class="btn" id="retry">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="#0b1220" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M21 3v6h-6" stroke="#0b1220" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Try again
+                        </button>
+                        <a class="btn btn-secondary" href="/" id="openApp">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.59 5.58L20 12l-8-8-8 8z"
+                                    stroke="currentColor" stroke-width="1.5" fill="currentColor" />
+                            </svg>
+                            Open cached app
+                        </a>
+                    </div>
+                    <div class="grid" role="list">
+                        <div class="tip" role="listitem">Check Wi‑Fi or mobile data</div>
+                        <div class="tip" role="listitem">Disable airplane mode</div>
+                        <div class="tip" role="listitem">Move to an area with better signal</div>
+                    </div>
+                    <div class="status" id="statusText" aria-live="polite">
+                        Waiting for connection…
+                    </div>
+                </div>
+                <div class="art" aria-hidden="true">
+                    <!-- Neon mascot badge inspired by provided UI -->
+                    <div class="badge">
+                        <svg viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="gradA" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#3B82F6" />
+                                    <stop offset="1" stop-color="#A855F7" />
+                                </linearGradient>
+                                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <!-- Rounded background card -->
+                            <rect x="10" y="10" width="500" height="400" rx="46" fill="url(#gradA)" opacity="0.10"
+                                stroke="#ffffff1a" />
+                            <!-- Infinity cable -->
+                            <path d="M120,230
+                                     C120,160 220,160 260,220
+                                     C300,280 400,280 400,210
+                                     C400,140 300,140 260,200
+                                     C220,260 120,300 120,230" fill="none" stroke="url(#gradA)" stroke-width="18"
+                                stroke-linecap="round" filter="url(#glow)" />
+                            <!-- Break spark -->
+                            <polygon points="250,208 270,200 262,220 282,212 270,236 254,230" fill="#F59E0B"
+                                opacity="0.95" filter="url(#glow)" />
+                            <!-- Cable segments (tech pattern) -->
+                            <g stroke="#93C5FD" opacity="0.6" stroke-width="3">
+                                <path d="M150 230 l30 -12 m18 -9 l28 -10 m20 -12 l26 -8 m18 -10 l24 -8" />
+                                <path d="M360 210 l-26 8 m-20 10 l-26 8 m-20 10 l-24 9" />
+                            </g>
+                            <!-- Plug icon (cracked) -->
+                            <g transform="translate(86,100)">
+                                <rect x="0" y="0" width="78" height="78" rx="18" fill="#111827" opacity="0.7"
+                                    stroke="#ffffff1a" />
+                                <g transform="translate(20,20)">
+                                    <rect x="0" y="18" width="38" height="26" rx="7" fill="#93C5FD" />
+                                    <rect x="6" y="8" width="6" height="14" rx="2" fill="#93C5FD" />
+                                    <rect x="26" y="8" width="6" height="14" rx="2" fill="#93C5FD" />
+                                    <path d="M8 36 l10 6 l8 -10" stroke="#FCA5A5" stroke-width="3" fill="none" />
+                                </g>
+                            </g>
+                            <!-- Friendly ghost with wrench -->
+                            <g transform="translate(330,255)">
+                                <path d="M0,40 C0,10 24,-10 54,-10 C84,-10 108,10 108,40
+                                         C108,74 92,80 80,80 C68,80 60,72 54,72
+                                         C48,72 40,80 28,80 C16,80 0,74 0,40" fill="#C4B5FD" opacity="0.85"
+                                    filter="url(#glow)" />
+                                <circle cx="38" cy="24" r="6" fill="#0b1220" />
+                                <circle cx="70" cy="24" r="6" fill="#0b1220" />
+                                <path d="M40 44 q14 10 28 0" stroke="#0b1220" stroke-width="3" fill="none"
+                                    stroke-linecap="round" />
+                                <!-- Wrench -->
+                                <g transform="translate(92,40) rotate(20)">
+                                    <path d="M0 0 l10 -10 l6 6 l-10 10 z" fill="#93C5FD" />
+                                    <rect x="-16" y="-3" width="22" height="6" rx="3" fill="#93C5FD" />
+                                </g>
+                            </g>
+                            <!-- Base shadow -->
+                            <rect x="150" y="330" width="220" height="14" rx="7" fill="#0ea5e94d" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <span class="pill warn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                            d="M12 9v4m0 4h.01M10.29 3.86l-8.48 14.7A2 2 0 0 0 3.53 22h16.94a2 2 0 0 0 1.72-3.44l-8.48-14.7a2 2 0 0 0-3.42 0z"
+                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Offline mode
+                </span>
+                <span class="pill success" id="swStatus">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Ready for offline
+                </span>
+            </div>
+        </div>
+    </div>
+    <script src="/offline.js" defer></script>
+</body>
+
+</html>

@@ -46,7 +46,7 @@ import { useBillingUsage } from "../hooks/useBillingUsage";
 import { notificationService } from "../services/notificationService";
 
 
-const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, level = 0 }) => {
+const TodoItem: React.FC<{ todo: Todo; level?: number; currentFilter: 'all' | 'completed' | 'uncompleted' }> = React.memo(({ todo, level = 0, currentFilter }) => {
     const { removeTodo, updateTodo, deleteSubtaskStore, updateSubtaskStore, calculatePriorityScore, aiAnalysisEnabled } = useTodoStore();
     const [expandedInsights, setExpandedInsights] = useState<string[]>([]);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
@@ -59,6 +59,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
     const [analysisLoading, setAnalysisLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [priorityScoreLoading, setPriorityScoreLoading] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
 
 
     const { canUseFeature, trackUsage } = useBillingUsage();
@@ -327,6 +328,12 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             await createNextRecurrence(todo);
         }
 
+        // When filtering to uncompleted, let the completion animation play before removal
+        if (updatedCompleted && currentFilter === 'uncompleted') {
+            setIsCompleting(true);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+
         const updates: Partial<Todo> = {
             completed: updatedCompleted,
             status: newStatus,
@@ -417,9 +424,11 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
 
     return (
         <motion.div
+            layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -100 }}
+            transition={{ layout: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] } }}
             className={`task-item p-2 sm:p-4 backdrop-blur-sm bg-white dark:glass-card rounded-xl shadow-sm hover:shadow-md transition-all ${level > 0 ? "ml-2 sm:ml-4 md:ml-8 mt-2" : "mb-4"
                 } ${todo.completed ? "border-l-4 border-l-emerald-500" : "hover:border-l-4 hover:border-l-blue-500"}`}
         >
@@ -428,6 +437,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
+                    animate={{ scale: todo.completed || isCompleting ? 1.05 : 1 }}
                     onClick={() => handleTodoCompletion(todo)}
                     className={`p-2 sm:p-3 rounded-full ${todo.completed
                         ? "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md"
@@ -452,6 +462,13 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
                         <p className={`text-base sm:text-lg md:text-xl ${todo.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-white"} break-words font-medium overflow-hidden text-ellipsis ${todo.title.length > 80 ? "line-clamp-2" : ""}`}>
                             {todo.title}
                         </p>
+                        <motion.div
+                            className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-emerald-500/70 rounded"
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: todo.completed || isCompleting ? 1 : 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            style={{ transformOrigin: "left center" }}
+                        />
                         {todo.title.length > 80 && (
                             <div className="absolute z-10 left-0 top-full mt-1 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-full max-w-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
                                 <p className="text-gray-800 dark:text-white font-medium">{todo.title}</p>
@@ -925,7 +942,7 @@ const TodoItem: React.FC<{ todo: Todo; level?: number }> = React.memo(({ todo, l
             {todo.subtasks && todo.subtasks.length > 0 && (
                 <div className="mt-4 space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                     {todo.subtasks.map((subtask) => (
-                        <TodoItem key={subtask.id} todo={subtask} level={level + 1} />
+                        <TodoItem key={subtask.id} todo={subtask} level={level + 1} currentFilter={currentFilter} />
                     ))}
                 </div>
             )}
@@ -1264,7 +1281,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                 )}
             </motion.div>
             <div className="flex-1 min-h-0">
-                <AnimatePresence>
+                <AnimatePresence mode="popLayout" initial={false}>
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
                             <div className="flex items-center space-x-2">
@@ -1273,10 +1290,10 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-2 pb-4">
+                        <motion.div layout className="space-y-2 pb-4">
                             {filteredTodos.length > 0 ? (
                                 filteredTodos.map((todo) => (
-                                    <TodoItem key={todo.id} todo={todo} />
+                                    <TodoItem key={todo.id} todo={todo} currentFilter={filterStatus} />
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-40 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
@@ -1286,7 +1303,7 @@ const TodoList: React.FC<{ isLoading?: boolean }> = ({ isLoading = false }) => {
                                     </p>
                                 </div>
                             )}
-                        </div>
+                        </motion.div>
                     )}
                 </AnimatePresence>
             </div>
