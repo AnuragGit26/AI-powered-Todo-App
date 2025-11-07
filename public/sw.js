@@ -162,56 +162,63 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
     console.log('Service Worker: Push received');
 
-    let notificationData = {
-        title: 'TaskMind AI',
-        body: 'You have a new notification',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: 'taskmind-notification',
-        requireInteraction: false,
-        actions: [
-            {
-                action: 'view',
-                title: 'View',
-                icon: '/icon-192.png'
-            },
-            {
-                action: 'dismiss',
-                title: 'Dismiss'
-            }
-        ]
-    };
+    event.waitUntil((async () => {
+        let notificationData = {
+            title: 'TaskMind AI',
+            body: 'You have a new notification',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: 'taskmind-notification',
+            requireInteraction: false,
+            actions: [
+                { action: 'view', title: 'View', icon: '/icon-192.png' },
+                { action: 'dismiss', title: 'Dismiss' }
+            ]
+        };
 
-    // Parse push data if available
-    if (event.data) {
-        event.waitUntil((async () => {
-            try {
-                // Try JSON first
-                const data = event.data.json();
-                notificationData = { ...notificationData, ...data };
-            } catch (jsonError) {
+        // Parse push data; prefer message/body as title
+        try {
+            if (event.data) {
                 try {
-                    // Fallback: treat payload as plain text body
-                    const text = event.data.text ? await event.data.text() : '';
-                    if (text && typeof text === 'string') {
-                        // Simple convention: "Title|Body"
-                        const [maybeTitle, maybeBody] = text.split('|');
-                        if (maybeBody) {
-                            notificationData = { ...notificationData, title: maybeTitle || notificationData.title, body: maybeBody };
+                    const data = await event.data.json();
+                    const messageText = String(data.message || data.body || data.title || '').trim();
+                    if (messageText) {
+                        notificationData.title = messageText; // message shown as header
+                    }
+                    const subtitle = String(data.title || '').trim();
+                    if (subtitle && subtitle !== notificationData.title) {
+                        notificationData.body = subtitle;
+                    } else {
+                        notificationData.body = '';
+                    }
+                    // Merge remaining fields (icon, tag, etc.)
+                    notificationData = { ...notificationData, ...data, title: notificationData.title, body: notificationData.body };
+                } catch (jsonError) {
+                    // Fallback: treat payload as plain text
+                    const textPayload = event.data?.text ? await event.data.text() : '';
+                    const text = String(textPayload || '').trim();
+                    if (text) {
+                        const parts = text.split('|');
+                        if (parts.length > 1) {
+                            const maybeTitle = parts[0].trim();
+                            const maybeBody = parts.slice(1).join('|').trim();
+                            // Show the message/body as header
+                            notificationData.title = maybeBody || maybeTitle || notificationData.title;
+                            notificationData.body = maybeTitle;
                         } else {
-                            notificationData = { ...notificationData, body: text };
+                            notificationData.title = text;
+                            notificationData.body = '';
                         }
                     }
-                } catch (textError) {
-                    console.error('Service Worker: Error parsing push text', textError);
                 }
             }
-        })());
-    }
+        } catch (e) {
+            console.warn('Service Worker: push payload parse failed', e);
+        }
 
-    event.waitUntil((async () => {
         await self.registration.showNotification(notificationData.title, notificationData);
-        // Mirror to all open clients so the UI notification center can record it
+
+        // Broadcast to open clients so in-app panel can mirror
         try {
             const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
             for (const client of clientList) {
