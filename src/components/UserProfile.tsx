@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Label } from './ui/label';
+import { Switch } from './ui/switch';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Activity, CreditCard, Shield,
@@ -22,6 +23,7 @@ import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 import BillingDashboard from './BillingDashboard';
 import BillingAnalytics from './BillingAnalytics';
+import { useTodoStore } from '../store/todoStore';
 
 interface UserMetadata {
     bio?: string;
@@ -93,6 +95,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
         phone_number: userData.user_metadata.phone_number || userData.phone || '',
         email: userData.email || ''
     });
+
+    const { aiAnalysisEnabled, setAiAnalysisEnabled, todos, addDefaultRemindersToAllTasks } = useTodoStore();
     const [showUploader, setShowUploader] = useState(false);
     const [profilePicture, setProfilePicture] = useState<string | null>(null);
     const [sessionLoading, setSessionLoading] = useState(false);
@@ -433,6 +437,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
                             <TabsTrigger value="billing" className="flex items-center gap-2 py-3">
                                 <CreditCard className="h-4 w-4" />
                                 <span className="hidden sm:inline">Billing</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="settings" className="flex items-center gap-2 py-3">
+                                <Settings className="h-4 w-4" />
+                                <span className="hidden sm:inline">Settings</span>
                             </TabsTrigger>
                         </TabsList>
                     </div>
@@ -953,6 +961,119 @@ const UserProfile: React.FC<UserProfileProps> = ({ userData }) => {
 
                         <TabsContent value="billing">
                             <BillingDashboard />
+                        </TabsContent>
+
+                        <TabsContent value="settings">
+                            <div className="space-y-6">
+                                <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Settings className="h-5 w-5" />
+                                            Application Settings
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Configure your application preferences and AI features
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="ai-analysis" className="text-base font-medium">
+                                                    AI Analysis
+                                                </Label>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                    Enable AI-powered task analysis, priority scoring, and insights
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                id="ai-analysis"
+                                                checked={aiAnalysisEnabled}
+                                                onCheckedChange={setAiAnalysisEnabled}
+                                                className="data-[state=checked]:bg-blue-600"
+                                            />
+                                        </div>
+
+                                        {!aiAnalysisEnabled && (
+                                            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                                <div className="flex items-start gap-3">
+                                                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                                                    <div className="space-y-1">
+                                                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                                            AI Analysis Disabled
+                                                        </p>
+                                                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                                            Task analysis will use basic templates instead of AI insights.
+                                                            Priority scoring and advanced features will be disabled.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/50 shadow-sm">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Clock className="h-5 w-5" />
+                                            Task Reminders
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Manage default reminders for your tasks
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <Label className="text-base font-medium">
+                                                        Default Reminders
+                                                    </Label>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                        Automatically add reminders to tasks with due dates
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                        {todos.filter(t => t.dueDate && !t.completed).length} tasks with due dates
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {todos.filter(t => t.reminders && t.reminders.length > 0).length} tasks with reminders
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                                <div className="flex items-start gap-3">
+                                                    <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                                            Default Reminder Schedule
+                                                        </p>
+                                                        <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                                                            <li>• 24 hours before due date</li>
+                                                            <li>• 2 hours before due date</li>
+                                                            <li>• 30 minutes before due date</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                onClick={() => {
+                                                    addDefaultRemindersToAllTasks();
+                                                    toast.success('Default reminders added to all eligible tasks!');
+                                                }}
+                                                className="w-full"
+                                                variant="outline"
+                                            >
+                                                <RefreshCw className="h-4 w-4 mr-2" />
+                                                Add Default Reminders to All Tasks
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </TabsContent>
                     </div>
                 </Tabs>

@@ -242,8 +242,22 @@ self.addEventListener('message', (event) => {
 
     if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
         const { title, options } = event.data;
+        const port = event.ports[0];
+
         event.waitUntil(
             self.registration.showNotification(title, options)
+                .then(() => {
+                    console.log('Service Worker: Notification shown successfully');
+                    if (port) {
+                        port.postMessage({ success: true });
+                    }
+                })
+                .catch((error) => {
+                    console.error('Service Worker: Failed to show notification', error);
+                    if (port) {
+                        port.postMessage({ error: error.message });
+                    }
+                })
         );
     }
 });

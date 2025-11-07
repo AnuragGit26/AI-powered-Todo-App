@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Mic, MicOff, Crown, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBillingUsage } from '../hooks/useBillingUsage';
+import { useTodoStore } from '../store/todoStore';
 
 interface VoiceToTaskProps {
     onTaskCreate?: (task: { title: string; description: string; priority: string; estimatedTime: string }) => void;
@@ -30,6 +31,7 @@ interface SimpleSpeechRecognition {
 
 const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
     const { isFeatureAvailable, showUpgradePrompt, trackUsage } = useBillingUsage();
+    const { aiAnalysisEnabled } = useTodoStore();
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -59,7 +61,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
 
             recognitionRef.current.onresult = (event: unknown) => {
                 type ResultItem = { 0: { transcript: string } };
-                type ResultList = { length: number; [index: number]: ResultItem };
+                type ResultList = { length: number;[index: number]: ResultItem };
                 const results = Array.from((event as { results: ResultList }).results);
                 const transcript = results.map((result: ResultItem) => result[0].transcript).join('');
                 setTranscript(transcript);
@@ -171,6 +173,24 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
     };
 
     const analyzeVoiceInput = (input: string) => {
+        // Check if AI Analysis is enabled
+        if (!aiAnalysisEnabled) {
+            // Basic analysis without AI
+            return {
+                title: input.trim(),
+                description: 'Task created from voice input',
+                priority: 'medium',
+                estimatedTime: '30 minutes',
+                category: 'General',
+                suggestedSubtasks: [
+                    'Review task details',
+                    'Plan approach',
+                    'Execute task',
+                    'Review and finalize'
+                ]
+            };
+        }
+
         // Mock AI analysis - in real app this would use OpenAI/Gemini API
         const words = input.toLowerCase();
 
@@ -378,7 +398,7 @@ const VoiceToTask: React.FC<VoiceToTaskProps> = ({ onTaskCreate }) => {
                     >
                         <h4 className="font-medium flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            AI Analysis Complete
+                            {aiAnalysisEnabled ? 'AI Analysis Complete' : 'Task Analysis Complete'}
                         </h4>
 
                         <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">

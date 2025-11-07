@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, PomodoroState, PriorityScore } from '../types';
+import { TodoStore, Todo, SubTodo, userData, ThemeConfig, PomodoroSettings, PomodoroState, PriorityScore, TaskReminder } from '../types';
 import { pomodoroService } from '../services/pomodoroService';
 import { aiPrioritizationEngine } from '../services/aiPrioritizationEngine';
 import { AIPriorityCache } from '../lib/cacheUtils';
 import { useBillingStore } from './billingStore';
+import { notificationService } from '../services/notificationService';
 
 // Helper function to determine initial theme based on system preference
 const getInitialTheme = (): ThemeConfig => {
@@ -66,28 +67,41 @@ export const useTodoStore = create<TodoStore>()(
                 userToken: null,
                 userData: null,
 
+                // AI Analysis Settings
+                aiAnalysisEnabled: true, // Default to true
+
                 // Pomodoro state
                 pomodoro: defaultPomodoroState,
 
                 setUserToken: (token: string) => set({ userToken: token }),
                 setUserData: (data: userData) => set({ userData: data }),
+                setAiAnalysisEnabled: (enabled: boolean) => set({ aiAnalysisEnabled: enabled }),
 
-                addTodo: (todo: Partial<Todo>) =>
+                addTodo: (todo: Partial<Todo>) => {
+                    const baseTodo = {
+                        ...todo,
+                        id: todo.id || crypto.randomUUID(),
+                        createdAt: todo.createdAt || new Date(),
+                        subtasks: todo.subtasks || [],
+                        title: todo.title || '',
+                        status: todo.status || 'Not Started',
+                        completed: todo.completed || false,
+                        priority: todo.priority || 'medium',
+                        reminders: todo.reminders || [],
+                    } as Todo;
+
+                    // Add default reminders if none exist and task has due date
+                    const newTodo = notificationService.addDefaultRemindersIfNeeded(baseTodo);
+
                     set((state) => ({
-                        todos: [
-                            ...state.todos,
-                            {
-                                ...todo,
-                                id: todo.id || crypto.randomUUID(),
-                                createdAt: todo.createdAt || new Date(),
-                                subtasks: todo.subtasks || [],
-                                title: todo.title || '',
-                                status: todo.status || 'Not Started',
-                                completed: todo.completed || false,
-                                priority: todo.priority || 'medium',
-                            } as Todo,
-                        ],
-                    })),
+                        todos: [...state.todos, newTodo],
+                    }));
+
+                    // Schedule reminders for the new task
+                    if (newTodo.reminders && newTodo.reminders.length > 0) {
+                        notificationService.scheduleTaskReminders(newTodo);
+                    }
+                },
 
                 addSubtask: (parentId: string, subtask: Partial<SubTodo>) =>
                     set((state) => ({
@@ -174,7 +188,11 @@ export const useTodoStore = create<TodoStore>()(
                         }),
                     })),
 
-                setTodos: (todos: Todo[]) => set({ todos }),
+                setTodos: (todos: Todo[]) => {
+                    // Process tasks to add default reminders where needed
+                    const processedTodos = notificationService.processTasksForDefaultReminders(todos);
+                    set({ todos: processedTodos });
+                },
                 setTheme: (theme: ThemeConfig) => set({ theme }),
                 setPomodoro: (pomodoro: PomodoroState) => set({ pomodoro }),
 
@@ -346,7 +364,13 @@ export const useTodoStore = create<TodoStore>()(
 
                 // AI Priority Scoring functions
                 calculatePriorityScore: async (taskId: string) => {
-                    const { todos, userData } = get();
+                    const { todos, userData, aiAnalysisEnabled } = get();
+
+                    // Check if AI Analysis is enabled
+                    if (!aiAnalysisEnabled) {
+                        console.log('AI Analysis is disabled, skipping priority scoring');
+                        return;
+                    }
 
                     // Try to get userId from multiple sources
                     let userId = userData?.userId;
@@ -427,7 +451,14 @@ export const useTodoStore = create<TodoStore>()(
                 },
 
                 calculateAllPriorityScores: async () => {
-                    const { todos, userData } = get();
+                    const { todos, userData, aiAnalysisEnabled } = get();
+
+                    // Check if AI Analysis is enabled
+                    if (!aiAnalysisEnabled) {
+                        console.log('AI Analysis is disabled, skipping priority scoring for all tasks');
+                        return;
+                    }
+
                     // Try to get userId from multiple sources (mirror single-task calc)
                     let userId = userData?.userId;
                     if (!userId) {
@@ -591,7 +622,14 @@ export const useTodoStore = create<TodoStore>()(
                 },
 
                 refreshPriorityScores: async () => {
-                    const { todos, userData } = get();
+                    const { todos, userData, aiAnalysisEnabled } = get();
+
+                    // Check if AI Analysis is enabled
+                    if (!aiAnalysisEnabled) {
+                        console.log('AI Analysis is disabled, skipping priority score refresh');
+                        return;
+                    }
+
                     // Fallback to localStorage if userData is not set
                     let userId = userData?.userId;
                     if (!userId) {
@@ -629,6 +667,63 @@ export const useTodoStore = create<TodoStore>()(
                             }
                         }
                     }
+                },
+
+                // Task Reminder Methods
+                scheduleTaskReminders: (taskId: string) => {
+                    const { todos } = get();
+                    const task = todos.find(t => t.id === taskId);
+                    if (task && task.reminders) {
+                        notificationService.scheduleTaskReminders(task);
+                    }
+                },
+
+                cancelTaskReminders: (taskId: string) => {
+                    notificationService.cancelTaskReminders(taskId);
+                },
+
+                updateTaskReminders: (taskId: string, reminders: TaskReminder[]) => {
+                    set((state) => ({
+                        todos: state.todos.map((todo) => {
+                            if (todo.id === taskId) {
+                                const updatedTodo = { ...todo, reminders };
+                                // Schedule the new reminders
+                                notificationService.scheduleTaskReminders(updatedTodo);
+                                return updatedTodo;
+                            }
+                            return todo;
+                        }),
+                    }));
+                },
+
+                scheduleAllReminders: () => {
+                    const { todos } = get();
+                    todos.forEach(task => {
+                        if (task.reminders && task.reminders.length > 0) {
+                            notificationService.scheduleTaskReminders(task);
+                        }
+                    });
+                },
+
+                addDefaultRemindersToAllTasks: () => {
+                    const { todos } = get();
+                    const updatedTodos = todos.map(task => {
+                        if (task.completed || !task.dueDate || (task.reminders && task.reminders.length > 0)) {
+                            return task;
+                        }
+
+                        const defaultReminders = notificationService.createDefaultReminders(task);
+                        if (defaultReminders.length > 0) {
+                            const updatedTask = { ...task, reminders: defaultReminders };
+                            // Schedule the new reminders
+                            notificationService.scheduleTaskReminders(updatedTask);
+                            return updatedTask;
+                        }
+
+                        return task;
+                    });
+
+                    set({ todos: updatedTodos });
                 },
             }),
             {

@@ -29,6 +29,8 @@ import {
 import { Switch } from "./ui/switch.tsx";
 import { Label } from "./ui/label.tsx";
 import { Checkbox } from "./ui/checkbox.tsx";
+import TaskReminderManager from "./TaskReminderManager.tsx";
+import type { TaskReminder } from "../types";
 
 const DAYS_OF_WEEK = [
     { value: 0, label: 'Sunday' },
@@ -56,7 +58,8 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isEndDateCalendarOpen, setIsEndDateCalendarOpen] = useState(false);
     const [formError, setFormError] = useState<string>('');
-    const { addTodo } = useTodoStore();
+    const [reminders, setReminders] = useState<TaskReminder[]>([]);
+    const { addTodo, aiAnalysisEnabled } = useTodoStore();
     const { trackUsage, canUseFeature } = useBillingUsage();
 
 
@@ -106,11 +109,11 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         }
 
         setIsAnalyzing(true);
-        announceToScreenReader('Analyzing task with AI...');
+        announceToScreenReader(aiAnalysisEnabled ? 'Analyzing task with AI...' : 'Creating task with basic analysis...');
         let analysis;
 
         // Check if user can use AI analysis
-        if (canUseFeature('maxAiAnalysis')) {
+        if (canUseFeature('maxAiAnalysis') && aiAnalysisEnabled) {
             if (parentId) {
                 const parentTask = getTaskById(parentId);
                 analysis = await analyzeTodo(title, {
@@ -145,8 +148,9 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
             monthOfYear: recurrenceFrequency === 'yearly' ? monthOfYear : undefined,
         } : undefined;
 
+        const taskId = crypto.randomUUID();
         const newTodo: Todo = {
-            id: crypto.randomUUID(),
+            id: taskId,
             title: title.trim(),
             completed: false,
             dueDate,
@@ -158,6 +162,10 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
             userId: localStorage.getItem('userId') || '1',
             recurrence,
             lastRecurrenceDate: null,
+            reminders: reminders.map(reminder => ({
+                ...reminder,
+                taskId: taskId
+            })),
         };
 
         if (parentId) {
@@ -176,6 +184,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                     status: newTodo.status,
                     estimatedTime: newTodo.estimatedTime,
                     completedAt: null,
+                    reminders: newTodo.reminders,
                 };
                 useTodoStore.getState().createSubtaskStore(parentId, newSubtask);
                 await createSubtask(newSubtask);
@@ -202,6 +211,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
         setDayOfMonth(1);
         setMonthOfYear(1);
         setFormError('');
+        setReminders([]);
 
         // Call the onSubmitSuccess callback if provided
         if (onSubmitSuccess) {
@@ -270,7 +280,7 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 className="absolute top-2.5 right-1"
                                 role="status"
-                                aria-label="Analyzing task with AI"
+                                aria-label={aiAnalysisEnabled ? "Analyzing task with AI" : "Creating task"}
                             >
                                 <Loader2 className="left-3 w-5 h-5 text-blue-500 animate-spin" />
                             </motion.div>
@@ -665,6 +675,15 @@ const TodoForm: React.FC<{ parentId?: string, onSubmitSuccess?: () => void }> = 
                         </div>
                     )}
                 </fieldset>
+
+                {/* Task Reminders Section */}
+                <TaskReminderManager
+                    reminders={reminders}
+                    onRemindersChange={setReminders}
+                    taskTitle={title.trim() || 'New Task'}
+                    dueDate={dueDate}
+                    className="mt-4"
+                />
             </fieldset>
         </form>
     );

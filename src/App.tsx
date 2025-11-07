@@ -39,7 +39,7 @@ import { NotificationPermissionBanner } from "./components/NotificationPermissio
 const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
 
 const App: React.FC = () => {
-    const { theme, setTodos, setUserToken, setTheme } = useTodoStore();
+    const { theme, setTodos, setUserToken, setTheme, scheduleAllReminders } = useTodoStore();
     const { setSubscription } = useBillingStore();
     const [session, setSession] = useState<Session | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -224,7 +224,7 @@ const App: React.FC = () => {
         });
 
         return () => subscription.unsubscribe();
-    }, [setUserToken]);
+    }, [setUserToken, setSubscription]);
 
     // Load user data (separate)
     useEffect(() => {
@@ -268,7 +268,7 @@ const App: React.FC = () => {
                 console.error('Error unsubscribing session revocation channel:', err);
             }
         };
-    }, [session?.user?.id]);
+    }, [session]);
 
     // Load data (separate)
     useEffect(() => {
@@ -354,6 +354,24 @@ const App: React.FC = () => {
         loadData();
     }, [session, setTodos, toast]);
 
+    // Initialize notification service and schedule reminders when data is loaded
+    useEffect(() => {
+        if (isDataLoaded && session) {
+            const initializeNotifications = async () => {
+                try {
+                    await notificationService.initialize();
+                    await notificationService.ensureNotificationReady();
+                    // Schedule all existing reminders
+                    scheduleAllReminders();
+                } catch (error) {
+                    console.error('Failed to initialize notifications:', error);
+                }
+            };
+
+            initializeNotifications();
+        }
+    }, [isDataLoaded, session, scheduleAllReminders]);
+
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme.mode === "dark");
     }, [theme.mode]);
@@ -402,6 +420,32 @@ const App: React.FC = () => {
                 if (permission === 'default') {
                     // Show a subtle notification permission request
                     console.log('Notification permission not granted yet');
+                }
+
+                // Make test utilities available in development
+                if (process.env.NODE_ENV === 'development') {
+                    const { testNotification } = await import('./utils/notificationTest');
+                    const { testAISwitch } = await import('./utils/aiSwitchTest');
+                    const { testReminders, testReminderTypes, testDefaultReminders, testAddDefaultRemindersToStore, testImmediateNotification, testNotificationSetup, testScheduledReminder } = await import('./utils/reminderTest');
+                    (window as unknown as { testNotification: typeof testNotification }).testNotification = testNotification;
+                    (window as unknown as { testAISwitch: typeof testAISwitch }).testAISwitch = testAISwitch;
+                    (window as unknown as { testReminders: typeof testReminders }).testReminders = testReminders;
+                    (window as unknown as { testReminderTypes: typeof testReminderTypes }).testReminderTypes = testReminderTypes;
+                    (window as unknown as { testDefaultReminders: typeof testDefaultReminders }).testDefaultReminders = testDefaultReminders;
+                    (window as unknown as { testAddDefaultRemindersToStore: typeof testAddDefaultRemindersToStore }).testAddDefaultRemindersToStore = testAddDefaultRemindersToStore;
+                    (window as unknown as { testImmediateNotification: typeof testImmediateNotification }).testImmediateNotification = testImmediateNotification;
+                    (window as unknown as { testNotificationSetup: typeof testNotificationSetup }).testNotificationSetup = testNotificationSetup;
+                    (window as unknown as { testScheduledReminder: typeof testScheduledReminder }).testScheduledReminder = testScheduledReminder;
+                    console.log('Test utilities available:');
+                    console.log('- window.testNotification() - Test notification system');
+                    console.log('- window.testAISwitch() - Test AI Analysis switch');
+                    console.log('- window.testReminders() - Test task reminders');
+                    console.log('- window.testReminderTypes() - Test different reminder types');
+                    console.log('- window.testDefaultReminders() - Test default reminder creation');
+                    console.log('- window.testAddDefaultRemindersToStore() - Test adding reminders to existing tasks');
+                    console.log('- window.testImmediateNotification() - Test immediate notifications (debug)');
+                    console.log('- window.testNotificationSetup() - Check notification setup and permissions');
+                    console.log('- window.testScheduledReminder() - Test scheduled reminder (5 seconds)');
                 }
             } catch (error) {
                 console.warn('Could not initialize notification service:', error);

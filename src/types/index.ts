@@ -61,6 +61,17 @@ export interface HistoricalPattern {
   lastUpdated: Date;
 }
 
+export interface TaskReminder {
+  id: string;
+  taskId: string;
+  reminderTime: Date;
+  isActive: boolean;
+  reminderType: 'due_date' | 'custom' | 'recurring';
+  message?: string;
+  createdAt: Date;
+  lastTriggered?: Date;
+}
+
 export interface Todo {
   id: string;
   title: string;
@@ -77,13 +88,14 @@ export interface Todo {
   completedAt?: Date | null;
   recurrence?: RecurrenceConfig;
   lastRecurrenceDate?: Date | null;
+  reminders?: TaskReminder[];
 
   // AI Priority System
   priorityScore?: PriorityScore;
   dependencies?: TaskDependency[];
-  impactLevel?: 'low' | 'medium' | 'high' | 'critical'; // Business impact
-  effortLevel?: 'low' | 'medium' | 'high' | 'very_high'; // Required effort
-  tags?: string[]; // For categorization and pattern recognition
+  impactLevel?: 'low' | 'medium' | 'high' | 'critical';
+  effortLevel?: 'low' | 'medium' | 'high' | 'very_high';
+  tags?: string[];
 }
 
 export interface SubTodo {
@@ -98,6 +110,7 @@ export interface SubTodo {
   status: Status;
   estimatedTime?: string | null;
   completedAt?: Date | null;
+  reminders?: TaskReminder[];
 
   // AI Priority System
   priorityScore?: PriorityScore;
@@ -165,6 +178,10 @@ export interface TodoStore {
   updateSubtaskStore: (parentId: string, subtaskId: string, subtask: Partial<SubTodo>) => void;
   deleteSubtaskStore: (parentId: string, subtaskId: string) => void;
 
+  // AI Analysis Settings
+  aiAnalysisEnabled: boolean;
+  setAiAnalysisEnabled: (enabled: boolean) => void;
+
   // Pomodoro Timer state
   pomodoro: PomodoroState;
   updatePomodoroState: (state: Partial<PomodoroState>) => void;
@@ -180,6 +197,13 @@ export interface TodoStore {
   updateTaskPriorityScore: (taskId: string, score: PriorityScore) => void;
   getSortedTodosByPriority: () => Todo[];
   refreshPriorityScores: () => Promise<void>;
+
+  // Task Reminders
+  scheduleTaskReminders: (taskId: string) => void;
+  cancelTaskReminders: (taskId: string) => void;
+  updateTaskReminders: (taskId: string, reminders: TaskReminder[]) => void;
+  scheduleAllReminders: () => void;
+  addDefaultRemindersToAllTasks: () => void;
 }
 
 export interface userData {

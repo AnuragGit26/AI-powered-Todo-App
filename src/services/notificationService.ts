@@ -1,7 +1,10 @@
 /**
  * Comprehensive Notification Service for Chrome Notification API
  * Supports mobile, PWA, and web platforms with fallback mechanisms
+ * Includes task reminder scheduling and management
  */
+
+import type { TaskReminder, Todo } from '../types';
 
 export interface NotificationOptions {
     title: string;
@@ -47,6 +50,7 @@ class NotificationService {
     private audioContext: AudioContext | null = null;
     private audioBuffer: AudioBuffer | null = null;
     private isInitialized = false;
+    private reminderTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
     constructor(config?: Partial<NotificationServiceConfig>) {
         this.config = {
@@ -83,6 +87,7 @@ class NotificationService {
             console.log('NotificationService initialized successfully');
         } catch (error) {
             console.error('Failed to initialize NotificationService:', error);
+            // Don't throw error, allow service to work without full initialization
         }
     }
 
@@ -153,7 +158,29 @@ class NotificationService {
                 notificationOptions.vibrate = [200, 100, 200];
             }
 
-            // Create the notification
+            // Try to show notification via service worker first (for better reliability)
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                try {
+                    await this.showNotificationViaServiceWorker(notificationOptions);
+                    return null; // Service worker handled it
+                } catch (swError) {
+                    console.warn('Service worker notification failed, falling back to main thread:', swError);
+                }
+            }
+
+            // For Chrome, if page is hidden, prefer service worker
+            if (this.isChrome() && document.hidden) {
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    try {
+                        await this.showNotificationViaServiceWorker(notificationOptions);
+                        return null; // Service worker handled it
+                    } catch (swError) {
+                        console.warn('Service worker notification failed for hidden page:', swError);
+                    }
+                }
+            }
+
+            // Fallback to main thread notification
             const notification = new Notification(notificationOptions.title, notificationOptions);
 
             // Store the notification for cleanup
@@ -223,15 +250,58 @@ class NotificationService {
         };
 
         const notificationConfig = notifications[type];
+
+        // For Chrome, ensure we have user interaction context
+        if (this.isChrome() && document.hidden) {
+            // If page is hidden, try to show notification anyway
+            console.log('Page is hidden, attempting notification anyway');
+        }
+
         await this.showNotification(notificationConfig);
+    }
+
+    /**
+     * Ensure notification permission and service worker are ready
+     */
+    async ensureNotificationReady(): Promise<boolean> {
+        try {
+            // Initialize if not already done
+            if (!this.isInitialized) {
+                await this.initialize();
+            }
+
+            // Check permission
+            const permission = this.getPermission();
+            if (permission !== 'granted') {
+                console.warn('Notification permission not granted');
+                return false;
+            }
+
+            // Ensure service worker is ready
+            if ('serviceWorker' in navigator) {
+                await navigator.serviceWorker.ready;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Failed to ensure notification readiness:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if running on Chrome
+     */
+    private isChrome(): boolean {
+        return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
     }
 
     /**
      * Show task reminder notification
      */
-    async showTaskReminder(taskTitle: string, dueDate?: Date): Promise<void> {
+    async showTaskReminder(taskTitle: string, dueDate?: Date, customMessage?: string): Promise<void> {
         const timeLeft = dueDate ? this.getTimeUntilDue(dueDate) : '';
-        const body = dueDate ? `Due ${timeLeft}` : 'This task needs your attention';
+        const body = customMessage || (dueDate ? `Due ${timeLeft}` : 'This task needs your attention');
 
         await this.showNotification({
             title: `📋 ${taskTitle}`,
@@ -243,6 +313,231 @@ class NotificationService {
                 { action: 'mark-complete', title: 'Mark Complete' }
             ]
         });
+    }
+
+    /**
+     * Schedule a task reminder
+     */
+    scheduleTaskReminder(reminder: TaskReminder, task: Todo): void {
+        const now = new Date();
+        const reminderTime = new Date(reminder.reminderTime);
+
+        if (reminderTime <= now) {
+            console.warn('Reminder time is in the past, skipping:', reminder);
+            return;
+        }
+
+        const delay = reminderTime.getTime() - now.getTime();
+
+        // Clear existing timeout if it exists
+        this.clearReminderTimeout(reminder.id);
+
+        const timeout = setTimeout(async () => {
+            try {
+                if (reminder.isActive) {
+                    console.log(`🔔 Triggering reminder for task "${task.title}"`);
+
+                    // Ensure notification service is ready
+                    await this.ensureNotificationReady();
+
+                    await this.showTaskReminder(
+                        task.title,
+                        task.dueDate ? new Date(task.dueDate) : undefined,
+                        reminder.message
+                    );
+
+                    console.log(`✅ Reminder notification sent for task "${task.title}"`);
+
+                    // Update last triggered time
+                    reminder.lastTriggered = new Date();
+
+                    // Handle recurring reminders
+                    if (reminder.reminderType === 'recurring') {
+                        this.scheduleRecurringReminder(reminder, task);
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ Failed to show reminder for task "${task.title}":`, error);
+            } finally {
+                this.reminderTimeouts.delete(reminder.id);
+            }
+        }, delay);
+
+        this.reminderTimeouts.set(reminder.id, timeout);
+        console.log(`⏰ Scheduled reminder for task "${task.title}" at ${reminderTime.toISOString()} (in ${Math.round(delay / 1000)} seconds)`);
+    }
+
+    /**
+     * Schedule a recurring reminder
+     */
+    private scheduleRecurringReminder(reminder: TaskReminder, task: Todo): void {
+        // For now, we'll implement daily recurring reminders
+        // This can be extended to support different recurrence patterns
+        const nextReminderTime = new Date(reminder.reminderTime);
+        nextReminderTime.setDate(nextReminderTime.getDate() + 1);
+
+        const updatedReminder: TaskReminder = {
+            ...reminder,
+            reminderTime: nextReminderTime
+        };
+
+        this.scheduleTaskReminder(updatedReminder, task);
+    }
+
+    /**
+     * Clear a specific reminder timeout
+     */
+    clearReminderTimeout(reminderId: string): void {
+        const timeout = this.reminderTimeouts.get(reminderId);
+        if (timeout) {
+            clearTimeout(timeout);
+            this.reminderTimeouts.delete(reminderId);
+        }
+    }
+
+    /**
+     * Clear all reminder timeouts
+     */
+    clearAllReminderTimeouts(): void {
+        this.reminderTimeouts.forEach(timeout => clearTimeout(timeout));
+        this.reminderTimeouts.clear();
+    }
+
+    /**
+     * Schedule reminders for a task
+     */
+    scheduleTaskReminders(task: Todo): void {
+        if (!task.reminders || task.reminders.length === 0) {
+            return;
+        }
+
+        task.reminders.forEach(reminder => {
+            if (reminder.isActive) {
+                this.scheduleTaskReminder(reminder, task);
+            }
+        });
+    }
+
+    /**
+     * Cancel reminders for a task
+     */
+    cancelTaskReminders(taskId: string): void {
+        // This would need to be implemented with a way to track task reminders
+        // For now, we'll clear all timeouts (this is not ideal for production)
+        console.log(`Cancelling reminders for task ${taskId}`);
+    }
+
+    /**
+     * Create a due date reminder
+     */
+    createDueDateReminder(task: Todo, hoursBeforeDue: number = 1): TaskReminder | null {
+        if (!task.dueDate) {
+            return null;
+        }
+
+        const dueDate = new Date(task.dueDate);
+        const reminderTime = new Date(dueDate.getTime() - (hoursBeforeDue * 60 * 60 * 1000));
+
+        // Don't create reminders in the past
+        if (reminderTime <= new Date()) {
+            return null;
+        }
+
+        return {
+            id: crypto.randomUUID(),
+            taskId: task.id,
+            reminderTime,
+            isActive: true,
+            reminderType: 'due_date',
+            message: `Task "${task.title}" is due in ${hoursBeforeDue} hour${hoursBeforeDue > 1 ? 's' : ''}`,
+            createdAt: new Date()
+        };
+    }
+
+    /**
+     * Create a custom reminder
+     */
+    createCustomReminder(taskId: string, reminderTime: Date, message?: string): TaskReminder {
+        return {
+            id: crypto.randomUUID(),
+            taskId,
+            reminderTime,
+            isActive: true,
+            reminderType: 'custom',
+            message: message || 'Task reminder',
+            createdAt: new Date()
+        };
+    }
+
+    /**
+     * Create default reminders for a task based on its due date
+     */
+    createDefaultReminders(task: Todo): TaskReminder[] {
+        const reminders: TaskReminder[] = [];
+
+        if (!task.dueDate || task.completed) {
+            return reminders;
+        }
+
+        const dueDate = new Date(task.dueDate);
+        const now = new Date();
+
+        // Don't create reminders for past due dates
+        if (dueDate <= now) {
+            return reminders;
+        }
+
+        // Create reminders at different intervals before due date
+        const reminderIntervals = [
+            { hours: 24, message: `Task "${task.title}" is due tomorrow` },
+            { hours: 2, message: `Task "${task.title}" is due in 2 hours` },
+            { hours: 0.5, message: `Task "${task.title}" is due in 30 minutes` }
+        ];
+
+        reminderIntervals.forEach(({ hours, message }) => {
+            const reminderTime = new Date(dueDate.getTime() - (hours * 60 * 60 * 1000));
+
+            // Only create reminder if it's in the future
+            if (reminderTime > now) {
+                reminders.push({
+                    id: crypto.randomUUID(),
+                    taskId: task.id,
+                    reminderTime,
+                    isActive: true,
+                    reminderType: 'due_date',
+                    message,
+                    createdAt: new Date()
+                });
+            }
+        });
+
+        return reminders;
+    }
+
+    /**
+     * Add default reminders to a task if it doesn't have any
+     */
+    addDefaultRemindersIfNeeded(task: Todo): Todo {
+        if (task.completed || !task.dueDate || (task.reminders && task.reminders.length > 0)) {
+            return task;
+        }
+
+        const defaultReminders = this.createDefaultReminders(task);
+        if (defaultReminders.length > 0) {
+            return {
+                ...task,
+                reminders: defaultReminders
+            };
+        }
+
+        return task;
+    }
+
+    /**
+     * Process all tasks and add default reminders where needed
+     */
+    processTasksForDefaultReminders(tasks: Todo[]): Todo[] {
+        return tasks.map(task => this.addDefaultRemindersIfNeeded(task));
     }
 
     /**
@@ -351,9 +646,48 @@ class NotificationService {
         try {
             const registration = await navigator.serviceWorker.register('/sw.js');
             console.log('Service Worker registered:', registration);
+
+            // Wait for the service worker to be ready
+            await navigator.serviceWorker.ready;
+            console.log('Service Worker is ready');
         } catch (error) {
             console.warn('Service Worker registration failed:', error);
         }
+    }
+
+    private async showNotificationViaServiceWorker(options: NotificationOptions): Promise<void> {
+        if (!navigator.serviceWorker.controller) {
+            throw new Error('No service worker controller available');
+        }
+
+        return new Promise((resolve, reject) => {
+            const messageChannel = new MessageChannel();
+
+            messageChannel.port1.onmessage = (event) => {
+                if (event.data.error) {
+                    reject(new Error(event.data.error));
+                } else {
+                    resolve();
+                }
+            };
+
+            const controller = navigator.serviceWorker.controller;
+            if (!controller) {
+                reject(new Error('Service worker controller is null'));
+                return;
+            }
+
+            controller.postMessage({
+                type: 'SHOW_NOTIFICATION',
+                title: options.title,
+                options: options
+            }, [messageChannel.port2]);
+
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                reject(new Error('Service worker notification timeout'));
+            }, 5000);
+        });
     }
 
     private cleanupOldNotifications(): void {

@@ -140,7 +140,15 @@ export const MiniPomodoro: React.FC = () => {
 
                 // Use notification service for enhanced notifications
                 const notificationType = pomodoro.isWorkTime ? 'work-complete' : 'break-complete';
-                await notificationService.showPomodoroNotification(notificationType);
+
+                // Ensure notification service is ready
+                const isReady = await notificationService.ensureNotificationReady();
+
+                if (isReady) {
+                    await notificationService.showPomodoroNotification(notificationType);
+                } else {
+                    console.warn('Notification service not ready, skipping notification');
+                }
 
                 // Show toast notification
                 toast({
@@ -208,13 +216,22 @@ export const MiniPomodoro: React.FC = () => {
     const requestNotificationPermission = async () => {
         const permission = notificationService.getPermission();
         if (permission === 'default') {
-            await notificationService.requestPermission();
+            try {
+                await notificationService.requestPermission();
+            } catch (error) {
+                console.warn('Failed to request notification permission:', error);
+            }
         }
     };
 
     // Call on component mount to request notification permissions
     useEffect(() => {
-        requestNotificationPermission();
+        // Delay permission request to ensure user has interacted with the page
+        const timer = setTimeout(() => {
+            requestNotificationPermission();
+        }, 2000); // Wait 2 seconds after component mount
+
+        return () => clearTimeout(timer);
     }, []);
 
     const getTimerStatus = () => {
