@@ -3,6 +3,14 @@ export default {
     darkMode: ["class"],
     content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
     theme: {
+        screens: {
+            'xs': '320px',   // Extra small devices (phones)
+            'sm': '640px',   // Small devices (tablets)
+            'md': '768px',   // Medium devices (tablets)
+            'lg': '1024px',  // Large devices (desktops)
+            'xl': '1280px',  // Extra large devices
+            '2xl': '1536px', // 2X large devices
+        },
         extend: {
             colors: {
                 border: "hsl(var(--border))",
@@ -38,16 +46,15 @@ export default {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
-                fontFamily: {
-                    "roboto": ['Roboto', 'sans-serif']
-                }
+            },
+            fontFamily: {
+                "roboto": ['Roboto', 'sans-serif']
             },
             borderRadius: {
                 lg: `var(--radius)`,
                 md: `calc(var(--radius) - 2px)`,
                 sm: "calc(var(--radius) - 4px)",
             },
-
             keyframes: {
                 shine: {
                     '0%': { 'background-position': '100%' },
@@ -62,8 +69,8 @@ export default {
             animation: {
                 shine: 'shine 5s linear infinite',
                 gradient: 'gradient 8s linear infinite',
-            }
+            },
         },
     },
     plugins: [require("tailwindcss-animate")],
-}
+};

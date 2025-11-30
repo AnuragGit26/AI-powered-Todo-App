@@ -255,7 +255,7 @@ export function SignUpForm() {
                 />
             </div>
 
-            <div className="flex-1 py-10 md:py-12 overflow-y-auto z-50">
+            <main id="main-content" role="main" aria-label="Main content" className="flex-1 py-10 md:py-12 overflow-y-auto z-50">
                 <div className="container max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center md:items-start min-h-[calc(100vh-8rem)]">
                     {/* Sign Up Form */}
                     <motion.div
@@ -452,7 +452,7 @@ export function SignUpForm() {
                     </motion.div>
                     <div className="hidden md:block" />
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

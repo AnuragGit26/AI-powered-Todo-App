@@ -23,7 +23,7 @@ const NotFound: React.FC = () => {
                     speed={0.7}
                 />
             </div>
-            <div className="relative z-10 flex flex-col items-center gap-6 max-w-md w-full px-4">
+            <main id="main-content" role="main" aria-label="Main content" className="relative z-10 flex flex-col items-center gap-6 max-w-md w-full px-4">
                 <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold">
                     <FuzzyText
                         baseIntensity={0.2}
@@ -45,7 +45,7 @@ const NotFound: React.FC = () => {
                     <HomeIcon size={18} />
                     Go Back Home
                 </Button>
-            </div>
+            </main>
         </div>
     );
 };

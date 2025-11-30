@@ -251,7 +251,7 @@ const BillingDashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             {/* Usage Warning Banner */}
             <AnimatePresence>
                 {showUsageWarning && usageWarnings.length > 0 && (
@@ -259,35 +259,37 @@ const BillingDashboard: React.FC = () => {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
+                        className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4"
                     >
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                                    Usage Limit Warning
-                                </h4>
-                                <div className="space-y-1">
-                                    {usageWarnings.map((warning, index) => (
-                                        <p key={index} className="text-sm text-yellow-700 dark:text-yellow-300">
-                                            {warning.message}
-                                        </p>
-                                    ))}
+                        <div className="flex flex-col sm:flex-row items-start gap-3">
+                            <div className="flex items-start gap-3 flex-1 w-full">
+                                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-sm sm:text-base text-yellow-800 dark:text-yellow-200 mb-2">
+                                        Usage Limit Warning
+                                    </h4>
+                                    <div className="space-y-1">
+                                        {usageWarnings.map((warning, index) => (
+                                            <p key={index} className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 break-words">
+                                                {warning.message}
+                                            </p>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        onClick={() => setShowUpgradeModal(true)}
+                                        size="sm"
+                                        className="mt-3 w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700 text-white text-sm sm:text-base py-2 px-4 min-h-[44px] touch-manipulation"
+                                    >
+                                        <Rocket className="h-4 w-4 mr-2" />
+                                        Upgrade Now
+                                    </Button>
                                 </div>
-                                <Button
-                                    onClick={() => setShowUpgradeModal(true)}
-                                    size="sm"
-                                    className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white"
-                                >
-                                    <Rocket className="h-4 w-4 mr-2" />
-                                    Upgrade Now
-                                </Button>
                             </div>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setShowUsageWarning(false)}
-                                className="text-yellow-600 hover:text-yellow-700"
+                                className="text-yellow-600 hover:text-yellow-700 self-end sm:self-start min-h-[44px] min-w-[44px] touch-manipulation"
                             >
                                 <X className="h-4 w-4" />
                             </Button>
@@ -298,15 +300,15 @@ const BillingDashboard: React.FC = () => {
 
             {/* Current Subscription Status */}
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            {subscription && getTierIcon(subscription.tier)}
-                            <div>
-                                <CardTitle className="capitalize text-xl">
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                            {subscription && <div className="flex-shrink-0">{getTierIcon(subscription.tier)}</div>}
+                            <div className="min-w-0 flex-1">
+                                <CardTitle className="capitalize text-lg sm:text-xl truncate">
                                     {subscription?.tier || 'Free'} Plan
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-xs sm:text-sm">
                                     {subscription?.status === 'active' ? 'Active subscription' : 'Manage your subscription'}
                                 </CardDescription>
                             </div>
@@ -314,7 +316,7 @@ const BillingDashboard: React.FC = () => {
                         {subscription?.tier !== 'enterprise' && (
                             <Button
                                 onClick={() => setShowUpgradeModal(true)}
-                                className={`bg-gradient-to-r ${getTierColor(subscription?.tier || 'free')} hover:shadow-lg transition-all`}
+                                className={`w-full sm:w-auto bg-gradient-to-r ${getTierColor(subscription?.tier || 'free')} hover:shadow-lg transition-all min-h-[44px] touch-manipulation text-sm sm:text-base`}
                             >
                                 <Sparkles className="h-4 w-4 mr-2 icon-contrast" />
                                 Upgrade
@@ -322,98 +324,98 @@ const BillingDashboard: React.FC = () => {
                         )}
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
                     {subscription && (
                         <TooltipProvider delayDuration={0}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
                                 {/* Enhanced Usage Statistics with Color Coding */}
-                                <div className="space-y-2">
-                                    <div className="usage-row-responsive text-sm">
+                                <div className="space-y-2 p-2 sm:p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                                    <div className="usage-row-responsive text-xs sm:text-sm">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="usage-row-label cursor-help">Tasks</span>
+                                                <span className="usage-row-label cursor-help font-medium">Tasks</span>
                                             </TooltipTrigger>
                                             <TooltipContent side="top">Tasks</TooltipContent>
                                         </Tooltip>
-                                        <span className={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                        <span className={`text-xs sm:text-sm ${getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}`}>
                                             {subscription.usage.tasksCreated}/{subscription.limits.maxTasks === -1 ? '∞' : subscription.limits.maxTasks}
                                         </span>
                                     </div>
                                     <Progress
                                         value={getUsagePercentage(subscription.usage.tasksCreated, subscription.limits.maxTasks)}
-                                        className="h-2"
+                                        className="h-1.5 sm:h-2"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="usage-row-responsive text-sm">
+                                <div className="space-y-2 p-2 sm:p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                                    <div className="usage-row-responsive text-xs sm:text-sm">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="usage-row-label cursor-help">AI Analysis</span>
+                                                <span className="usage-row-label cursor-help font-medium">AI Analysis</span>
                                             </TooltipTrigger>
                                             <TooltipContent side="top">AI Analysis</TooltipContent>
                                         </Tooltip>
-                                        <span className={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                        <span className={`text-xs sm:text-sm ${getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}`}>
                                             {subscription.usage.aiAnalysisUsed}/{subscription.limits.maxAiAnalysis === -1 ? '∞' : subscription.limits.maxAiAnalysis}
                                         </span>
                                     </div>
                                     <Progress
                                         value={getUsagePercentage(subscription.usage.aiAnalysisUsed, subscription.limits.maxAiAnalysis)}
-                                        className="h-2"
+                                        className="h-1.5 sm:h-2"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="usage-row-responsive text-sm">
+                                <div className="space-y-2 p-2 sm:p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                                    <div className="usage-row-responsive text-xs sm:text-sm">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="usage-row-label cursor-help">Pomodoro Sessions</span>
+                                                <span className="usage-row-label cursor-help font-medium">Pomodoro</span>
                                             </TooltipTrigger>
                                             <TooltipContent side="top">Pomodoro Sessions</TooltipContent>
                                         </Tooltip>
-                                        <span className={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                        <span className={`text-xs sm:text-sm ${getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}`}>
                                             {subscription.usage.pomodoroSessions}/{subscription.limits.maxPomodoroSessions === -1 ? '∞' : subscription.limits.maxPomodoroSessions}
                                         </span>
                                     </div>
                                     <Progress
                                         value={getUsagePercentage(subscription.usage.pomodoroSessions, subscription.limits.maxPomodoroSessions)}
-                                        className="h-2"
+                                        className="h-1.5 sm:h-2"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="usage-row-responsive text-sm">
+                                <div className="space-y-2 p-2 sm:p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                                    <div className="usage-row-responsive text-xs sm:text-sm">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="usage-row-label cursor-help">Integrations</span>
+                                                <span className="usage-row-label cursor-help font-medium">Integrations</span>
                                             </TooltipTrigger>
                                             <TooltipContent side="top">Integrations</TooltipContent>
                                         </Tooltip>
-                                        <span className={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                        <span className={`text-xs sm:text-sm ${getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}`}>
                                             {subscription.usage.integrationsSynced}/{subscription.limits.maxIntegrations === -1 ? '∞' : subscription.limits.maxIntegrations}
                                         </span>
                                     </div>
                                     <Progress
                                         value={getUsagePercentage(subscription.usage.integrationsSynced, subscription.limits.maxIntegrations)}
-                                        className="h-2"
+                                        className="h-1.5 sm:h-2"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="usage-row-responsive text-sm">
+                                <div className="space-y-2 p-2 sm:p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                                    <div className="usage-row-responsive text-xs sm:text-sm">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="usage-row-label cursor-help">Team Members</span>
+                                                <span className="usage-row-label cursor-help font-medium">Team</span>
                                             </TooltipTrigger>
                                             <TooltipContent side="top">Team Members</TooltipContent>
                                         </Tooltip>
-                                        <span className={getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}>
+                                        <span className={`text-xs sm:text-sm ${getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers) >= 80 ? 'text-red-600 font-semibold usage-row-value' : 'usage-row-value'}`}>
                                             {subscription.usage.teamMembersInvited}/{subscription.limits.maxTeamMembers === -1 ? '∞' : subscription.limits.maxTeamMembers}
                                         </span>
                                     </div>
                                     <Progress
                                         value={getUsagePercentage(subscription.usage.teamMembersInvited, subscription.limits.maxTeamMembers)}
-                                        className="h-2"
+                                        className="h-1.5 sm:h-2"
                                     />
                                 </div>
                             </div>
@@ -423,35 +425,37 @@ const BillingDashboard: React.FC = () => {
             </Card>
 
             <Tabs defaultValue="plans" className="w-full" onValueChange={setActiveTab}>
-                <div className="relative">
-                    <TabsList className="w-full justify-start overflow-x-auto md:justify-center">
-                        <TabsTrigger value="plans" className={`billing-tabs-trigger ${activeTab === 'plans' ? 'shadow-md' : ''}`}>Pricing Plans</TabsTrigger>
-                        <TabsTrigger value="features" className={`billing-tabs-trigger ${activeTab === 'features' ? 'shadow-md' : ''}`}>Premium Features</TabsTrigger>
-                        <TabsTrigger value="billing" className={`billing-tabs-trigger ${activeTab === 'billing' ? 'shadow-md' : ''}`}>Billing History</TabsTrigger>
-                        <TabsTrigger value="manage" className={`billing-tabs-trigger ${activeTab === 'manage' ? 'shadow-md' : ''}`}>Manage Plan</TabsTrigger>
-                        <TabsTrigger value="settings" className={`billing-tabs-trigger ${activeTab === 'settings' ? 'shadow-md' : ''}`}>Settings</TabsTrigger>
+                <div className="relative -mx-2 sm:mx-0">
+                    <TabsList className="w-full justify-start overflow-x-auto md:justify-center gap-1 sm:gap-2 px-2 sm:px-0 scrollbar-hide touch-pan-x">
+                        <TabsTrigger value="plans" className={`billing-tabs-trigger min-h-[44px] touch-manipulation ${activeTab === 'plans' ? 'shadow-md' : ''}`}>Pricing Plans</TabsTrigger>
+                        <TabsTrigger value="features" className={`billing-tabs-trigger min-h-[44px] touch-manipulation ${activeTab === 'features' ? 'shadow-md' : ''}`}>Premium Features</TabsTrigger>
+                        <TabsTrigger value="billing" className={`billing-tabs-trigger min-h-[44px] touch-manipulation ${activeTab === 'billing' ? 'shadow-md' : ''}`}>Billing History</TabsTrigger>
+                        <TabsTrigger value="manage" className={`billing-tabs-trigger min-h-[44px] touch-manipulation ${activeTab === 'manage' ? 'shadow-md' : ''}`}>Manage Plan</TabsTrigger>
+                        <TabsTrigger value="settings" className={`billing-tabs-trigger min-h-[44px] touch-manipulation ${activeTab === 'settings' ? 'shadow-md' : ''}`}>Settings</TabsTrigger>
                     </TabsList>
                 </div>
 
                 {/* Pricing Plans */}
-                <TabsContent value="plans" className="space-y-6">
-                    <div className="flex items-center justify-center gap-4 mb-6">
+                <TabsContent value="plans" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+                    <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
                         <Button
                             variant={billingInterval === 'monthly' ? 'default' : 'outline'}
                             onClick={() => setBillingInterval('monthly')}
+                            className="min-h-[44px] touch-manipulation text-sm sm:text-base flex-1 sm:flex-initial"
                         >
                             Monthly
                         </Button>
                         <Button
                             variant={billingInterval === 'yearly' ? 'default' : 'outline'}
                             onClick={() => setBillingInterval('yearly')}
+                            className="min-h-[44px] touch-manipulation text-sm sm:text-base flex-1 sm:flex-initial"
                         >
                             Yearly
-                            <Badge variant="secondary" className="ml-2">Save 17%</Badge>
+                            <Badge variant="secondary" className="ml-2 text-xs">Save 17%</Badge>
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="mobile-pricing-grid px-2 sm:px-0">
                         {pricingPlans
                             .filter(plan => plan.interval === billingInterval || plan.tier === 'free')
                             .map((plan) => (
@@ -470,38 +474,38 @@ const BillingDashboard: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <CardHeader className="text-center">
-                                            <div className={`w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-r ${getTierColor(plan.tier)} flex items-center justify-center`}>
+                                        <CardHeader className="text-center p-4 sm:p-6">
+                                            <div className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-r ${getTierColor(plan.tier)} flex items-center justify-center`}>
                                                 {getTierIcon(plan.tier)}
                                             </div>
 
-                                            <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                                            <div className="space-y-1">
-                                                <div className="text-3xl font-bold">
+                                            <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
+                                            <div className="space-y-1 mt-2">
+                                                <div className="text-2xl sm:text-3xl font-bold">
                                                     {formatPrice(plan.price)}
-                                                    <span className="text-lg text-gray-500">/{plan.interval}</span>
+                                                    <span className="text-base sm:text-lg text-gray-500">/{plan.interval}</span>
                                                 </div>
                                                 {plan.interval === 'yearly' && plan.tier === 'premium' && (
-                                                    <p className="text-sm text-green-600">Save $20 per year</p>
+                                                    <p className="text-xs sm:text-sm text-green-600">Save $20 per year</p>
                                                 )}
                                                 {plan.comingSoon && (
-                                                    <Badge className="bg-gradient-to-r from-gray-400 to-gray-600 text-white">Coming Soon</Badge>
+                                                    <Badge className="bg-gradient-to-r from-gray-400 to-gray-600 text-white text-xs">Coming Soon</Badge>
                                                 )}
                                             </div>
                                         </CardHeader>
 
-                                        <CardContent className="space-y-4">
-                                            <ul className="space-y-3">
+                                        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+                                            <ul className="space-y-2 sm:space-y-3">
                                                 {plan.features.map((feature, index) => (
-                                                    <li key={index} className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                                        <span className="text-sm">{feature}</span>
+                                                    <li key={index} className="flex items-start gap-2">
+                                                        <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                        <span className="text-xs sm:text-sm leading-relaxed">{feature}</span>
                                                     </li>
                                                 ))}
                                             </ul>
 
                                             <Button
-                                                className="w-full"
+                                                className="w-full min-h-[44px] touch-manipulation text-sm sm:text-base"
                                                 variant={plan.tier === subscription?.tier ? 'outline' : 'default'}
                                                 disabled={plan.tier === subscription?.tier || plan.comingSoon}
                                                 onClick={() => plan.tier !== subscription?.tier && !plan.comingSoon && handleUpgrade(plan)}
@@ -528,35 +532,35 @@ const BillingDashboard: React.FC = () => {
                 </TabsContent>
 
                 {/* Billing History */}
-                <TabsContent value="billing" className="space-y-6">
+                <TabsContent value="billing" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="p-4 sm:p-6">
+                            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                                 <BarChart3 className="h-5 w-5" />
                                 Billing History
                             </CardTitle>
-                            <CardDescription>View your past invoices and payment history</CardDescription>
+                            <CardDescription className="text-xs sm:text-sm">View your past invoices and payment history</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4 sm:p-6 pt-0">
                             {invoices.length > 0 ? (
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4">
                                     {invoices.map((invoice) => (
-                                        <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                            <div className="space-y-1">
-                                                <p className="font-medium">Invoice #{invoice.id.slice(-8)}</p>
-                                                <p className="text-sm text-gray-500">
+                                        <div key={invoice.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
+                                            <div className="space-y-1 flex-1 min-w-0">
+                                                <p className="font-medium text-sm sm:text-base truncate">Invoice #{invoice.id.slice(-8)}</p>
+                                                <p className="text-xs sm:text-sm text-gray-500">
                                                     {new Date(invoice.invoiceDate).toLocaleDateString()}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-right">
-                                                    <p className="font-medium">{formatPrice(invoice.amount)}</p>
-                                                    <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'}>
+                                            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                                                <div className="text-left sm:text-right">
+                                                    <p className="font-medium text-sm sm:text-base">{formatPrice(invoice.amount)}</p>
+                                                    <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'} className="text-xs mt-1">
                                                         {invoice.status}
                                                     </Badge>
                                                 </div>
                                                 {invoice.downloadUrl && (
-                                                    <Button size="sm" variant="outline">
+                                                    <Button size="sm" variant="outline" className="min-h-[44px] min-w-[44px] touch-manipulation">
                                                         <Download className="h-4 w-4" />
                                                     </Button>
                                                 )}
@@ -567,7 +571,7 @@ const BillingDashboard: React.FC = () => {
                             ) : (
                                 <div className="text-center py-8">
                                     <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                    <p className="text-gray-500">No billing history yet</p>
+                                    <p className="text-gray-500 text-sm sm:text-base">No billing history yet</p>
                                 </div>
                             )}
                         </CardContent>
@@ -575,38 +579,38 @@ const BillingDashboard: React.FC = () => {
                 </TabsContent>
 
                 {/* Settings */}
-                <TabsContent value="settings" className="space-y-6">
+                <TabsContent value="settings" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="p-4 sm:p-6">
+                            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                                 <Settings className="h-5 w-5" />
                                 Billing Settings
                             </CardTitle>
-                            <CardDescription>Manage your payment methods and preferences</CardDescription>
+                            <CardDescription className="text-xs sm:text-sm">Manage your payment methods and preferences</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
                             {/* Subscription Status */}
                             {subscription && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">Subscription Status</span>
-                                        <Badge variant={subscription.status === 'active' ? 'default' : 'destructive'}>
+                                <div className="space-y-3 sm:space-y-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                        <span className="font-medium text-sm sm:text-base">Subscription Status</span>
+                                        <Badge variant={subscription.status === 'active' ? 'default' : 'destructive'} className="text-xs sm:text-sm">
                                             {subscription.status}
                                         </Badge>
                                     </div>
 
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">Next Billing Date</span>
-                                        <span className="text-sm">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                        <span className="font-medium text-sm sm:text-base">Next Billing Date</span>
+                                        <span className="text-xs sm:text-sm">
                                             {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                                         </span>
                                     </div>
 
                                     {subscription.cancelAtPeriodEnd && (
-                                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                                                <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                                        <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <div className="flex items-start gap-2">
+                                                <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                                <span className="font-medium text-xs sm:text-sm text-yellow-800 dark:text-yellow-200">
                                                     Subscription will cancel at period end
                                                 </span>
                                             </div>
@@ -618,25 +622,25 @@ const BillingDashboard: React.FC = () => {
                             <Separator />
 
                             {/* Payment Methods */}
-                            <div className="space-y-4">
-                                <h4 className="font-medium">Payment Methods</h4>
+                            <div className="space-y-3 sm:space-y-4">
+                                <h4 className="font-medium text-sm sm:text-base">Payment Methods</h4>
                                 {paymentMethods.length > 0 ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 sm:space-y-3">
                                         {paymentMethods.map((method) => (
-                                            <div key={method.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                <div className="flex items-center gap-3">
-                                                    <CreditCard className="h-5 w-5" />
-                                                    <div>
-                                                        <p className="font-medium">
+                                            <div key={method.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 border rounded-lg">
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <CreditCard className="h-5 w-5 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-sm sm:text-base truncate">
                                                             {method.brand} •••• {method.last4}
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-xs sm:text-sm text-gray-500">
                                                             Expires {method.expiryMonth}/{method.expiryYear}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 {method.isDefault && (
-                                                    <Badge variant="secondary">Default</Badge>
+                                                    <Badge variant="secondary" className="text-xs sm:text-sm self-start sm:self-center">Default</Badge>
                                                 )}
                                             </div>
                                         ))}
@@ -644,8 +648,8 @@ const BillingDashboard: React.FC = () => {
                                 ) : (
                                     <div className="text-center py-6">
                                         <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                        <p className="text-gray-500">No payment methods added</p>
-                                        <Button variant="outline" className="mt-2">
+                                        <p className="text-gray-500 text-sm sm:text-base mb-3">No payment methods added</p>
+                                        <Button variant="outline" className="min-h-[44px] touch-manipulation text-sm sm:text-base">
                                             Add Payment Method
                                         </Button>
                                     </div>
@@ -663,24 +667,24 @@ const BillingDashboard: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4"
                         onClick={() => setShowUpgradeModal(false)}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
+                            initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="mobile-modal bg-white dark:bg-gray-900 shadow-2xl max-w-4xl w-full overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                                            <Crown className="h-6 w-6 text-yellow-500" />
-                                            Upgrade Your Plan
+                            <div className="p-4 sm:p-6">
+                                <div className="flex items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                                            <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
+                                            <span className="truncate">Upgrade Your Plan</span>
                                         </h2>
-                                        <p className="text-gray-600 dark:text-gray-400">
+                                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             Choose the perfect plan for your productivity needs
                                         </p>
                                     </div>
@@ -688,21 +692,22 @@ const BillingDashboard: React.FC = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setShowUpgradeModal(false)}
+                                        className="min-h-[44px] min-w-[44px] touch-manipulation flex-shrink-0"
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
 
-                                <div className="mb-6">
-                                    <div className="flex items-center justify-center gap-4 mb-6">
-                                        <span className={billingInterval === 'monthly' ? 'font-medium' : 'text-gray-500'}>
+                                <div className="mb-4 sm:mb-6">
+                                    <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+                                        <span className={`text-sm sm:text-base ${billingInterval === 'monthly' ? 'font-medium' : 'text-gray-500'}`}>
                                             Monthly
                                         </span>
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                                            className="relative"
+                                            className="relative min-h-[44px] touch-manipulation"
                                         >
                                             <div className={`w-12 h-6 rounded-full transition-colors ${billingInterval === 'yearly' ? 'bg-blue-500' : 'bg-gray-300'
                                                 }`}>
@@ -710,14 +715,14 @@ const BillingDashboard: React.FC = () => {
                                                     } mt-0.5`} />
                                             </div>
                                         </Button>
-                                        <span className={billingInterval === 'yearly' ? 'font-medium' : 'text-gray-500'}>
+                                        <span className={`text-sm sm:text-base ${billingInterval === 'yearly' ? 'font-medium' : 'text-gray-500'}`}>
                                             Yearly
-                                            <Badge variant="secondary" className="ml-2">Save 17%</Badge>
+                                            <Badge variant="secondary" className="ml-2 text-xs">Save 17%</Badge>
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-6">
+                                <div className="mobile-pricing-grid">
                                     {pricingPlans
                                         .filter(plan => plan.interval === billingInterval && plan.tier !== 'free')
                                         .map((plan) => (
@@ -732,37 +737,37 @@ const BillingDashboard: React.FC = () => {
                                                     </div>
                                                 )}
                                                 <Card className="h-full">
-                                                    <CardHeader>
+                                                    <CardHeader className="p-4 sm:p-6">
                                                         <div className="flex items-center justify-between">
-                                                            <CardTitle className="flex items-center gap-2">
+                                                            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                                                                 {getTierIcon(plan.tier)}
-                                                                {plan.name}
+                                                                <span className="truncate">{plan.name}</span>
                                                             </CardTitle>
                                                         </div>
-                                                        <div className="space-y-2">
+                                                        <div className="space-y-2 mt-2">
                                                             <div className="flex items-baseline gap-1">
-                                                                <span className="text-3xl font-bold">{formatPrice(plan.price)}</span>
-                                                                <span className="text-gray-500">/{plan.interval}</span>
+                                                                <span className="text-2xl sm:text-3xl font-bold">{formatPrice(plan.price)}</span>
+                                                                <span className="text-sm sm:text-base text-gray-500">/{plan.interval}</span>
                                                             </div>
                                                             {plan.interval === 'yearly' && (
-                                                                <p className="text-sm text-green-600">
+                                                                <p className="text-xs sm:text-sm text-green-600">
                                                                     Save ${((plan.price / 12) * 12 * 1.2 - plan.price).toFixed(0)} per year
                                                                 </p>
                                                             )}
                                                         </div>
                                                     </CardHeader>
-                                                    <CardContent className="space-y-4">
+                                                    <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                                                         <ul className="space-y-2">
                                                             {plan.features.map((feature, index) => (
-                                                                <li key={index} className="flex items-start gap-2 text-sm">
+                                                                <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
                                                                     <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                                                    {feature}
+                                                                    <span className="leading-relaxed">{feature}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>
 
                                                         <Button
-                                                            className="w-full"
+                                                            className="w-full min-h-[44px] touch-manipulation text-sm sm:text-base"
                                                             variant={plan.tier === subscription?.tier ? 'outline' : 'default'}
                                                             disabled={plan.tier === subscription?.tier}
                                                             onClick={() => {
@@ -778,7 +783,7 @@ const BillingDashboard: React.FC = () => {
                                         ))}
                                 </div>
 
-                                <div className="mt-6 text-center text-sm text-gray-500">
+                                <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-500 px-2">
                                     <p>All plans include a 14-day free trial. Cancel anytime.</p>
                                 </div>
                             </div>

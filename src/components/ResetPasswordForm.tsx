@@ -393,7 +393,7 @@ const ResetPasswordForm: React.FC = () => {
                 />
             </div>
 
-            <div className="flex-1 py-12 overflow-y-auto z-50 flex items-center justify-center">
+            <main id="main-content" role="main" aria-label="Main content" className="flex-1 py-12 overflow-y-auto z-50 flex items-center justify-center">
                 <div className="container max-w-md mx-auto px-4">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -577,10 +577,10 @@ const ResetPasswordForm: React.FC = () => {
                                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                                     <div
                                                         className={`h-full transition-all duration-300 ${passwordStrength.score === 5 ? 'bg-green-600' :
-                                                                passwordStrength.score === 4 ? 'bg-green-500' :
-                                                                    passwordStrength.score === 3 ? 'bg-yellow-500' :
-                                                                        passwordStrength.score === 2 ? 'bg-orange-500' :
-                                                                            'bg-red-500'
+                                                            passwordStrength.score === 4 ? 'bg-green-500' :
+                                                                passwordStrength.score === 3 ? 'bg-yellow-500' :
+                                                                    passwordStrength.score === 2 ? 'bg-orange-500' :
+                                                                        'bg-red-500'
                                                             }`}
                                                         style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                                                     />
@@ -654,7 +654,7 @@ const ResetPasswordForm: React.FC = () => {
                         </Card>
                     </motion.div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

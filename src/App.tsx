@@ -534,7 +534,7 @@ const App: React.FC = () => {
             />
 
             <div className={`pt-0 -mt-12 pb-8 px-4 sm:px-6 md:px-8 min-h-screen ${isLargeScreen ? 'xl:pr-80 2xl:pr-96' : ''}`}>
-                <div className="max-w-5xl xl:max-w-6xl mx-auto h-full flex flex-col">
+                <main id="main-content" className="max-w-5xl xl:max-w-6xl mx-auto h-full flex flex-col" role="main" aria-label="Main content">
                     <div className="w-full flex-shrink-0 mb-4">
                         <Button
                             onClick={() => setShowTodoForm(!showTodoForm)}
@@ -584,65 +584,67 @@ const App: React.FC = () => {
                     <div className="flex-1 min-h-0">
                         <TodoList isLoading={!isDataLoaded} />
                     </div>
-                </div>
-            </div>
 
-            {/* Analytics (large screens) */}
-            {isLargeScreen && (
-                <div className="fixed top-20 right-4 max-h-full w-72 lg:w-80 xl:w-80 2xl:w-96 p-4 overflow-y-auto z-10 pr-5">
-                    <div className="space-y-4">
-                        <Suspense fallback={<div>Loading Analytics...</div>}>
-                            <AnalyticsDashboard />
-                        </Suspense>
-                    </div>
-                </div>
-            )}
-
-            {/* Slide-in analytics (small) */}
-            <AnimatePresence>
-                {showAnalytics && !isLargeScreen && (
-                    <motion.div
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowAnalytics(false)}
-                    >
-                        <motion.div
-                            className="w-full sm:w-96 md:w-[400px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black h-full p-4 overflow-y-auto"
-                            initial={{ x: "100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "100%" }}
-                            transition={{ type: "spring", damping: 20 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex justify-between items-center mb-6 px-2">
-                                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Analytics Dashboard</h2>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowAnalytics(false)}
-                                    className="rounded-full h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800"
-                                >
-                                    <X className="h-5 w-5" />
-                                </Button>
-                            </div>
-                            <div className="space-y-4 px-1">
+                    {/* Analytics (large screens) */}
+                    {isLargeScreen && (
+                        <div className="fixed top-20 right-4 max-h-full w-72 lg:w-80 xl:w-80 2xl:w-96 p-4 overflow-y-auto z-10 pr-5">
+                            <div className="space-y-4">
                                 <Suspense fallback={<div>Loading Analytics...</div>}>
                                     <AnalyticsDashboard />
                                 </Suspense>
                             </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        </div>
+                    )}
 
+                    {/* Slide-in analytics (small) */}
+                    <AnimatePresence>
+                        {showAnalytics && !isLargeScreen && (
+                            <motion.div
+                                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowAnalytics(false)}
+                            >
+                                <motion.div
+                                    className="w-full sm:w-96 md:w-[400px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-black h-full p-4 overflow-y-auto"
+                                    initial={{ x: "100%" }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: "100%" }}
+                                    transition={{ type: "spring", damping: 20 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex justify-between items-center mb-6 px-2">
+                                        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Analytics Dashboard</h2>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowAnalytics(false)}
+                                            className="rounded-full h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                        >
+                                            <X className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-4 px-1">
+                                        <Suspense fallback={<div>Loading Analytics...</div>}>
+                                            <AnalyticsDashboard />
+                                        </Suspense>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </main>
+            </div>
             <Footer />
         </div>
     );
 
     return (
         <>
+            <a href="#main-content" className="skip-to-main">
+                Skip to main content
+            </a>
             <NotificationPermissionBanner />
             <NavigationBlocker />
             <SessionTransition
@@ -699,9 +701,9 @@ const App: React.FC = () => {
                                         amplitude={2.5}
                                         speed={0.9}
                                     />
-                                    <div className="pt-0 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                    <main id="main-content" role="main" aria-label="Main content" className="pt-0 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
                                         {session?.user && <UserProfile userData={session.user} />}
-                                    </div>
+                                    </main>
                                     <Footer />
                                 </div>
                             </PageTransition>
@@ -736,11 +738,11 @@ const App: React.FC = () => {
                                         amplitude={2.5}
                                         speed={0.9}
                                     />
-                                    <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
+                                    <main id="main-content" role="main" aria-label="Main content" className="pt-20 pb-8 px-4 sm:px-6 md:px-8 min-h-screen">
                                         <div className="max-w-2xl mx-auto">
                                             <PomodoroTimer />
                                         </div>
-                                    </div>
+                                    </main>
                                     <Footer />
                                 </div>
                             </PageTransition>

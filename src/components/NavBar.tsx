@@ -64,7 +64,7 @@ export const NavBar: React.FC = () => {
                 {/* Left section with logo/home */}
                 <Button
                     variant="ghost"
-                    className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                    className="touch-target p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
                     onClick={() => handleNavigationClick("/", "Home")}
                     aria-label="Go to home page"
                 >
@@ -84,7 +84,7 @@ export const NavBar: React.FC = () => {
                     <NotificationBell />
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                        className="touch-target p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
                         onClick={() => handleNavigationClick("/pomodoro", "Pomodoro Timer")}
                         aria-label="Go to Pomodoro Timer"
                     >
@@ -93,7 +93,7 @@ export const NavBar: React.FC = () => {
 
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
+                        className="touch-target p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
                         onClick={() => handleNavigationClick("/profile", "User Profile")}
                         aria-label="Go to user profile"
                     >
@@ -103,7 +103,7 @@ export const NavBar: React.FC = () => {
                     {showAnalyticsButton && (
                         <Button
                             variant="ghost"
-                            className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                            className="touch-target p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
                             onClick={handleAnalyticsToggle}
                             aria-label="Toggle analytics panel"
                         >
@@ -126,7 +126,7 @@ export const NavBar: React.FC = () => {
             >
                 <Button
                     variant="ghost"
-                    className="p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
+                    className="touch-target p-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-full"
                     onClick={() => handleNavigationClick("/", "Home")}
                     aria-label="Go to home page"
                 >
@@ -147,7 +147,7 @@ export const NavBar: React.FC = () => {
 
                     <Button
                         variant="ghost"
-                        className="p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
+                        className="touch-target p-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-full"
                         onClick={handleMobileMenuToggle}
                         aria-label={showMobileMenu ? "Close navigation menu" : "Open navigation menu"}
                         aria-expanded={showMobileMenu}
@@ -173,7 +173,7 @@ export const NavBar: React.FC = () => {
                     >
                         <Button
                             variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
+                            className="touch-target flex justify-start p-3 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg min-h-[48px]"
                             onClick={() => handleNavigationClick("/", "Home")}
                             role="menuitem"
                             aria-label="Go to home page"
@@ -184,7 +184,7 @@ export const NavBar: React.FC = () => {
 
                         <Button
                             variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
+                            className="touch-target flex justify-start p-3 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg min-h-[48px]"
                             onClick={() => handleNavigationClick("/pomodoro", "Pomodoro Timer")}
                             role="menuitem"
                             aria-label="Go to Pomodoro Timer"
@@ -195,7 +195,7 @@ export const NavBar: React.FC = () => {
 
                         <Button
                             variant="ghost"
-                            className="flex justify-start p-2 mb-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-lg"
+                            className="touch-target flex justify-start p-3 mb-2 hover:theme-secondary-bg/10 theme-secondary-text dark:hover:bg-gray-900 rounded-lg min-h-[48px]"
                             onClick={() => handleNavigationClick("/profile", "User Profile")}
                             role="menuitem"
                             aria-label="Go to user profile"
@@ -207,7 +207,7 @@ export const NavBar: React.FC = () => {
                         {showAnalyticsButton && (
                             <Button
                                 variant="ghost"
-                                className="flex justify-start p-2 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg"
+                                className="touch-target flex justify-start p-3 mb-2 hover:theme-accent-bg/10 theme-accent-text dark:hover:bg-gray-900 rounded-lg min-h-[48px]"
                                 onClick={handleAnalyticsToggle}
                                 role="menuitem"
                                 aria-label="Toggle analytics panel"

@@ -19,7 +19,7 @@ const urlsToCache = [
 
 // Inline HTML fallback (used only if cache is empty and network is unavailable)
 const INLINE_OFFLINE_HTML = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"/>
 <title>Offline • TaskMind AI</title>
 <style>
   :root{--bg1:#0f172a;--bg2:#020617;--t:#e5e7eb;--m:#9ca3af;--a1:#3b82f6;--a2:#a855f7}

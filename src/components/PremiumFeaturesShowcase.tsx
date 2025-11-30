@@ -71,16 +71,16 @@ const PremiumFeaturesShowcase: React.FC = () => {
         };
 
         return (
-            <div className="space-y-4">
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border">
-                    <div className="flex items-center gap-3 mb-3">
-                        <Mic className="h-5 w-5 text-blue-500" />
-                        <span className="font-medium">Voice Input</span>
+            <div className="space-y-3 sm:space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 sm:p-4 rounded-lg border">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <Mic className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">Voice Input</span>
                     </div>
                     <Button
                         onClick={handleStartRecording}
                         disabled={isRecording}
-                        className={`w-full ${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                        className={`w-full min-h-[44px] touch-manipulation text-sm sm:text-base ${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}
                     >
                         {isRecording ? (
                             <>
@@ -100,13 +100,13 @@ const PremiumFeaturesShowcase: React.FC = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-gray-800 p-4 rounded-lg border"
+                        className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border"
                     >
-                        <div className="flex items-start gap-3">
-                            <Brain className="h-5 w-5 text-purple-500 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-medium mb-1">AI Analysis Result</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{voiceText}</p>
+                        <div className="flex items-start gap-2 sm:gap-3">
+                            <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs sm:text-sm font-medium mb-1">AI Analysis Result</p>
+                                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">{voiceText}</p>
                             </div>
                         </div>
                     </motion.div>
@@ -388,25 +388,25 @@ const PremiumFeaturesShowcase: React.FC = () => {
     const categories = Array.from(new Set(premiumFeatures.map(f => f.category)));
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8 px-2 sm:px-0">
             <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-3">
-                    <Crown className="h-8 w-8 text-yellow-500" />
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center justify-center gap-2 sm:gap-3">
+                    <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
                     Premium Features
                 </h2>
-                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                <p className="mt-2 text-sm sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-2">
                     Unlock powerful productivity features with our premium plans.
                     Collaborate, analyze, and achieve more.
                 </p>
             </div>
 
             <Tabs defaultValue="ai-assistant" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="flex flex-wrap h-auto p-2 mb-6 bg-gray-100/50 dark:bg-gray-800/30 rounded-lg">
+                <TabsList className="flex flex-wrap h-auto p-1 sm:p-2 mb-4 sm:mb-6 bg-gray-100/50 dark:bg-gray-800/30 rounded-lg gap-1 sm:gap-2">
                     {categories.map(category => (
                         <TabsTrigger
                             key={category}
                             value={category.toLowerCase().replace(' ', '-')}
-                            className="flex-grow md:flex-grow-0"
+                            className="flex-grow md:flex-grow-0 min-h-[44px] touch-manipulation text-xs sm:text-sm px-2 sm:px-4"
                         >
                             {category}
                         </TabsTrigger>
@@ -417,9 +417,9 @@ const PremiumFeaturesShowcase: React.FC = () => {
                     <TabsContent
                         key={category}
                         value={category.toLowerCase().replace(' ', '-')}
-                        className="space-y-6"
+                        className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {premiumFeatures
                                 .filter(f => f.category === category)
                                 .map((feature) => (
@@ -429,26 +429,26 @@ const PremiumFeaturesShowcase: React.FC = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                     >
                                         <Card className="h-full bg-white dark:bg-gray-800/20">
-                                            <CardHeader>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 rounded-lg">
+                                            <CardHeader className="p-4 sm:p-6">
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-1.5 sm:p-2 rounded-lg flex-shrink-0">
                                                             {feature.icon}
                                                         </div>
-                                                        <CardTitle className="text-lg">{feature.name}</CardTitle>
+                                                        <CardTitle className="text-base sm:text-lg truncate">{feature.name}</CardTitle>
                                                     </div>
-                                                    <Badge variant={feature.tier === 'premium' ? 'default' : 'secondary'} className="capitalize">
+                                                    <Badge variant={feature.tier === 'premium' ? 'default' : 'secondary'} className="capitalize text-xs sm:text-sm self-start sm:self-center">
                                                         {feature.tier}
                                                     </Badge>
                                                 </div>
-                                                <CardDescription className="pt-2">{feature.description}</CardDescription>
+                                                <CardDescription className="pt-2 text-xs sm:text-sm">{feature.description}</CardDescription>
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
+                                            <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                                                 <ul className="space-y-2">
                                                     {feature.benefits.map((benefit, index) => (
-                                                        <li key={index} className="flex items-center gap-2 text-sm">
-                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                            <span>{benefit}</span>
+                                                        <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
+                                                            <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                            <span className="leading-relaxed">{benefit}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -456,7 +456,7 @@ const PremiumFeaturesShowcase: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <Button
                                                         onClick={() => handleTryDemo(feature)}
-                                                        className="w-full"
+                                                        className="w-full min-h-[44px] touch-manipulation text-sm sm:text-base"
                                                         disabled={feature.tier === 'enterprise' && tier !== 'enterprise'}
                                                     >
                                                         <Sparkles className="h-4 w-4 mr-2" />
@@ -478,33 +478,34 @@ const PremiumFeaturesShowcase: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4"
                         onClick={() => setActiveDemo(null)}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
+                            initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl"
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="w-full h-full sm:h-auto sm:max-w-lg bg-white dark:bg-gray-900 rounded-none sm:rounded-xl shadow-2xl overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <Card className="border-0">
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="flex items-center gap-3">
-                                            <Sparkles className="h-5 w-5 text-yellow-500" />
-                                            {premiumFeatures.find(f => f.id === activeDemo)?.name} Demo
+                            <Card className="border-0 h-full sm:h-auto">
+                                <CardHeader className="p-4 sm:p-6">
+                                    <div className="flex items-start sm:items-center justify-between gap-3">
+                                        <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl flex-1 min-w-0">
+                                            <Sparkles className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                                            <span className="truncate">{premiumFeatures.find(f => f.id === activeDemo)?.name} Demo</span>
                                         </CardTitle>
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => setActiveDemo(null)}
+                                            className="min-h-[44px] min-w-[44px] touch-manipulation flex-shrink-0"
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="p-4 sm:p-6 pt-0">
                                     {premiumFeatures.find(f => f.id === activeDemo)?.demoComponent}
                                 </CardContent>
                             </Card>
